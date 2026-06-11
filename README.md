@@ -32,13 +32,6 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-Login admin default setelah seed:
-
-```text
-username: admin
-password: password
-```
-
 Ganti password admin sebelum dipakai di server.
 
 ## Deploy VPS
@@ -65,10 +58,3 @@ Nginx harus diarahkan ke folder:
 ```text
 /var/www/ruangbelajar/public
 ```
-
-## Catatan Keamanan
-
-- Jangan upload `.env` ke GitHub.
-- Jangan upload `vendor`, `node_modules`, `storage/logs`, dan dokumen private.
-- Gunakan `APP_DEBUG=false` di server.
-- Rotate API key dan password database sebelum production.
