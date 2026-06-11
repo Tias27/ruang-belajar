@@ -34,24 +34,6 @@ php artisan serve
 
 Ganti password admin sebelum dipakai di server.
 
-## Deploy VPS
-
-Panduan lengkap ada di [DEPLOY_VPS.md](DEPLOY_VPS.md).
-
-Ringkasnya:
-
-```bash
-git clone https://github.com/USERNAME/NAMA_REPO.git /var/www/ruangbelajar
-cd /var/www/ruangbelajar
-composer install --no-dev --optimize-autoloader
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --force
-php artisan db:seed --force
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-```
 
 Nginx harus diarahkan ke folder:
 
