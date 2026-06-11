@@ -31,12 +31,3 @@ php artisan key:generate
 php artisan migrate --seed
 php artisan serve
 ```
-
-Ganti password admin sebelum dipakai di server.
-
-
-Nginx harus diarahkan ke folder:
-
-```text
-/var/www/ruangbelajar/public
-```
