@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="RuangBelajar AI">
+  <defs>
+    <linearGradient id="bg" x1="20" x2="108" y1="16" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f3f9ff"/>
+      <stop offset="1" stop-color="#e9e2ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#bg)"/>
+  <circle cx="64" cy="58" r="34" fill="#fff7ed" stroke="#d8bfa5" stroke-width="3"/>
+  <path d="M37 34 25 18l-2 28M91 34l12-16 2 28" fill="#fff7ed" stroke="#d8bfa5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50" cy="55" r="7" fill="#111827"/>
+  <circle cx="78" cy="55" r="7" fill="#111827"/>
+  <circle cx="47" cy="52" r="2" fill="#fff"/>
+  <circle cx="75" cy="52" r="2" fill="#fff"/>
+  <path d="M64 65c4 0 6 2 6 4s-3 4-6 4-6-2-6-4 2-4 6-4Z" fill="#f4a6a6"/>
+  <path d="M45 82c11 9 27 9 38 0" fill="none" stroke="#9a6b52" stroke-width="3" stroke-linecap="round"/>
+  <rect x="23" y="76" width="35" height="25" rx="5" fill="#31251f" transform="rotate(-12 23 76)"/>
+  <path d="M30 82h22M31 89h17" stroke="#8b776b" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="88" cy="86" r="15" fill="#ffd84d"/>
+  <path d="M77 86h22M88 75v22" stroke="#efb700" stroke-width="3" stroke-linecap="round"/>
+</svg>

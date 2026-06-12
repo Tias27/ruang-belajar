@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateFlashcardsJob;
 use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Models\Flashcard;
@@ -19,76 +20,20 @@ class FlashcardController extends Controller
     {
         abort_if($document->user_id !== auth()->id(), 403);
 
-        try {
-            $result = $gemini->generateFlashcards($document);
-            $flashcards = $result['flashcards'] ?? [];
-            if (count($flashcards) === 0) {
-                $flashcards = $sources->fallbackFlashcards($document);
-            }
+        GenerateFlashcardsJob::dispatch('document', $document->id, auth()->id());
+        $logger->log('queue_flashcards', $document);
 
-            foreach ($flashcards as $index => $flashcard) {
-                $document->flashcards()->create([
-                    'user_id' => auth()->id(),
-                    'front' => $flashcard['front'] ?? 'Pertanyaan',
-                    'back' => $flashcard['back'] ?? 'Jawaban',
-                    'position' => $index + 1,
-                ]);
-            }
-
-            $logger->log('generate_flashcards', $document, ['count' => count($flashcards)]);
-        } catch (Throwable $exception) {
-            report($exception);
-
-            $flashcards = $sources->fallbackFlashcards($document);
-            if (count($flashcards) === 0) {
-                return back()->with('status', 'Kartu belajar belum berhasil dibuat. Coba beberapa saat lagi atau pastikan teks dokumen berhasil terbaca.');
-            }
-
-            $this->createFlashcardsForDocument($document, $flashcards);
-            $logger->log('generate_flashcards_fallback', $document, ['count' => count($flashcards)]);
-
-            return redirect()->route('flashcards.index', $document)->with('status', $this->fallbackStatus($exception));
-        }
-
-        return redirect()->route('flashcards.index', $document);
+        return redirect()->route('flashcards.index', $document)->with('status', 'Kartu belajar selesai diproses.');
     }
 
     public function storeFolder(DocumentFolder $folder, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
     {
         abort_if($folder->user_id !== auth()->id(), 403);
 
-        try {
-            $result = $gemini->generateFlashcards($folder);
-            $flashcards = $result['flashcards'] ?? [];
-            if (count($flashcards) === 0) {
-                $flashcards = $sources->fallbackFlashcards($folder);
-            }
+        GenerateFlashcardsJob::dispatch('folder', $folder->id, auth()->id());
+        $logger->log('queue_folder_flashcards', $folder);
 
-            foreach ($flashcards as $index => $flashcard) {
-                $folder->flashcards()->create([
-                    'user_id' => auth()->id(),
-                    'front' => $flashcard['front'] ?? 'Pertanyaan',
-                    'back' => $flashcard['back'] ?? 'Jawaban',
-                    'position' => $index + 1,
-                ]);
-            }
-
-            $logger->log('generate_folder_flashcards', $folder, ['count' => count($flashcards)]);
-        } catch (Throwable $exception) {
-            report($exception);
-
-            $flashcards = $sources->fallbackFlashcards($folder);
-            if (count($flashcards) === 0) {
-                return back()->with('status', 'Kartu belajar folder belum berhasil dibuat. Coba beberapa saat lagi atau pastikan teks dokumen di folder berhasil terbaca.');
-            }
-
-            $this->createFlashcardsForFolder($folder, $flashcards);
-            $logger->log('generate_folder_flashcards_fallback', $folder, ['count' => count($flashcards)]);
-
-            return redirect()->route('folders.flashcards.index', $folder)->with('status', $this->fallbackStatus($exception));
-        }
-
-        return redirect()->route('folders.flashcards.index', $folder);
+        return redirect()->route('folders.flashcards.index', $folder)->with('status', 'Kartu belajar folder selesai diproses.');
     }
 
     public function index(Document $document, LearningSourceService $sources)

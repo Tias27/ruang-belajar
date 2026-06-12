@@ -10,7 +10,7 @@ class Summary extends Model
 {
     use HasFactory, HasPublicId;
 
-    protected $fillable = ['document_id', 'folder_id', 'user_id', 'short_summary', 'full_summary', 'key_points', 'conclusion', 'raw_response'];
+    protected $fillable = ['document_id', 'folder_id', 'user_id', 'short_summary', 'full_summary', 'key_points', 'conclusion', 'raw_response', 'status', 'generation_error'];
 
     protected function casts(): array
     {

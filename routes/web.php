@@ -48,6 +48,7 @@ Route::middleware(['auth', 'role:mahasiswa'])->group(function () {
     Route::delete('documents-selected', [DocumentController::class, 'bulkDestroy'])->name('documents.bulk-destroy');
     Route::resource('documents', DocumentController::class)->except(['edit', 'update']);
     Route::get('folders/{folder}', [DocumentFolderController::class, 'show'])->name('folders.show');
+    Route::post('folders/{folder}/documents', [DocumentFolderController::class, 'storeDocuments'])->name('folders.documents.store');
     Route::delete('folders/{folder}', [DocumentFolderController::class, 'destroy'])->name('folders.destroy');
     Route::post('documents/{document}/notes', [StudyNoteController::class, 'storeDocument'])->name('documents.notes.store');
     Route::post('folders/{folder}/notes', [StudyNoteController::class, 'storeFolder'])->name('folders.notes.store');

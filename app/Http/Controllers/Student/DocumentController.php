@@ -63,6 +63,13 @@ class DocumentController extends Controller
             'folder_description' => ['nullable', 'string', 'max:1000'],
             'files' => ['required', 'array', 'min:1', 'max:30'],
             'files.*' => ['required', 'file', 'max:20480', 'mimes:pdf,docx,pptx'],
+        ], [
+            'files.required' => 'Pilih minimal satu file materi.',
+            'files.max' => 'Maksimal 30 file dalam sekali upload.',
+            'files.*.required' => 'File materi wajib dipilih.',
+            'files.*.file' => 'File materi belum valid. Jika ukuran di atas 2 MB gagal, naikkan upload_max_filesize dan post_max_size di PHP.',
+            'files.*.max' => 'Ukuran maksimal 20 MB per file.',
+            'files.*.mimes' => 'Format file harus PDF, DOCX, atau PPTX.',
         ]);
 
         $files = $data['files'];

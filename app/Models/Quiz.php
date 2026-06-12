@@ -10,7 +10,7 @@ class Quiz extends Model
 {
     use HasFactory, HasPublicId;
 
-    protected $fillable = ['document_id', 'folder_id', 'user_id', 'title', 'question_count'];
+    protected $fillable = ['document_id', 'folder_id', 'user_id', 'title', 'question_type', 'question_count', 'status', 'generation_error'];
 
     public function document()
     {

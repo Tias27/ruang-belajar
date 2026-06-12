@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Document;
 use App\Models\DocumentFolder;
+use App\Models\Quiz;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -13,7 +14,7 @@ class GeminiService
 {
     public function summarize(Document|DocumentFolder $document): array
     {
-        return $this->jsonPrompt($document, 'Buat ringkasan belajar dalam JSON dengan kunci: short_summary, full_summary, key_points array, conclusion. Gunakan bahasa Indonesia yang jelas, urutkan dari konsep dasar ke konsep lanjutan, dan tambahkan contoh singkat jika materi cocok.', 3200, 'summary');
+        return $this->jsonPrompt($document, 'Buat ringkasan belajar rapi dalam JSON dengan kunci: short_summary, full_summary, key_points array, conclusion. Fokus ke inti materi, konsep penting, langkah, manfaat, dan kesimpulan. Abaikan cover, daftar isi, identitas tugas, dan teks administratif. Jangan bertele-tele.', 1800, 'summary');
     }
 
     public function chat(Document|DocumentFolder $document, string $question): string
@@ -24,25 +25,71 @@ Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelask
 Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban.
 Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
 Jika pertanyaan menanyakan karakter, karakteristik, ciri, jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
+Jika jawaban ada dalam bentuk daftar di materi, rangkum seluruh daftar tersebut dengan bahasa rapi.
+Jika materi punya istilah teknis, jelaskan arti istilahnya dulu lalu hubungkan dengan konteks dokumen.
+Berikan jawaban yang terasa seperti tutor pintar: jelas, lengkap, tidak kaku, dan tetap tidak bertele-tele.
+Jangan cuma menjawab satu poin jika materi memuat banyak poin. Gabungkan semua poin relevan menjadi jawaban utuh.
+Kalau pertanyaan pendek atau typo, tafsirkan maksud terdekat dari materi.
 
 Pertanyaan: {$question}";
 
-        return $this->textPrompt($document, $prompt, $question, 900, null, 'chat');
+        return $this->textPrompt($document, $prompt, $question, 1100, null, 'chat');
     }
 
-    public function generateQuiz(Document|DocumentFolder $document): array
+    public function generateQuiz(Document|DocumentFolder $document, string $questionType = 'multiple_choice', int $questionCount = 10): array
     {
-        return $this->jsonPrompt($document, 'Buat 10 soal pilihan ganda dalam JSON: {"questions":[{"question":"","options":["A. ...","B. ...","C. ...","D. ..."],"correct_answer":"A","explanation":""}]}. Pertanyaan harus ringkas, pilihan pendek, pembahasan maksimal 2 kalimat, dan tetap berdasarkan materi.', 2600, 'quiz');
+        $questionCount = max(1, min(30, $questionCount));
+
+        if ($questionType === 'essay') {
+            return $this->jsonPrompt($document, "Buat {$questionCount} soal esai dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[],\"correct_answer\":\"contoh jawaban ideal\",\"explanation\":\"pembahasan singkat\"}]}. Soal menguji pemahaman konsep dari materi. Hindari cover/judul/identitas dokumen. Pertanyaan ringkas, jawaban ideal maksimal 3 kalimat, pembahasan maksimal 1 kalimat.", min(2800, 900 + ($questionCount * 160)), 'quiz');
+        }
+
+        return $this->jsonPrompt($document, "Buat {$questionCount} soal pilihan ganda dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[\"A. ...\",\"B. ...\",\"C. ...\",\"D. ...\"],\"correct_answer\":\"A\",\"explanation\":\"\"}]}. Soal menguji pemahaman, bukan menyalin kalimat panjang. Pilihan pendek dan masuk akal. Hindari cover/judul/identitas dokumen. Pembahasan maksimal 1 kalimat.", min(2800, 800 + ($questionCount * 130)), 'quiz');
     }
 
     public function generateFlashcards(Document|DocumentFolder $document): array
     {
-        return $this->jsonPrompt($document, 'Buat 10 kartu belajar dalam JSON: {"flashcards":[{"front":"","back":""}]}. Bagian depan berisi pertanyaan singkat, bagian belakang berisi jawaban jelas maksimal 3 poin.', 2200, 'flashcard');
+        return $this->jsonPrompt($document, 'Buat 10 kartu belajar dalam JSON: {"flashcards":[{"front":"","back":""}]}. Depan berupa pertanyaan singkat. Belakang berupa jawaban jelas maksimal 2 poin pendek. Prioritaskan definisi, manfaat, karakteristik, langkah, rumus, dan contoh penting. Hindari cover dan identitas tugas.', 1300, 'flashcard');
+    }
+
+    public function gradeEssayQuiz(Quiz $quiz, array $answers): array
+    {
+        $quiz->loadMissing('questions');
+
+        $payload = $quiz->questions
+            ->map(fn ($question) => [
+                'id' => $question->id,
+                'question' => $question->question,
+                'ideal_answer' => $question->correct_answer,
+                'explanation' => $question->explanation,
+                'student_answer' => (string) ($answers[$question->id] ?? ''),
+            ])
+            ->values()
+            ->all();
+
+        $prompt = "Nilai jawaban esai siswa berdasarkan jawaban ideal.
+Aturan penilaian:
+1. Beri skor 0 sampai 100 untuk setiap soal.
+2. Jika jawaban benar sebagian, beri skor parsial sesuai kelengkapan dan ketepatan.
+3. Jangan terlalu kaku pada perbedaan kata, nilai makna dan konsepnya.
+4. Jika jawaban sangat pendek tetapi memuat inti benar, beri skor wajar, bukan nol.
+5. Beri feedback singkat dan saran perbaikan.
+
+Data soal:
+".json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."
+
+Balas hanya JSON valid:
+{\"items\":[{\"id\":1,\"score\":0,\"feedback\":\"\",\"suggested_answer\":\"\"}],\"summary\":\"\"}";
+
+        $text = $this->sendText($prompt, 2600, 'application/json', 'quiz');
+        $json = json_decode($this->extractJson($text), true);
+
+        return json_last_error() === JSON_ERROR_NONE ? $json : [];
     }
 
     private function textPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
     {
-        return $this->sendText($this->buildPrompt($document, $instruction, $question), $maxOutputTokens, $responseMimeType, $task);
+        return $this->sendText($this->buildPrompt($document, $instruction, $question, $task), $maxOutputTokens, $responseMimeType, $task);
     }
 
     private function jsonPrompt(Document|DocumentFolder $document, string $instruction, int $maxOutputTokens = 4096, string $task = 'default'): array
@@ -139,9 +186,9 @@ Pertanyaan: {$question}";
         $connectTimeout = max(3, min((int) config('services.gemini.connect_timeout', 15), $timeout));
 
         $generationConfig = [
-            'temperature' => 0.25,
+            'temperature' => 0.2,
             'topP' => 0.9,
-            'maxOutputTokens' => max(512, min($maxOutputTokens, 4096)),
+            'maxOutputTokens' => max(512, min($maxOutputTokens, 8192)),
         ];
 
         if ($responseMimeType) {
@@ -208,8 +255,8 @@ Pertanyaan: {$question}";
         $payload = [
             'model' => $model,
             'messages' => $messages,
-            'temperature' => 0.25,
-            'max_tokens' => max(512, min($maxOutputTokens, 4096)),
+            'temperature' => 0.2,
+            'max_tokens' => max(512, min($maxOutputTokens, 8192)),
         ];
 
         if ($responseMimeType === 'application/json') {
@@ -321,7 +368,7 @@ Pertanyaan: {$question}";
         @ini_set('max_execution_time', '90');
     }
 
-    private function buildPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null): string
+    private function buildPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, string $task = 'default'): string
     {
         $sourceType = $document instanceof DocumentFolder ? 'FOLDER MATERI' : 'DOKUMEN';
         
@@ -330,7 +377,7 @@ Pertanyaan: {$question}";
             $relevantContext = $this->chatContext($document, $question);
             $contextPart = "KONTEKS RELEVAN:\n{$relevantContext}";
         } else {
-            $contextPart = "KONTEKS DOKUMEN:\n" . $this->generationContext($document);
+            $contextPart = "KONTEKS DOKUMEN:\n" . $this->generationContext($document, $task);
         }
 
         return "Kamu adalah RuangBelajar AI, asisten belajar untuk pelajar SD, SMP, SMA/SMK, mahasiswa, dan pembelajar umum.
@@ -346,6 +393,9 @@ Aturan:
 8. Jangan tampilkan proses berpikir, reasoning internal, tag <think>, atau catatan internal.
 9. Jangan gunakan LaTeX mentah seperti $$...$$. Jika ada rumus, tulis sebagai teks biasa yang rapi, contoh: Bobot = Jumlah Baris / Jumlah Kriteria.
 10. Susun jawaban seperti tutor belajar: judul pendek, penjelasan bertahap, poin bernomor/bullet, lalu kesimpulan singkat.
+11. Utamakan kualitas pemahaman: jelaskan hubungan antar konsep, sebab-akibat, langkah, contoh, dan batasan jika ada.
+12. Abaikan cover, daftar isi, identitas tugas, nama kelompok, nama dosen, dan teks administratif kecuali pengguna memang menanyakannya.
+13. Jangan menyalin mentah potongan materi panjang. Olah menjadi penjelasan belajar yang rapi.
 
 {$sourceType}: {$document->title}
 
@@ -358,7 +408,7 @@ INSTRUKSI:
     private function chatContext(Document|DocumentFolder $document, string $question): string
     {
         if ($document instanceof Document) {
-            return $this->relevantContext($document->extracted_text ?: '', $question, 2800);
+            return $this->relevantContext($document->extracted_text ?: '', $question, 3600);
         }
 
         $sections = $document->documentsForPrompt()
@@ -375,20 +425,53 @@ INSTRUKSI:
             : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
     }
 
-    private function generationContext(Document|DocumentFolder $document): string
+    private function generationContext(Document|DocumentFolder $document, string $task = 'default'): string
     {
+        $limit = match ($task) {
+            'summary' => 5600,
+            'quiz' => 4600,
+            'flashcard' => 3600,
+            default => 6500,
+        };
+
         if ($document instanceof Document) {
-            return Str::limit($document->extracted_text ?: 'Materi belum memiliki teks yang berhasil diekstrak.', 8500);
+            return $this->compactContext($document->extracted_text ?: 'Materi belum memiliki teks yang berhasil diekstrak.', $limit);
         }
+
+        $perDocumentLimit = match ($task) {
+            'summary' => 800,
+            'quiz' => 650,
+            'flashcard' => 500,
+            default => 800,
+        };
 
         $sections = $document->documentsForPrompt()
             ->filter(fn (Document $item) => filled($item->extracted_text))
-            ->map(fn (Document $item) => "### {$item->title}\n".Str::limit($item->extracted_text ?: '', 1000))
+            ->map(fn (Document $item) => "### {$item->title}\n".$this->compactContext($item->extracted_text ?: '', $perDocumentLimit))
             ->implode("\n\n");
 
         return $sections !== ''
-            ? Str::limit($sections, 8500)
+            ? Str::limit($sections, $limit)
             : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
+    }
+
+    private function compactContext(string $context, int $limit): string
+    {
+        $context = trim($context);
+        if ($context === '') {
+            return '';
+        }
+
+        if (mb_strlen($context) <= $limit) {
+            return $context;
+        }
+
+        $headLimit = (int) floor($limit * 0.68);
+        $tailLimit = max(400, $limit - $headLimit - 80);
+
+        return Str::limit($context, $headLimit, '')
+            ."\n\n[bagian akhir materi]\n"
+            .Str::limit(Str::substr($context, -$tailLimit), $tailLimit, '');
     }
 
     private function relevantContext(string $context, string $question, int $limit = 5000): string

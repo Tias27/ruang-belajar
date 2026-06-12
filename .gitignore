@@ -5,6 +5,7 @@
 .env.backup
 .env.infinity
 .env.production
+DEPLOY_VPS.md
 .phpactor.json
 .phpunit.result.cache
 /.fleet

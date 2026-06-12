@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'RuangBelajar AI' }}</title>
+    @php($brandLogo = file_exists(public_path('images/logo.png')) ? asset('images/logo.png') : asset('images/logo.svg'))
+    <link rel="icon" href="{{ $brandLogo }}">
+    <link rel="apple-touch-icon" href="{{ $brandLogo }}">
     @if(file_exists(public_path('build/manifest.json')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
@@ -79,7 +82,7 @@
         @php($isAdmin = auth()->user()->isAdmin())
         <aside class="fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-slate-200 bg-white px-5 py-5 lg:block">
             <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('student.dashboard') }}" class="flex items-center gap-3">
-                <span class="grid h-10 w-10 place-items-center rounded-lg bg-campus-900 text-lg font-bold text-white shadow-sm">C</span>
+                <img src="{{ $brandLogo }}" alt="Logo RuangBelajar AI" class="h-11 w-11 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200">
                 <span><span class="block text-lg font-semibold tracking-tight">RuangBelajar AI</span><span class="text-xs text-slate-500">{{ $isAdmin ? 'Pusat Pengelolaan' : 'Belajar dari Materi' }}</span></span>
             </a>
             <div class="mt-6 rounded-lg border {{ $isAdmin ? 'border-campus-100 bg-campus-50 text-campus-900' : 'border-accent-100 bg-accent-50 text-accent-700' }} p-3 text-xs leading-5">
@@ -112,7 +115,10 @@
                     <button type="button" x-on:click="mobileNav = ! mobileNav" class="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm">
                         <i data-lucide="menu" class="h-5 w-5"></i>
                     </button>
-                    <a class="font-semibold" href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('student.dashboard') }}">{{ $isAdmin ? 'Pengelola RuangBelajar' : 'RuangBelajar AI' }}</a>
+                    <a class="flex min-w-0 items-center gap-2 font-semibold" href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('student.dashboard') }}">
+                        <img src="{{ $brandLogo }}" alt="Logo" class="h-8 w-8 shrink-0 rounded-xl object-cover ring-1 ring-slate-200">
+                        <span class="min-w-0 truncate">{{ $isAdmin ? 'Pengelola RuangBelajar' : 'RuangBelajar AI' }}</span>
+                    </a>
                 </div>
                 <div class="hidden text-sm text-slate-500 lg:block">{{ $subtitle ?? ($isAdmin ? 'Kelola sistem RuangBelajar AI' : 'Belajar dari materi dengan bantuan AI') }}</div>
                 <div class="flex items-center gap-3">
@@ -160,6 +166,9 @@
                 </div>
             @endif
             {{ $slot }}
+            <footer class="mt-8 pb-2 text-center text-xs text-slate-400">
+                <span>RuangBelajar AI by Yasti 2026</span>
+            </footer>
         </div>
     </main>
 </body>

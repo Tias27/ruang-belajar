@@ -9,12 +9,13 @@ class QuizAttempt extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['quiz_id', 'user_id', 'answers', 'score', 'total', 'submitted_at'];
+    protected $fillable = ['quiz_id', 'user_id', 'answers', 'metadata', 'score', 'total', 'submitted_at'];
 
     protected function casts(): array
     {
         return [
             'answers' => 'array',
+            'metadata' => 'array',
             'submitted_at' => 'datetime',
         ];
     }

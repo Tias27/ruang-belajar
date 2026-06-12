@@ -43,6 +43,8 @@ return new class extends Migration
             $table->json('key_points')->nullable();
             $table->text('conclusion')->nullable();
             $table->json('raw_response')->nullable();
+            $table->string('status', 20)->default('completed')->index();
+            $table->text('generation_error')->nullable();
             $table->timestamps();
         });
 
@@ -63,7 +65,10 @@ return new class extends Migration
             $table->foreignId('folder_id')->nullable()->constrained('document_folders')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('title');
+            $table->string('question_type', 30)->default('multiple_choice');
             $table->unsignedInteger('question_count')->default(10);
+            $table->string('status', 20)->default('completed')->index();
+            $table->text('generation_error')->nullable();
             $table->timestamps();
         });
 
@@ -72,7 +77,7 @@ return new class extends Migration
             $table->foreignId('quiz_id')->constrained()->cascadeOnDelete();
             $table->text('question');
             $table->json('options');
-            $table->string('correct_answer');
+            $table->text('correct_answer');
             $table->text('explanation')->nullable();
             $table->unsignedInteger('position')->default(1);
             $table->timestamps();

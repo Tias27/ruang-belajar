@@ -9,24 +9,37 @@ use Illuminate\Support\Str;
 
 class LearningSourceService
 {
-    public function fallbackQuiz(Document|DocumentFolder $source, int $limit = 10): array
+    public function fallbackQuiz(Document|DocumentFolder $source, int $limit = 10, string $questionType = 'multiple_choice'): array
     {
-        $snippets = $this->snippetsFor($source, 'konsep definisi karakteristik manfaat langkah contoh', $limit);
+        $snippets = $this->quizCandidates($source, $limit);
 
         return collect($snippets)
             ->take($limit)
             ->values()
-            ->map(fn (array $snippet, int $index) => [
-                'question' => 'Pernyataan mana yang paling sesuai dengan materi '.$this->topicLabel($snippet, $index).'?',
-                'options' => [
-                    'A. '.Str::limit($this->answerText($snippet['snippet']), 180, ''),
-                    'B. Pernyataan yang tidak berkaitan dengan materi.',
-                    'C. Contoh umum yang tidak dijelaskan dalam dokumen.',
-                    'D. Kesimpulan yang bertentangan dengan isi materi.',
-                ],
-                'correct_answer' => 'A',
-                'explanation' => 'Jawaban A benar karena langsung diambil dari bagian materi '.$snippet['title'].'.',
-            ])
+            ->map(function (array $snippet, int $index) use ($questionType) {
+                $answer = $this->answerText($snippet['snippet'], 240);
+
+                if ($questionType === 'essay') {
+                    return [
+                        'question' => 'Jelaskan poin penting dari materi '.$this->topicLabel($snippet, $index).'.',
+                        'options' => [],
+                        'correct_answer' => $answer,
+                        'explanation' => 'Jawaban dapat dibandingkan dengan inti materi dari bagian '.$snippet['title'].'.',
+                    ];
+                }
+
+                return [
+                    'question' => 'Apa inti materi dari '.$this->topicLabel($snippet, $index).'?',
+                    'options' => [
+                        'A. '.$answer,
+                        'B. Materi tersebut hanya membahas identitas dokumen tanpa konsep utama.',
+                        'C. Materi tersebut tidak memiliki hubungan dengan pembahasan di dokumen.',
+                        'D. Materi tersebut berisi kesimpulan yang berlawanan dengan isi dokumen.',
+                    ],
+                    'correct_answer' => 'A',
+                    'explanation' => 'Jawaban A benar karena sesuai dengan potongan materi yang terbaca dari dokumen.',
+                ];
+            })
             ->all();
     }
 
@@ -42,6 +55,41 @@ class LearningSourceService
                 'back' => $this->formatFlashcardBack($card['snippet']),
             ])
             ->all();
+    }
+
+    private function quizCandidates(Document|DocumentFolder $source, int $limit): array
+    {
+        $documents = $source instanceof DocumentFolder
+            ? $source->documents()->oldest()->get(['id', 'title', 'extracted_text'])
+            : collect([$source]);
+
+        $candidates = $documents
+            ->flatMap(function (Document $document) {
+                return collect($this->studyUnits($document->extracted_text ?: ''))
+                    ->map(fn (string $unit) => [
+                        'document_id' => $document->id,
+                        'title' => $document->title,
+                        'snippet' => $unit,
+                        'score' => $this->quizUnitScore($unit),
+                    ]);
+            })
+            ->filter(fn (array $item) => $item['score'] > 0)
+            ->sortByDesc('score')
+            ->unique(fn (array $item) => Str::lower($this->completeLimit($item['snippet'], 90)))
+            ->take($limit)
+            ->map(fn (array $item) => [
+                'document_id' => $item['document_id'],
+                'title' => $item['title'],
+                'snippet' => $item['snippet'],
+            ])
+            ->values()
+            ->all();
+
+        if ($candidates !== []) {
+            return $candidates;
+        }
+
+        return $this->snippetsFor($source, 'konsep definisi karakteristik manfaat langkah tujuan masalah solusi metode proses', $limit);
     }
 
     public function fallbackAnswer(Document|DocumentFolder $source, string $question, string $reason): string
@@ -165,6 +213,7 @@ class LearningSourceService
             ->map(fn (string $part) => $this->completeLimit($part, 520))
             ->map(fn (string $part) => trim($part, " \t\n\r\0\x0B:;,.-"))
             ->filter(fn (string $part) => mb_strlen($part) >= 35)
+            ->reject(fn (string $part) => $this->isAdministrativeText($part))
             ->reject(fn (string $part) => preg_match('/^(contoh|rumus|keterangan|daftar isi|referensi)\b/iu', $part))
             ->values()
             ->all();
@@ -186,6 +235,52 @@ class LearningSourceService
         }
 
         return $score + min(5, intdiv(mb_strlen($unit), 120));
+    }
+
+    private function quizUnitScore(string $unit): int
+    {
+        $unit = trim($unit);
+        $lower = Str::lower($unit);
+
+        if ($this->isAdministrativeText($unit)) {
+            return 0;
+        }
+
+        $score = $this->studyUnitScore($unit);
+
+        foreach (['masalah', 'solusi', 'metode', 'sistem', 'proses', 'tahap', 'analisis', 'desain', 'implementasi', 'pengujian'] as $marker) {
+            if (str_contains($lower, $marker)) {
+                $score += 2;
+            }
+        }
+
+        if (str_word_count($unit) < 8 || mb_strlen($unit) < 50) {
+            $score -= 4;
+        }
+
+        return max(0, $score);
+    }
+
+    private function isAdministrativeText(string $text): bool
+    {
+        $lower = Str::lower($text);
+
+        if (preg_match('/\b(laporan akhir|tugas mata kuliah|disusun oleh|program studi|fakultas|universitas|dosen pengampu|kelompok|daftar isi|kata pengantar|referensi|bibliografi)\b/iu', $text)) {
+            return true;
+        }
+
+        $letters = preg_replace('/[^\pL]/u', '', $text) ?: '';
+        if ($letters !== '') {
+            $upper = preg_replace('/[^\p{Lu}]/u', '', $text) ?: '';
+            if (mb_strlen($upper) / max(1, mb_strlen($letters)) > 0.65) {
+                return true;
+            }
+        }
+
+        return str_contains($lower, 'rekayasa perangkat lunak sistem informasi manajemen order')
+            && ! str_contains($lower, 'masalah')
+            && ! str_contains($lower, 'metode')
+            && ! str_contains($lower, 'solusi');
     }
 
     private function chunks(string $text): array
@@ -350,12 +445,12 @@ class LearningSourceService
         return ($snippet['title'] ?? 'materi').' bagian '.($index + 1);
     }
 
-    private function answerText(string $snippet): string
+    private function answerText(string $snippet, int $limit = 420): string
     {
         $text = $this->clean($snippet);
         $text = preg_replace('/^\d+\s+/', '', $text) ?: $text;
 
-        return $this->completeLimit($text, 420);
+        return $this->completeLimit($text, $limit);
     }
 
     private function completeLimit(string $text, int $limit): string

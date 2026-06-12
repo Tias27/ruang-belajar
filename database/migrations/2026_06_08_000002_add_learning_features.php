@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('quiz_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->json('answers');
+            $table->json('metadata')->nullable();
             $table->unsignedInteger('score')->default(0);
             $table->unsignedInteger('total')->default(0);
             $table->timestamp('submitted_at')->nullable();

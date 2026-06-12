@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Services\ActivityLogger;
 use App\Services\DocumentDeletionService;
+use App\Services\DocumentTextExtractor;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class DocumentFolderController extends Controller
 {
@@ -26,6 +31,93 @@ class DocumentFolderController extends Controller
         ]);
     }
 
+    public function storeDocuments(Request $request, DocumentFolder $folder, DocumentTextExtractor $extractor, ActivityLogger $logger)
+    {
+        $this->authorizeOwner($folder);
+
+        $data = $request->validate([
+            'files' => ['required', 'array', 'min:1', 'max:30'],
+            'files.*' => ['required', 'file', 'max:20480', 'mimes:pdf,docx,pptx'],
+        ], [
+            'files.required' => 'Pilih minimal satu file materi.',
+            'files.max' => 'Maksimal 30 file dalam sekali upload.',
+            'files.*.required' => 'File materi wajib dipilih.',
+            'files.*.file' => 'File materi belum valid. Jika ukuran di atas 2 MB gagal, naikkan upload_max_filesize dan post_max_size di PHP.',
+            'files.*.max' => 'Ukuran maksimal 20 MB per file.',
+            'files.*.mimes' => 'Format file harus PDF, DOCX, atau PPTX.',
+        ]);
+
+        $files = $data['files'];
+        $allowedExtensions = ['pdf', 'docx', 'pptx'];
+        $storageDirectory = storage_path('app/private/documents');
+
+        if (! is_dir($storageDirectory)) {
+            mkdir($storageDirectory, 0755, true);
+        }
+
+        foreach ($files as $index => $file) {
+            $extension = strtolower($file->getClientOriginalExtension());
+
+            if (! in_array($extension, $allowedExtensions, true)) {
+                throw ValidationException::withMessages([
+                    "files.{$index}" => 'Format dokumen harus PDF, DOCX, atau PPTX.',
+                ]);
+            }
+        }
+
+        $documents = collect();
+
+        foreach ($files as $file) {
+            $extension = strtolower($file->getClientOriginalExtension());
+            $originalName = $file->getClientOriginalName();
+            $fileName = (string) Str::uuid().'.'.$extension;
+            $path = 'documents/'.$fileName;
+            $absolutePath = $storageDirectory.DIRECTORY_SEPARATOR.$fileName;
+
+            $file->move($storageDirectory, $fileName);
+
+            $document = Document::create([
+                'user_id' => auth()->id(),
+                'folder_id' => $folder->id,
+                'title' => Str::limit(pathinfo($originalName, PATHINFO_FILENAME) ?: $originalName, 250, ''),
+                'original_name' => $originalName,
+                'file_name' => $fileName,
+                'file_path' => $path,
+                'mime_type' => $this->mimeTypeFor($extension),
+                'size' => $file->getSize(),
+                'extension' => $extension,
+                'status' => 'processing',
+            ]);
+
+            $text = '';
+            $processingNotes = null;
+
+            try {
+                $text = $extractor->extract($absolutePath, $extension);
+            } catch (\Throwable $exception) {
+                report($exception);
+                $processingNotes = 'Teks belum dapat diekstrak otomatis dari dokumen ini.';
+            }
+
+            $document->update([
+                'extracted_text' => $text,
+                'status' => filled($text) ? 'processed' : 'uploaded',
+                'processing_notes' => filled($text) ? null : ($processingNotes ?: 'Teks belum dapat diekstrak otomatis. AI tetap dapat digunakan setelah extractor server dilengkapi.'),
+            ]);
+
+            $logger->log('add_document_to_folder', $document, [
+                'folder_id' => $folder->id,
+                'title' => $document->title,
+            ]);
+
+            $documents->push($document);
+        }
+
+        return redirect()
+            ->route('folders.show', $folder)
+            ->with('status', $documents->count().' file berhasil ditambahkan ke folder. Hasil AI lama tetap tersimpan, buat ulang ringkasan/soal/kartu kalau ingin menyertakan file baru.');
+    }
+
     public function destroy(DocumentFolder $folder, ActivityLogger $logger, DocumentDeletionService $deletionService)
     {
         $this->authorizeOwner($folder);
@@ -40,5 +132,15 @@ class DocumentFolderController extends Controller
     private function authorizeOwner(DocumentFolder $folder): void
     {
         abort_if($folder->user_id !== auth()->id(), 403);
+    }
+
+    private function mimeTypeFor(string $extension): string
+    {
+        return match (strtolower($extension)) {
+            'pdf' => 'application/pdf',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            default => 'application/octet-stream',
+        };
     }
 }
