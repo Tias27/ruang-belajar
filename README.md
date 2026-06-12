@@ -8,7 +8,7 @@ RuangBelajar AI adalah aplikasi web Laravel untuk belajar dari dokumen. Pengguna
 - PHP 8.3+
 - MySQL atau MariaDB
 - Blade, Tailwind CSS, Alpine.js
-- AI provider: Kimchi/OpenAI compatible atau Gemini
+- AI provider: Gemini
 
 ## Fitur Utama
 
