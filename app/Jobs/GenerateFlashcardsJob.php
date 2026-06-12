@@ -15,7 +15,7 @@ class GenerateFlashcardsJob implements ShouldQueue
 
     public int $tries = 2;
 
-    public int $timeout = 120;
+    public int $timeout = 300;
 
     public function __construct(
         public string $sourceType,

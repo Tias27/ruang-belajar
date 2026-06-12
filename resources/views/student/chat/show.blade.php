@@ -104,31 +104,61 @@
                 this.scrollToBottom();
 
                 try {
+                    const assistantMessageId = 'assistant-' + Date.now();
+                    this.messages.push({ id: assistantMessageId, role: 'assistant', content: '', metadata: null });
+                    const assistantIndex = this.messages.length - 1;
+
                     const response = await fetch(@js(route('chat.store', $session)), {
                         method: 'POST',
                         headers: {
-                            'Accept': 'application/json',
+                            'Accept': 'text/event-stream',
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': @js(csrf_token()),
                         },
                         body: JSON.stringify({ question: text }),
                     });
 
-                    const raw = await response.text();
-                    let data = {};
-                    try {
-                        data = raw ? JSON.parse(raw) : {};
-                    } catch (parseError) {
-                        data = { message: 'Server mengirim respons yang belum bisa dibaca. Coba ulangi dengan pertanyaan yang lebih spesifik.' };
-                    }
-
                     if (! response.ok) {
+                        const raw = await response.text();
+                        let data = {};
+                        try { data = JSON.parse(raw); } catch (e) {}
                         throw new Error(data.message || 'Pertanyaan belum bisa diproses.');
                     }
 
-                    this.title = data.title || this.title;
-                    const answer = data.messages?.find((message) => message.role === 'assistant');
-                    if (answer) this.messages.push(answer);
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop(); // keep partial lines
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const dataStr = line.slice(6).trim();
+                                if (!dataStr) continue;
+
+                                try {
+                                    const parsed = JSON.parse(dataStr);
+                                    if (parsed.chunk) {
+                                        this.messages[assistantIndex].content += parsed.chunk;
+                                        this.scrollToBottom();
+                                    } else if (parsed.done) {
+                                        this.title = parsed.title || this.title;
+                                        this.messages[assistantIndex].id = parsed.message.id;
+                                        this.messages[assistantIndex].metadata = parsed.message.metadata;
+                                        this.scrollToBottom();
+                                    }
+                                } catch (e) {
+                                    console.error('SSE parse error:', e);
+                                }
+                            }
+                        }
+                    }
                 } catch (error) {
                     this.messages.push({
                         id: 'error-' + Date.now(),

@@ -97,7 +97,62 @@ class ChatController extends Controller
         $userMessage = $session->messages()->create(['role' => 'user', 'content' => $data['question']]);
 
         $source = $session->folder ?: $session->document;
-        $sourceSnippets = [];
+
+        if ($request->header('Accept') === 'text/event-stream' || $request->expectsJson()) {
+            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger) {
+                $session->update(['title' => Str::limit($data['question'], 70)]);
+                $logger->log('chat_document', $session, ['document_id' => $session->document_id, 'folder_id' => $session->folder_id]);
+
+                $fullAnswer = '';
+                $sourceSnippets = [];
+
+                try {
+                    $stream = $gemini->streamChat($source, $data['question']);
+                    foreach ($stream as $chunk) {
+                        $fullAnswer .= $chunk;
+                        echo "data: " . json_encode(['chunk' => $chunk]) . "\n\n";
+                        if (ob_get_level() > 0) ob_flush();
+                        flush();
+                    }
+
+                    $sourceSnippets = $sources->snippetsFor($source, $data['question'].' '.$fullAnswer);
+                } catch (Throwable $exception) {
+                    report($exception);
+                    $fullAnswer = $sources->fallbackAnswer($source, $data['question'], $exception->getMessage());
+                    $sourceSnippets = $sources->snippetsFor($source, $data['question']);
+                    echo "data: " . json_encode(['chunk' => $fullAnswer]) . "\n\n";
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
+                }
+
+                $assistantMessage = $session->messages()->create([
+                    'role' => 'assistant',
+                    'content' => $fullAnswer,
+                    'metadata' => [
+                        'source_snippets' => $sourceSnippets,
+                    ],
+                ]);
+
+                echo "data: " . json_encode([
+                    'done' => true,
+                    'title' => $session->title,
+                    'message' => [
+                        'id' => $assistantMessage->id,
+                        'role' => 'assistant',
+                        'content' => $assistantMessage->content,
+                        'metadata' => $assistantMessage->metadata,
+                    ],
+                ]) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+            }, 200, [
+                'Cache-Control' => 'no-cache',
+                'Content-Type' => 'text/event-stream',
+                'X-Accel-Buffering' => 'no',
+            ]);
+        }
+
+        // Fallback for non-AJAX / non-streaming requests
         try {
             $answer = $gemini->chat($source, $data['question']);
             $sourceSnippets = $sources->snippetsFor($source, $data['question'].' '.$answer);
@@ -107,7 +162,7 @@ class ChatController extends Controller
             $sourceSnippets = $sources->snippetsFor($source, $data['question']);
         }
 
-        $assistantMessage = $session->messages()->create([
+        $session->messages()->create([
             'role' => 'assistant',
             'content' => $answer,
             'metadata' => [
@@ -116,25 +171,6 @@ class ChatController extends Controller
         ]);
         $session->update(['title' => Str::limit($data['question'], 70)]);
         $logger->log('chat_document', $session, ['document_id' => $session->document_id, 'folder_id' => $session->folder_id]);
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'title' => $session->title,
-                'messages' => [
-                    [
-                        'id' => $userMessage->id,
-                        'role' => 'user',
-                        'content' => $userMessage->content,
-                    ],
-                    [
-                        'id' => $assistantMessage->id,
-                        'role' => 'assistant',
-                        'content' => $assistantMessage->content,
-                        'metadata' => $assistantMessage->metadata,
-                    ],
-                ],
-            ]);
-        }
 
         return redirect()->route('chat.show', $session);
     }

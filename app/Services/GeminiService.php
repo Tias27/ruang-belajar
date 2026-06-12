@@ -36,6 +36,31 @@ Pertanyaan: {$question}";
         return $this->textPrompt($document, $prompt, $question, 1100, null, 'chat');
     }
 
+    public function streamChat(Document|DocumentFolder $document, string $question): \Generator
+    {
+        $prompt = "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
+Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
+Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
+Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban.
+Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
+Jika pertanyaan menanyakan karakter, karakteristik, ciri, jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
+Jika jawaban ada dalam bentuk daftar di materi, rangkum seluruh daftar tersebut dengan bahasa rapi.
+Jika materi punya istilah teknis, jelaskan arti istilahnya dulu lalu hubungkan dengan konteks dokumen.
+Berikan jawaban yang terasa seperti tutor pintar: jelas, lengkap, tidak kaku, dan tetap tidak bertele-tele.
+Jangan cuma menjawab satu poin jika materi memuat banyak poin. Gabungkan semua poin relevan menjadi jawaban utuh.
+Kalau pertanyaan pendek atau typo, tafsirkan maksud terdekat dari materi.
+
+Pertanyaan: {$question}";
+
+        $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat');
+
+        if (config('services.ai.provider') === 'kimchi') {
+            return $this->sendKimchiStream($builtPrompt, 1100, null, 'chat');
+        }
+
+        return $this->sendGeminiStream($builtPrompt, 1100, null, 'chat');
+    }
+
     public function generateQuiz(Document|DocumentFolder $document, string $questionType = 'multiple_choice', int $questionCount = 10): array
     {
         $questionCount = max(1, min(30, $questionCount));
@@ -182,7 +207,7 @@ Balas hanya JSON valid:
 
         $models = $this->models();
         $baseUrl = rtrim(config('services.gemini.base_url'), '/');
-        $timeout = max(5, min((int) config('services.gemini.timeout', 90), 90));
+        $timeout = max(5, min((int) config('services.gemini.timeout', 300), 300));
         $connectTimeout = max(3, min((int) config('services.gemini.connect_timeout', 15), $timeout));
 
         $generationConfig = [
@@ -229,6 +254,92 @@ Balas hanya JSON valid:
         throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. '.$lastError);
     }
 
+    private function sendGeminiStream(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): \Generator
+    {
+        $this->extendExecutionTime();
+
+        $apiKeys = $this->apiKeys();
+        if ($apiKeys === []) {
+            throw new RuntimeException('GEMINI_API_KEY atau GEMINI_API_KEYS belum diatur.');
+        }
+
+        $models = $this->models();
+        $baseUrl = rtrim(config('services.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
+        $timeout = max(5, min((int) config('services.gemini.timeout', 300), 300));
+        $connectTimeout = max(3, min((int) config('services.gemini.connect_timeout', 15), $timeout));
+
+        $generationConfig = [
+            'temperature' => 0.2,
+            'topP' => 0.9,
+            'maxOutputTokens' => max(512, min($maxOutputTokens, 8192)),
+        ];
+
+        if ($responseMimeType) {
+            $generationConfig['responseMimeType'] = $responseMimeType;
+        }
+
+        $lastError = null;
+
+        foreach ($models as $modelIndex => $model) {
+            foreach ($apiKeys as $keyIndex => $apiKey) {
+                try {
+                    $response = Http::timeout($timeout)
+                        ->connectTimeout($connectTimeout)
+                        ->withOptions([
+                            'verify' => config('services.gemini.verify_ssl'),
+                            'stream' => true,
+                        ])
+                        ->post("{$baseUrl}/models/{$model}:streamGenerateContent?alt=sse&key={$apiKey}", [
+                            'contents' => [[
+                                'parts' => [['text' => $prompt]],
+                            ]],
+                            'generationConfig' => $generationConfig,
+                        ]);
+                } catch (ConnectionException $exception) {
+                    throw new RuntimeException('Koneksi streaming ke Gemini gagal.', previous: $exception);
+                }
+
+                if ($response->successful()) {
+                    $body = $response->toPsrResponse()->getBody();
+                    $buffer = '';
+
+                    while (! $body->eof()) {
+                        $chunk = $body->read(1024);
+                        $buffer .= $chunk;
+
+                        while (($pos = strpos($buffer, "\n")) !== false) {
+                            $line = substr($buffer, 0, $pos);
+                            $buffer = substr($buffer, $pos + 1);
+
+                            $line = trim($line);
+                            if (str_starts_with($line, 'data: ')) {
+                                $data = substr($line, 6);
+                                if ($data === '[DONE]') {
+                                    break 3;
+                                }
+
+                                $json = json_decode($data, true);
+                                if (isset($json['candidates'][0]['content']['parts'][0]['text'])) {
+                                    yield $json['candidates'][0]['content']['parts'][0]['text'];
+                                }
+                            }
+                        }
+                    }
+                    return; // successfully yielded all chunks
+                }
+
+                $bodyStr = $response->body();
+                $lastError = 'Gemini model '.$model.' / API key #'.($keyIndex + 1).' gagal: '.$bodyStr;
+
+                if (! $this->shouldTryNextGeminiTarget($response->status(), $bodyStr)) {
+                    throw new RuntimeException('Gemini API gagal pada model '.$model.': '.$bodyStr);
+                }
+            }
+        }
+
+        throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. '.$lastError);
+    }
+
     private function sendKimchi(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
     {
         $apiKey = trim((string) config('services.kimchi.api_key', ''));
@@ -238,7 +349,7 @@ Balas hanya JSON valid:
 
         $baseUrl = rtrim((string) config('services.kimchi.base_url', 'https://llm.cast.ai/openai/v1'), '/');
         $model = $this->kimchiModelFor($task);
-        $timeout = max(5, min((int) config('services.kimchi.timeout', 60), 90));
+        $timeout = max(5, min((int) config('services.kimchi.timeout', 300), 300));
         $connectTimeout = max(3, min((int) config('services.kimchi.connect_timeout', 15), $timeout));
 
         $messages = [
@@ -279,6 +390,88 @@ Balas hanya JSON valid:
         }
 
         return (string) data_get($response->json(), 'choices.0.message.content', 'AI belum memberikan jawaban.');
+    }
+
+    private function sendKimchiStream(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): \Generator
+    {
+        $this->extendExecutionTime();
+
+        $apiKey = trim((string) config('services.kimchi.api_key', ''));
+        if ($apiKey === '') {
+            throw new RuntimeException('KIMCHI_API_KEY belum diatur.');
+        }
+
+        $baseUrl = rtrim((string) config('services.kimchi.base_url', 'https://llm.cast.ai/openai/v1'), '/');
+        $model = $this->kimchiModelFor($task);
+        $timeout = max(5, min((int) config('services.kimchi.timeout', 300), 300));
+        $connectTimeout = max(3, min((int) config('services.kimchi.connect_timeout', 15), $timeout));
+
+        $messages = [
+            [
+                'role' => 'system',
+                'content' => 'Kamu adalah RuangBelajar AI. Jawab dalam bahasa Indonesia yang jelas, akurat, dan hanya berdasarkan konteks materi yang diberikan. Jangan tampilkan proses berpikir, reasoning internal, tag <think>, atau catatan internal.',
+            ],
+            [
+                'role' => 'user',
+                'content' => $prompt,
+            ],
+        ];
+
+        $payload = [
+            'model' => $model,
+            'messages' => $messages,
+            'temperature' => 0.7, // As requested by user: 0.7
+            'max_tokens' => max(512, min($maxOutputTokens, 8192)),
+            'stream' => true,
+        ];
+
+        if ($responseMimeType === 'application/json') {
+            $payload['response_format'] = ['type' => 'json_object'];
+        }
+
+        try {
+            $response = Http::timeout($timeout)
+                ->connectTimeout($connectTimeout)
+                ->withToken($apiKey)
+                ->acceptJson()
+                ->withOptions([
+                    'verify' => config('services.kimchi.verify_ssl'),
+                    'stream' => true,
+                ])
+                ->post("{$baseUrl}/chat/completions", $payload);
+        } catch (ConnectionException $exception) {
+            throw new RuntimeException('Koneksi streaming gagal.', previous: $exception);
+        }
+
+        if (! $response->successful()) {
+            throw new RuntimeException('API gagal (Streaming): '.$response->body());
+        }
+
+        $body = $response->toPsrResponse()->getBody();
+        $buffer = '';
+
+        while (! $body->eof()) {
+            $chunk = $body->read(1024);
+            $buffer .= $chunk;
+
+            while (($pos = strpos($buffer, "\n")) !== false) {
+                $line = substr($buffer, 0, $pos);
+                $buffer = substr($buffer, $pos + 1);
+
+                $line = trim($line);
+                if (str_starts_with($line, 'data: ')) {
+                    $data = substr($line, 6);
+                    if ($data === '[DONE]') {
+                        break 2;
+                    }
+
+                    $json = json_decode($data, true);
+                    if (isset($json['choices'][0]['delta']['content'])) {
+                        yield $json['choices'][0]['delta']['content'];
+                    }
+                }
+            }
+        }
     }
 
     private function apiKeys(): array
@@ -362,10 +555,10 @@ Balas hanya JSON valid:
     private function extendExecutionTime(): void
     {
         if (function_exists('set_time_limit')) {
-            @set_time_limit(90);
+            @set_time_limit(300);
         }
 
-        @ini_set('max_execution_time', '90');
+        @ini_set('max_execution_time', '300');
     }
 
     private function buildPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, string $task = 'default'): string
