@@ -103,7 +103,7 @@
                         @endphp
                         
                         @if($intent === 'quiz')
-                            <div class="group flex flex-col justify-between min-h-[14rem] rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                            <div class="group flex flex-col justify-between min-h-[14rem] rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:shadow-md min-w-0">
                                 <div class="flex items-start gap-4">
                                     <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-campus-50 to-campus-100 text-campus-700 shadow-sm">
                                         <i data-lucide="folder" class="h-6 w-6"></i>
@@ -140,7 +140,7 @@
                                 </form>
                             </div>
                         @else
-                            <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false }" x-on:submit="loading = true" class="w-full h-full">
+                            <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false }" x-on:submit="loading = true" class="w-full h-full min-w-0">
                                 @csrf
                                 <button type="submit" x-bind:disabled="loading" class="group flex h-full w-full flex-col justify-between rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:border-{{ $tone }}-200 hover:shadow-md text-left disabled:cursor-wait relative overflow-hidden">
                                     <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-{{ $tone }}-50/50 transition-transform group-hover:scale-150"></div>
@@ -268,7 +268,7 @@
                     @endphp
                     
                     @if($intent === 'quiz')
-                        <div class="group flex flex-col justify-between min-h-[15rem] rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:shadow-md">
+                        <div class="group flex flex-col justify-between min-h-[15rem] rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:shadow-md min-w-0">
                             <div class="flex items-start gap-4">
                                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-campus-50 to-campus-100 text-campus-700 shadow-sm">
                                     <i data-lucide="file-text" class="h-5 w-5"></i>
@@ -308,9 +308,9 @@
                             </form>
                         </div>
                     @else
-                        <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false }" x-on:submit="loading = true" class="w-full">
+                        <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false }" x-on:submit="loading = true" class="w-full min-w-0">
                             @csrf
-                            <button type="submit" x-bind:disabled="loading" class="group flex w-full items-center gap-4 rounded-[1.25rem] bg-white p-4 shadow-sm border border-slate-100 transition-all hover:-translate-y-0.5 hover:border-{{ $tone }}-200 hover:shadow-md text-left disabled:cursor-wait">
+                            <button type="submit" x-bind:disabled="loading" class="group flex w-full min-w-0 items-center gap-4 rounded-[1.25rem] bg-white p-4 shadow-sm border border-slate-100 transition-all hover:-translate-y-0.5 hover:border-{{ $tone }}-200 hover:shadow-md text-left disabled:cursor-wait">
                                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-colors group-hover:bg-{{ $tone }}-50 group-hover:text-{{ $tone }}-600">
                                     <i data-lucide="file-text" class="h-5 w-5" x-show="!loading"></i>
                                     <span x-show="loading" x-cloak class="h-5 w-5 animate-spin rounded-full border-2 border-{{ $tone }}-400 border-t-{{ $tone }}-700"></span>
@@ -335,7 +335,7 @@
                     @endif
                 @else
                     <!-- Normal Mode Document Card (Horizontal List) -->
-                    <article class="group flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-6 rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:shadow-md relative">
+                    <article class="group flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-6 rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:shadow-md relative min-w-0">
                         <div class="flex min-w-0 flex-1 items-start gap-4">
                             <label class="mt-3.5 flex h-6 w-6 shrink-0 items-center justify-center">
                                 <input type="checkbox" value="{{ $document->public_id }}" x-model="selected" aria-label="Pilih {{ $document->title }}" class="h-5 w-5 rounded border-slate-300 text-campus-600 focus:ring-campus-500">
