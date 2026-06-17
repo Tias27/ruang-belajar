@@ -145,7 +145,7 @@
                                 <button type="submit" x-bind:disabled="loading" class="group flex h-full w-full flex-col justify-between rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:border-{{ $tone }}-200 hover:shadow-md text-left disabled:cursor-wait relative overflow-hidden">
                                     <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-{{ $tone }}-50/50 transition-transform group-hover:scale-150"></div>
                                     
-                                    <div class="relative flex items-start gap-4">
+                                    <div class="relative flex min-w-0 items-start gap-4">
                                         <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-{{ $tone }}-50 to-{{ $tone }}-100 text-{{ $tone }}-700 shadow-sm group-hover:from-{{ $tone }}-100 group-hover:to-{{ $tone }}-200 transition-colors">
                                             <i data-lucide="folder" class="h-6 w-6" x-show="!loading"></i>
                                             <span x-show="loading" x-cloak class="h-5 w-5 animate-spin rounded-full border-2 border-{{ $tone }}-400 border-t-{{ $tone }}-700"></span>
