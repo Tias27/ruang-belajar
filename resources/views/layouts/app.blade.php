@@ -85,7 +85,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-[#f8fbff] text-slate-900 antialiased" x-data="{mobileNav:false}">
+<body class="min-h-screen bg-[#f8fbff] text-slate-900 antialiased overflow-x-hidden flex flex-col" x-data="{mobileNav:false}">
     @auth
         @php
             $isAdmin = auth()->user()->isAdmin();
@@ -163,8 +163,8 @@
             </div>
         </header>
     @endauth
-    <main class="@auth lg:ml-64 @endauth flex flex-col h-[calc(100vh-4rem)] min-w-0 w-full overflow-x-hidden">
-        <div class="{{ request()->routeIs('chat.show') ? 'flex flex-col flex-1 h-full min-w-0' : 'mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 min-w-0' }}">
+    <main class="@auth lg:ml-64 @endauth flex flex-col flex-1">
+        <div class="{{ request()->routeIs('chat.show') ? 'flex flex-col flex-1 h-full' : 'mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 w-full' }}">
             @if(session('status'))
                 <div class="mb-5 flex items-start gap-3 rounded-[1.25rem] border border-emerald-100 bg-emerald-50 px-4 py-4 text-sm text-emerald-900 shadow-sm sm:px-5">
                     <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-emerald-700 shadow-sm">
