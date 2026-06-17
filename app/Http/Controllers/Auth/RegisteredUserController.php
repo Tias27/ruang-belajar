@@ -53,6 +53,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('student.dashboard');
+        return redirect()
+            ->route('student.dashboard')
+            ->with('status', 'Akun berhasil dibuat. Selamat datang, '.$user->username.'! Kamu sudah bisa upload materi dan mulai belajar.');
     }
 }

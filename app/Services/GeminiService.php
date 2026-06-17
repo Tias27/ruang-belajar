@@ -14,7 +14,15 @@ class GeminiService
 {
     public function summarize(Document|DocumentFolder $document): array
     {
-        return $this->jsonPrompt($document, 'Buat ringkasan belajar rapi dalam JSON dengan kunci: short_summary, full_summary, key_points array, conclusion. Fokus ke inti materi, konsep penting, langkah, manfaat, dan kesimpulan. Abaikan cover, daftar isi, identitas tugas, dan teks administratif. Jangan bertele-tele.', 1800, 'summary');
+        $typeLabel = $document instanceof DocumentFolder ? 'seluruh materi dari kumpulan file dalam folder ini' : 'materi ini';
+        $prompt = "Buat ringkasan belajar yang sangat komprehensif, mendalam, dan rapi dari {$typeLabel} dalam format JSON dengan kunci:
+- full_summary: penjelasan materi secara detail, menyeluruh, dan terstruktur. Bahas semua topik, bab, atau sub-materi secara proporsional. **Gunakan format Markdown (heading, bold, list bullet/numbering) di dalam nilai string ini agar rapi saat ditampilkan.** Semakin banyak materi, ringkasan ini harus semakin panjang dan detail.
+- key_points: array of string, berisi poin-poin utama yang sangat penting (buat minimal 7-15 poin tergantung banyaknya materi).
+- conclusion: kesimpulan akhir yang merangkum keseluruhan pembelajaran.
+
+Fokus ke penjabaran inti materi, penjelasan konsep, alasan, langkah-langkah, dan insight penting. Jangan membuat ringkasan yang terlalu singkat jika materinya panjang. Abaikan bagian tidak penting seperti cover, daftar isi, atau identitas tugas.";
+
+        return $this->jsonPrompt($document, $prompt, 4000, 'summary');
     }
 
     public function chat(Document|DocumentFolder $document, string $question): string
@@ -22,9 +30,10 @@ class GeminiService
         $prompt = "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
 Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
 Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
+Jika pertanyaan di luar topik materi yang diunggah (seperti obrolan santai, pertanyaan umum di luar topik, resep makanan, atau menghitung jumlah huruf/karakter kata acak), tolak secara sopan dan jelaskan bahwa kamu hanya bisa menjawab hal yang berkaitan dengan materi ini.
 Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban.
 Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
-Jika pertanyaan menanyakan karakter, karakteristik, ciri, jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
+Jika pertanyaan menanyakan karakteristik (ciri-ciri), jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
 Jika jawaban ada dalam bentuk daftar di materi, rangkum seluruh daftar tersebut dengan bahasa rapi.
 Jika materi punya istilah teknis, jelaskan arti istilahnya dulu lalu hubungkan dengan konteks dokumen.
 Berikan jawaban yang terasa seperti tutor pintar: jelas, lengkap, tidak kaku, dan tetap tidak bertele-tele.
@@ -41,9 +50,10 @@ Pertanyaan: {$question}";
         $prompt = "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
 Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
 Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
+Jika pertanyaan di luar topik materi yang diunggah (seperti obrolan santai, pertanyaan umum di luar topik, resep makanan, atau menghitung jumlah huruf/karakter kata acak), tolak secara sopan dan jelaskan bahwa kamu hanya bisa menjawab hal yang berkaitan dengan materi ini.
 Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban.
 Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
-Jika pertanyaan menanyakan karakter, karakteristik, ciri, jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
+Jika pertanyaan menanyakan karakteristik (ciri-ciri), jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
 Jika jawaban ada dalam bentuk daftar di materi, rangkum seluruh daftar tersebut dengan bahasa rapi.
 Jika materi punya istilah teknis, jelaskan arti istilahnya dulu lalu hubungkan dengan konteks dokumen.
 Berikan jawaban yang terasa seperti tutor pintar: jelas, lengkap, tidak kaku, dan tetap tidak bertele-tele.
@@ -580,15 +590,16 @@ Aturan:
 2. Sesuaikan kedalaman jawaban dengan tingkat materi pada konteks.
 3. Jelaskan dari konsep dasar ke detail penting.
 4. Cari jawaban dari istilah yang sama, sinonim, contoh, definisi, atau penjelasan konsep yang berkaitan.
-5. Jika konteks tidak memuat jawaban setelah dicari secara wajar, katakan dengan jujur bahwa informasi tidak ditemukan di materi.
-6. Jangan mengarang sumber di luar konteks.
-7. Untuk materi teknis, beri contoh sederhana jika membantu.
-8. Jangan tampilkan proses berpikir, reasoning internal, tag <think>, atau catatan internal.
-9. Jangan gunakan LaTeX mentah seperti $$...$$. Jika ada rumus, tulis sebagai teks biasa yang rapi, contoh: Bobot = Jumlah Baris / Jumlah Kriteria.
-10. Susun jawaban seperti tutor belajar: judul pendek, penjelasan bertahap, poin bernomor/bullet, lalu kesimpulan singkat.
-11. Utamakan kualitas pemahaman: jelaskan hubungan antar konsep, sebab-akibat, langkah, contoh, dan batasan jika ada.
-12. Abaikan cover, daftar isi, identitas tugas, nama kelompok, nama dosen, dan teks administratif kecuali pengguna memang menanyakannya.
-13. Jangan menyalin mentah potongan materi panjang. Olah menjadi penjelasan belajar yang rapi.
+5. Batasi ruang lingkup (scope) jawabanmu secara ketat HANYA pada isi/topik DOKUMEN/FOLDER MATERI yang diunggah.
+6. Jika pertanyaan pengguna sama sekali tidak berhubungan dengan materi yang diunggah (seperti obrolan santai, pertanyaan umum di luar topik materi, resep makanan, atau menghitung jumlah huruf/karakter dari kata acak seperti \"strawberry\"), kamu WAJIB menolak untuk menjawab secara sopan dan ingatkan pengguna bahwa kamu hanya diperbolehkan menjawab pertanyaan seputar materi yang diunggah.
+7. Jangan pernah mengarang sumber atau informasi di luar konteks materi. Jika tidak ada di materi dan tidak relevan, tolak untuk menjawab.
+8. Untuk materi teknis, beri contoh sederhana jika membantu.
+9. Jangan tampilkan proses berpikir, reasoning internal, tag <think>, atau catatan internal.
+10. Jangan gunakan LaTeX mentah seperti $$...$$. Jika ada rumus, tulis sebagai teks biasa yang rapi, contoh: Bobot = Jumlah Baris / Jumlah Kriteria.
+11. Susun jawaban seperti tutor belajar: judul pendek, penjelasan bertahap, poin bernomor/bullet, lalu kesimpulan singkat.
+12. Utamakan kualitas pemahaman: jelaskan hubungan antar konsep, sebab-akibat, langkah, contoh, dan batasan jika ada.
+13. Abaikan cover, daftar isi, identitas tugas, nama kelompok, nama dosen, dan teks administratif kecuali pengguna memang menanyakannya.
+14. Jangan menyalin mentah potongan materi panjang. Olah menjadi penjelasan belajar yang rapi.
 
 {$sourceType}: {$document->title}
 

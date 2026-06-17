@@ -40,6 +40,8 @@
             x-data="{
                 password: '',
                 confirmation: '',
+                showPassword: false,
+                showConfirmation: false,
                 get hasConfirmation() {
                     return this.confirmation.length > 0;
                 },
@@ -56,7 +58,7 @@
         >
             @csrf
             <div class="text-center">
-                <img src="{{ $brandLogo }}" alt="Logo RuangBelajar AI" class="mx-auto h-14 w-14 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200">
+                <img src="{{ $brandLogo }}" alt="Logo Ruang Belajar" class="mx-auto h-14 w-14 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200">
                 <h2 class="mt-3 text-2xl font-semibold tracking-tight text-campus-900 sm:mt-5 sm:text-3xl">Buat Akun</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-500">Isi data singkat untuk mulai belajar dari materi kamu.</p>
             </div>
@@ -92,7 +94,11 @@
                         <span class="text-sm font-semibold text-slate-800">Kata sandi</span>
                         <span class="relative mt-2 block">
                             <i data-lucide="lock-keyhole" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
-                            <input name="password" type="password" required autocomplete="new-password" placeholder="Minimal 8 karakter" class="rounded-full border-slate-200 bg-slate-50" style="padding-left: 2.75rem;" x-model="password" x-bind:class="password.length > 0 && ! isLongEnough ? 'border-amber-300 focus:border-amber-400 focus:ring-amber-100' : ''">
+                            <input name="password" x-bind:type="showPassword ? 'text' : 'password'" required autocomplete="new-password" placeholder="Minimal 8 karakter" class="rounded-full border-slate-200 bg-slate-50" style="padding-left: 2.75rem; padding-right: 3rem;" x-model="password" x-bind:class="password.length > 0 && ! isLongEnough ? 'border-amber-300 focus:border-amber-400 focus:ring-amber-100' : ''">
+                            <button type="button" x-on:click="showPassword = ! showPassword" class="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-campus-700" x-bind:title="showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'">
+                                <i x-show="! showPassword" data-lucide="eye" class="h-4 w-4"></i>
+                                <i x-show="showPassword" x-cloak data-lucide="eye-off" class="h-4 w-4"></i>
+                            </button>
                         </span>
                         <span class="mt-1 block text-xs" x-bind:class="isLongEnough ? 'text-campus-900' : 'text-slate-500'">Minimal 8 karakter.</span>
                     </label>
@@ -100,7 +106,11 @@
                         <span class="text-sm font-semibold text-slate-800">Konfirmasi</span>
                         <span class="relative mt-2 block">
                             <i data-lucide="shield-check" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
-                            <input name="password_confirmation" type="password" required autocomplete="new-password" placeholder="Ulangi sandi" class="rounded-full border-slate-200 bg-slate-50" style="padding-left: 2.75rem;" x-model="confirmation" x-bind:class="hasConfirmation ? (matches ? 'border-campus-300 focus:border-campus-500 focus:ring-campus-100' : 'border-rose-300 focus:border-rose-500 focus:ring-rose-100') : ''">
+                            <input name="password_confirmation" x-bind:type="showConfirmation ? 'text' : 'password'" required autocomplete="new-password" placeholder="Ulangi sandi" class="rounded-full border-slate-200 bg-slate-50" style="padding-left: 2.75rem; padding-right: 3rem;" x-model="confirmation" x-bind:class="hasConfirmation ? (matches ? 'border-campus-300 focus:border-campus-500 focus:ring-campus-100' : 'border-rose-300 focus:border-rose-500 focus:ring-rose-100') : ''">
+                            <button type="button" x-on:click="showConfirmation = ! showConfirmation" class="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-campus-700" x-bind:title="showConfirmation ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'">
+                                <i x-show="! showConfirmation" data-lucide="eye" class="h-4 w-4"></i>
+                                <i x-show="showConfirmation" x-cloak data-lucide="eye-off" class="h-4 w-4"></i>
+                            </button>
                         </span>
                         <span class="mt-1 block text-xs text-slate-500" x-show="! hasConfirmation">Ulangi kata sandi yang sama.</span>
                         <span class="mt-1 block text-xs text-campus-900" x-show="hasConfirmation && matches" x-cloak>Kata sandi sudah cocok.</span>

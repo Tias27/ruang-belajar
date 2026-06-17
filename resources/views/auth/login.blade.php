@@ -4,7 +4,7 @@
         <section class="hidden lg:block">
             <div class="max-w-lg">
                 <span class="inline-flex items-center gap-2 rounded-full bg-campus-50 px-4 py-2 text-sm font-semibold text-campus-700">
-                    <i data-lucide="sparkles" class="h-4 w-4"></i> RuangBelajar AI
+                    <i data-lucide="sparkles" class="h-4 w-4"></i> Ruang Belajar
                 </span>
                 <h1 class="mt-6 text-4xl font-semibold leading-tight tracking-tight text-campus-900">
                     Belajar dari dokumen jadi lebih ringan.
@@ -34,12 +34,12 @@
 
         <section class="mx-auto w-full max-w-[430px] rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 shadow-panel sm:rounded-[1.75rem] sm:px-8 sm:py-8">
             <div class="text-center">
-                <img src="{{ $brandLogo }}" alt="Logo RuangBelajar AI" class="mx-auto h-14 w-14 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200">
+                <img src="{{ $brandLogo }}" alt="Logo Ruang Belajar" class="mx-auto h-14 w-14 rounded-2xl object-cover shadow-sm ring-1 ring-slate-200">
                 <h2 class="mt-3 text-2xl font-semibold tracking-tight text-campus-900 sm:mt-5 sm:text-3xl">Masuk</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-500">Lanjutkan belajar dari materi yang sudah kamu simpan.</p>
             </div>
 
-            <form method="POST" action="{{ route('login') }}" class="mt-5 space-y-3 sm:mt-7 sm:space-y-4">
+            <form method="POST" action="{{ route('login') }}" class="mt-5 space-y-3 sm:mt-7 sm:space-y-4" x-data="{ showPassword: false }">
                 @csrf
                 <label class="block">
                     <span class="text-sm font-semibold text-slate-800">Nama pengguna</span>
@@ -53,7 +53,11 @@
                     <span class="text-sm font-semibold text-slate-800">Kata sandi</span>
                     <span class="relative mt-2 block">
                         <i data-lucide="lock-keyhole" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
-                        <input name="password" type="password" required autocomplete="current-password" placeholder="Masukkan kata sandi" class="rounded-full border-slate-200 bg-slate-50" style="padding-left: 2.75rem;">
+                        <input name="password" x-bind:type="showPassword ? 'text' : 'password'" required autocomplete="current-password" placeholder="Masukkan kata sandi" class="rounded-full border-slate-200 bg-slate-50" style="padding-left: 2.75rem; padding-right: 3rem;">
+                        <button type="button" x-on:click="showPassword = ! showPassword" class="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-campus-700" x-bind:title="showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'">
+                            <i x-show="! showPassword" data-lucide="eye" class="h-4 w-4"></i>
+                            <i x-show="showPassword" x-cloak data-lucide="eye-off" class="h-4 w-4"></i>
+                        </button>
                     </span>
                 </label>
 

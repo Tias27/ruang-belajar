@@ -7,26 +7,25 @@
     @endphp
 
     <div class="min-w-0 overflow-x-hidden">
-        <section class="overflow-hidden rounded-[1.5rem] bg-white p-5 shadow-sm">
-            <a class="inline-flex items-center gap-1 rounded-full bg-campus-50 px-3 py-2 text-sm font-semibold text-campus-700 hover:bg-campus-100" href="{{ $quiz->folder ? route('folders.show', $quiz->folder) : route('documents.show', $quiz->document) }}">
+        <section class="overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-campus-50 to-white p-5 sm:p-8 shadow-sm border border-campus-100 relative">
+            <a class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-campus-700 shadow-sm border border-slate-100 transition-colors hover:bg-campus-100" href="{{ $quiz->folder ? route('folders.show', $quiz->folder) : route('documents.show', $quiz->document) }}">
                 <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke {{ $quiz->folder ? 'folder' : 'materi' }}
             </a>
 
-            <div class="mt-5 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="mt-5 flex min-w-0 flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div class="min-w-0">
-                    <p class="text-sm font-semibold text-campus-700">{{ $isEssay ? 'Latihan esai' : 'Latihan pilihan ganda' }}</p>
-                    <h1 class="mt-1 break-words text-xl font-semibold leading-tight text-campus-900 sm:text-2xl">{{ $quiz->title }}</h1>
+                    <span class="inline-flex rounded-full bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-campus-700 shadow-sm ring-1 ring-slate-100">{{ $isEssay ? 'Latihan Esai' : 'Pilihan Ganda' }}</span>
+                    <h1 class="mt-4 text-2xl font-extrabold tracking-tight text-campus-950 sm:text-3xl">{{ $quiz->title }}</h1>
                     <div class="mt-3 flex min-w-0 flex-wrap gap-2 text-xs font-semibold">
-                        <span class="max-w-full truncate rounded-full bg-slate-50 px-3 py-1.5 text-slate-600">{{ $source->title }}</span>
-                        <span class="rounded-full bg-campus-50 px-3 py-1.5 text-campus-700">{{ $quiz->questions->count() }} soal</span>
-                        <span class="rounded-full bg-accent-50 px-3 py-1.5 text-accent-700">{{ $isEssay ? 'Esai' : 'Pilihan ganda' }}</span>
+                        <span class="max-w-full truncate rounded-full bg-white px-3 py-1.5 text-slate-700 shadow-sm border border-slate-100">{{ $source->title }}</span>
+                        <span class="rounded-full bg-white px-3 py-1.5 text-slate-700 shadow-sm border border-slate-100">{{ $quiz->questions->count() }} soal</span>
                     </div>
                 </div>
 
                 @if($latestAttempt)
-                    <div class="w-fit shrink-0 rounded-[1.1rem] bg-campus-50 px-3 py-2 text-campus-900">
-                        <p class="text-xs font-semibold text-campus-700">{{ $isEssay ? 'Skor AI' : 'Skor' }}</p>
-                        <p class="text-lg font-semibold">{{ $latestAttempt->score.'/'.$latestAttempt->total }}</p>
+                    <div class="w-fit shrink-0 rounded-[1.25rem] bg-white p-4 shadow-sm ring-1 ring-slate-100 text-center min-w-[100px]">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">{{ $isEssay ? 'Skor AI' : 'Nilai Kamu' }}</p>
+                        <p class="mt-1 text-3xl font-black text-campus-700">{{ $latestAttempt->score }}<span class="text-lg text-slate-400">/{{ $latestAttempt->total }}</span></p>
                     </div>
                 @endif
             </div>
@@ -79,27 +78,31 @@
                     $correctClean = strtolower(trim(preg_replace('/^[A-D][\.\)]\s*/i', '', (string) $correctOption)));
                 @endphp
 
-                <section class="min-w-0 overflow-hidden rounded-[1.35rem] bg-white p-4 shadow-sm sm:p-5" x-data="{detail:false}">
-                    <div class="flex min-w-0 items-start gap-3">
-                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-campus-50 text-sm font-semibold text-campus-700">{{ $question->position }}</span>
+                <section class="min-w-0 overflow-hidden rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 sm:p-7" x-data="{detail:false, currentSelection: '{{ $selected ? addslashes($selected) : '' }}'}">
+                    <div class="flex min-w-0 items-start gap-4">
+                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-campus-50 text-[15px] font-bold text-campus-700 ring-1 ring-campus-100 shadow-sm">{{ $question->position }}</span>
                         <div class="min-w-0 flex-1">
-                            <p class="break-words text-sm font-semibold leading-6 text-slate-900">{{ $question->question }}</p>
-                            @if($isEssay)
-                                <p class="mt-1 text-xs leading-5 text-slate-500">Jawab singkat dan sesuai materi.</p>
+                            <p class="break-words text-[15px] font-semibold leading-relaxed text-slate-900">{{ $question->question }}</p>
+                            @if($isEssay && !$latestAttempt)
+                                <p class="mt-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-500">
+                                    <i data-lucide="info" class="h-4 w-4"></i> Jawab singkat sesuai pemahaman materi.
+                                </p>
                             @endif
                         </div>
                         @if($isEssay && $grade)
-                            <span class="shrink-0 rounded-full bg-campus-50 px-2.5 py-1 text-xs font-semibold text-campus-700">{{ (int) ($grade['score'] ?? 0) }}/100</span>
+                            <span class="shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ring-1 {{ (int)($grade['score']??0) >= 70 ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-rose-50 text-rose-700 ring-rose-200' }}">
+                                Skor: {{ (int) ($grade['score'] ?? 0) }}
+                            </span>
                         @endif
                     </div>
 
                     @if($isEssay)
-                        <div class="mt-3 rounded-[1rem] bg-slate-50 p-3">
-                            <label class="block text-xs font-semibold uppercase text-slate-500">Jawaban kamu</label>
-                            <textarea name="answers[{{ $question->id }}]" rows="{{ $latestAttempt ? 2 : 3 }}" required placeholder="Tulis jawaban esai kamu di sini..." class="mt-2 resize-y rounded-[.9rem] border-slate-200 bg-white px-3 py-2 text-sm leading-6 placeholder:text-slate-400">{{ $selected }}</textarea>
+                        <div class="mt-5 rounded-[1.25rem] bg-slate-50 p-4 ring-1 ring-slate-100">
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Jawaban Kamu</label>
+                            <textarea name="answers[{{ $question->id }}]" rows="{{ $latestAttempt ? 2 : 3 }}" required placeholder="Ketik jawaban di sini..." class="w-full resize-y rounded-xl border-slate-200 bg-white px-4 py-3 text-[14px] leading-relaxed shadow-sm transition-colors focus:border-campus-500 focus:ring-campus-500 placeholder:text-slate-400" {{ $latestAttempt ? 'readonly' : '' }}>{{ $selected }}</textarea>
                         </div>
                     @else
-                        <div class="mt-4 grid gap-2">
+                        <div class="mt-6 grid gap-3">
                             @foreach($options as $option)
                                 @php
                                     $optionClean = strtolower(trim(preg_replace('/^[A-D][\.\)]\s*/i', '', (string) $option)));
@@ -107,10 +110,35 @@
                                     $isCorrect = $latestAttempt && $optionClean === $correctClean;
                                     $isWrongSelection = $latestAttempt && $isSelected && ! $isCorrect;
                                 @endphp
-                                <label class="flex min-w-0 cursor-pointer items-start gap-3 rounded-[1.1rem] p-3 text-sm transition {{ $isCorrect ? 'bg-emerald-50 text-emerald-800' : ($isWrongSelection ? 'bg-rose-50 text-rose-800' : 'bg-slate-50 text-slate-700 hover:bg-campus-50') }}">
-                                    <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option }}" {{ $selected !== null && $isSelected ? 'checked' : '' }} required class="mt-1 shrink-0">
-                                    <span class="min-w-0 break-words leading-6">{{ $option }}</span>
-                                </label>
+                                
+                                @if($latestAttempt)
+                                    {{-- Graded View --}}
+                                    <label class="relative flex min-w-0 items-start gap-4 rounded-[1.25rem] p-4 text-[14px] leading-relaxed transition-all ring-1 {{ $isCorrect ? 'bg-emerald-50 text-emerald-900 ring-emerald-200 shadow-sm' : ($isWrongSelection ? 'bg-rose-50 text-rose-900 ring-rose-200 shadow-sm' : 'bg-white text-slate-500 ring-slate-100 opacity-60') }}">
+                                        <div class="mt-0.5 shrink-0">
+                                            @if($isCorrect)
+                                                <i data-lucide="check-circle-2" class="h-5 w-5 text-emerald-600"></i>
+                                            @elseif($isWrongSelection)
+                                                <i data-lucide="x-circle" class="h-5 w-5 text-rose-600"></i>
+                                            @else
+                                                <div class="h-5 w-5 rounded-full border-2 border-slate-200"></div>
+                                            @endif
+                                        </div>
+                                        <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option }}" {{ $isSelected ? 'checked' : '' }} disabled class="sr-only">
+                                        <span class="min-w-0 break-words {{ $isCorrect || $isWrongSelection ? 'font-medium' : '' }}">{{ $option }}</span>
+                                    </label>
+                                @else
+                                    {{-- Interactive View --}}
+                                    <label class="relative flex min-w-0 cursor-pointer items-start gap-4 rounded-[1.25rem] p-4 text-[14px] leading-relaxed transition-all hover:bg-slate-50 ring-1"
+                                        x-bind:class="currentSelection === '{{ addslashes($option) }}' ? 'bg-campus-50 text-campus-900 ring-campus-500 shadow-md scale-[1.01]' : 'bg-white text-slate-700 ring-slate-200'">
+                                        <div class="mt-0.5 shrink-0 flex items-center justify-center">
+                                            <div class="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors" x-bind:class="currentSelection === '{{ addslashes($option) }}' ? 'border-campus-600' : 'border-slate-300'">
+                                                <div class="h-2.5 w-2.5 rounded-full bg-campus-600 transition-transform" x-bind:class="currentSelection === '{{ addslashes($option) }}' ? 'scale-100' : 'scale-0'"></div>
+                                            </div>
+                                        </div>
+                                        <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option }}" required class="sr-only" x-model="currentSelection">
+                                        <span class="min-w-0 break-words" x-bind:class="currentSelection === '{{ addslashes($option) }}' ? 'font-medium' : ''">{{ $option }}</span>
+                                    </label>
+                                @endif
                             @endforeach
                         </div>
                     @endif
@@ -140,13 +168,14 @@
                                 @endif
                             </div>
                         @else
-                            <div class="mt-4 rounded-[1.1rem] bg-campus-50 p-3 text-sm text-campus-900">
-                                Jawaban benar: <strong>{{ $correctOption }}</strong>
+                            <div class="mt-5 rounded-[1.25rem] bg-emerald-50 p-4 ring-1 ring-emerald-200">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1">Kunci Jawaban</p>
+                                <p class="font-medium text-emerald-900">{{ $correctOption }}</p>
                             </div>
 
                             @if($question->explanation)
-                                <div class="mt-3 rounded-[1.1rem] bg-slate-50 p-3 text-sm leading-7 text-slate-600">
-                                    <p class="mb-1 text-xs font-semibold uppercase text-slate-400">Pembahasan</p>
+                                <div class="mt-3 rounded-[1.25rem] bg-slate-50 p-4 text-[14px] leading-relaxed text-slate-700 ring-1 ring-slate-100">
+                                    <p class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Pembahasan</p>
                                     <p class="break-words">{{ $question->explanation }}</p>
                                 </div>
                             @endif
@@ -155,10 +184,10 @@
                 </section>
             @endforeach
 
-            <div class="sticky bottom-4 z-10 rounded-[1.25rem] bg-white/95 p-3 shadow-panel backdrop-blur">
-                <button class="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-campus-700 px-5 text-sm font-semibold text-white shadow-sm hover:bg-campus-900 sm:w-auto">
-                    <i data-lucide="check-circle" class="h-4 w-4"></i>
-                    {{ $latestAttempt ? 'Kerjakan ulang' : ($isEssay ? 'Simpan jawaban' : 'Koreksi jawaban') }}
+            <div class="sticky bottom-6 z-10 flex justify-center mt-8">
+                <button class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-700 px-8 text-[15px] font-bold text-white shadow-xl shadow-campus-700/30 ring-1 ring-white/20 transition-all hover:-translate-y-1 hover:bg-campus-800 hover:shadow-campus-700/40 w-full sm:w-auto">
+                    <i data-lucide="check-circle" class="h-5 w-5"></i>
+                    {{ $latestAttempt ? 'Kerjakan Ulang' : ($isEssay ? 'Simpan Jawaban Esai' : 'Koreksi Jawaban Saya') }}
                 </button>
             </div>
         </form>

@@ -12,232 +12,327 @@
     <script>
         window.chatSessionPage = function () {
             return {
-            title: @js($session->title),
-            question: '',
-            sending: false,
-            messages: @js($initialMessages),
-            scrollToBottom() {
-                this.$nextTick(() => {
-                    this.$refs.messages?.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: 'smooth' });
-                });
-            },
-            formatMessage(content) {
-                const normalizeMath = (value) => String(value || '')
-                    .replace(/\$\$([\s\S]*?)\$\$/g, '$1')
-                    .replace(/\$([^$]+)\$/g, '$1')
-                    .replace(/\\text\{([^{}]*)\}/g, '$1')
-                    .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1) / ($2)')
-                    .replace(/\\sum/g, 'Sigma')
-                    .replace(/\\times/g, 'x')
-                    .replace(/\\rightarrow/g, '->')
-                    .replace(/\\geq/g, '>=')
-                    .replace(/\\leq/g, '<=')
-                    .replace(/\\neq/g, '!=')
-                    .replace(/\\\(|\\\)|\\\[|\\\]/g, '');
-
-                const escaped = normalizeMath(content)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-
-                const lines = escaped
-                    .replace(/â€¢/g, '-')
-                    .replace(/â†’/g, '->')
-                    .replace(/Î£/g, 'Sigma')
-                    .split(/\n/);
-
-                let listOpen = false;
-                const closeList = () => {
-                    if (! listOpen) return '';
-                    listOpen = false;
-                    return '</ul>';
-                };
-
-                const inline = (value) => value
-                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                    .replace(/`([^`]+)`/g, '<code class="rounded bg-slate-200 px-1 py-0.5 text-[.8em]">$1</code>');
-
-                const blocks = [];
-
-                return lines.map((line) => {
-                    const trimmed = line.trim();
-                    if (! trimmed) {
-                        return closeList();
-                    }
-
-                    if (/^#{1,6}\s+/.test(trimmed)) {
-                        return closeList() + '<h3 class="mt-4 text-sm font-semibold text-slate-950">' + inline(trimmed.replace(/^#{1,6}\s+/, '')) + '</h3>';
-                    }
-
-                    if (/^[-•]\s+/.test(trimmed)) {
-                        const open = listOpen ? '' : '<ul class="my-2 ml-5 list-disc space-y-1">';
-                        listOpen = true;
-                        return open + '<li>' + inline(trimmed.replace(/^[-•]\s+/, '')) + '</li>';
-                    }
-
-                    if (/^\d+\.\s+/.test(trimmed)) {
-                        return closeList() + '<p class="mb-2">' + inline(trimmed) + '</p>';
-                    }
-
-                    if (/^\|/.test(trimmed) || /^[-:|\s]+$/.test(trimmed) || /^```/.test(trimmed)) {
-                        return '';
-                    }
-
-                    const looksLikeFormula = /[=()\/]|Sigma|Bobot|CR|CI|RI|Eigen|Normalisasi/i.test(trimmed)
-                        && trimmed.length <= 160;
-
-                    return closeList() + (looksLikeFormula
-                        ? '<div class="my-2 rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-800">' + inline(trimmed) + '</div>'
-                        : '<p class="mb-2">' + inline(trimmed) + '</p>');
-                }).concat(closeList()).filter(Boolean).join('');
-            },
-            async sendQuestion() {
-                const text = this.question.trim();
-                if (! text || this.sending) return;
-
-                this.messages.push({ id: 'local-' + Date.now(), role: 'user', content: text });
-                this.question = '';
-                this.sending = true;
-                this.scrollToBottom();
-
-                try {
-                    const assistantMessageId = 'assistant-' + Date.now();
-                    this.messages.push({ id: assistantMessageId, role: 'assistant', content: '', metadata: null });
-                    const assistantIndex = this.messages.length - 1;
-
-                    const response = await fetch(@js(route('chat.store', $session)), {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'text/event-stream',
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': @js(csrf_token()),
-                        },
-                        body: JSON.stringify({ question: text }),
+                title: @js($session->title),
+                question: '',
+                sending: false,
+                messages: @js($initialMessages),
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        if (this.$refs.messages) {
+                            this.$refs.messages.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: 'smooth' });
+                        }
                     });
+                },
+                formatMessage(content) {
+                    const normalizeMath = (value) => String(value || '')
+                        .replace(/\$\$([\s\S]*?)\$\$/g, '$1')
+                        .replace(/\$([^$]+)\$/g, '$1')
+                        .replace(/\\text\{([^{}]*)\}/g, '$1')
+                        .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1) / ($2)')
+                        .replace(/\\sum/g, 'Sigma')
+                        .replace(/\\times/g, 'x')
+                        .replace(/\\rightarrow/g, '->')
+                        .replace(/\\geq/g, '>=')
+                        .replace(/\\leq/g, '<=')
+                        .replace(/\\neq/g, '!=')
+                        .replace(/\\\(|\\\)|\\\[|\\\]/g, '');
 
-                    if (! response.ok) {
-                        const raw = await response.text();
-                        let data = {};
-                        try { data = JSON.parse(raw); } catch (e) {}
-                        throw new Error(data.message || 'Pertanyaan belum bisa diproses.');
-                    }
+                    const escaped = normalizeMath(content)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
 
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder();
-                    let buffer = '';
+                    const lines = escaped
+                        .replace(/â€¢/g, '-')
+                        .replace(/â†’/g, '->')
+                        .replace(/Î£/g, 'Sigma')
+                        .split(/\n/);
 
-                    while (true) {
-                        const { value, done } = await reader.read();
-                        if (done) break;
+                    let listOpen = false;
+                    const closeList = () => {
+                        if (! listOpen) return '';
+                        listOpen = false;
+                        return '</ul>';
+                    };
 
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop(); // keep partial lines
+                    const inline = (value) => value
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                        .replace(/`([^`]+)`/g, '<code class="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-slate-800">$1</code>');
 
-                        for (const line of lines) {
-                            if (line.startsWith('data: ')) {
-                                const dataStr = line.slice(6).trim();
-                                if (!dataStr) continue;
+                    return lines.map((line) => {
+                        const trimmed = line.trim();
+                        if (! trimmed) return closeList();
 
-                                try {
-                                    const parsed = JSON.parse(dataStr);
-                                    if (parsed.chunk) {
-                                        this.messages[assistantIndex].content += parsed.chunk;
-                                        this.scrollToBottom();
-                                    } else if (parsed.done) {
-                                        this.title = parsed.title || this.title;
-                                        this.messages[assistantIndex].id = parsed.message.id;
-                                        this.messages[assistantIndex].metadata = parsed.message.metadata;
-                                        this.scrollToBottom();
+                        if (/^#{1,6}\s+/.test(trimmed)) {
+                            return closeList() + '<h3 class="mt-4 mb-2 text-base font-bold text-slate-900">' + inline(trimmed.replace(/^#{1,6}\s+/, '')) + '</h3>';
+                        }
+
+                        if (/^[-•]\s+/.test(trimmed)) {
+                            const open = listOpen ? '' : '<ul class="my-2 ml-5 list-disc space-y-1.5">';
+                            listOpen = true;
+                            return open + '<li>' + inline(trimmed.replace(/^[-•]\s+/, '')) + '</li>';
+                        }
+
+                        if (/^\d+\.\s+/.test(trimmed)) {
+                            return closeList() + '<p class="mb-2 ml-2">' + inline(trimmed) + '</p>';
+                        }
+
+                        if (/^\|/.test(trimmed) || /^[-:|\s]+$/.test(trimmed) || /^```/.test(trimmed)) {
+                            return '';
+                        }
+
+                        const looksLikeFormula = /=|\b(?:CR|CI|RI|Sigma|Bobot|Eigen|Normalisasi)\b/i.test(trimmed) && trimmed.length <= 160;
+
+                        return closeList() + (looksLikeFormula
+                            ? '<div class="my-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm text-slate-800 shadow-sm">' + inline(trimmed) + '</div>'
+                            : '<p class="mb-2 leading-relaxed">' + inline(trimmed) + '</p>');
+                    }).concat(closeList()).filter(Boolean).join('');
+                },
+                async sendQuestion() {
+                    const text = this.question.trim();
+                    if (!text || this.sending) return;
+
+                    this.messages.push({ id: 'local-' + Date.now(), role: 'user', content: text });
+                    this.question = '';
+                    this.sending = true;
+                    this.$refs.textarea.style.height = 'auto'; // Reset textarea height
+                    this.scrollToBottom();
+
+                    try {
+                        const assistantMessageId = 'assistant-' + Date.now();
+                        this.messages.push({ id: assistantMessageId, role: 'assistant', content: '', metadata: null });
+                        const assistantIndex = this.messages.length - 1;
+
+                        const response = await fetch(@js(route('chat.store', $session)), {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'text/event-stream',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': @js(csrf_token()),
+                            },
+                            body: JSON.stringify({ question: text }),
+                        });
+
+                        if (!response.ok) {
+                            const raw = await response.text();
+                            let data = {};
+                            try { data = JSON.parse(raw); } catch (e) {}
+                            throw new Error(data.message || 'Pertanyaan belum bisa diproses.');
+                        }
+
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) break;
+
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop(); // keep partial lines
+
+                            for (const line of lines) {
+                                if (line.startsWith('data: ')) {
+                                    const dataStr = line.slice(6).trim();
+                                    if (!dataStr) continue;
+
+                                    try {
+                                        const parsed = JSON.parse(dataStr);
+                                        if (parsed.chunk) {
+                                            this.messages[assistantIndex].content += parsed.chunk;
+                                            this.scrollToBottom();
+                                        } else if (parsed.done) {
+                                            this.title = parsed.title || this.title;
+                                            this.messages[assistantIndex].id = parsed.message.id;
+                                            this.messages[assistantIndex].metadata = parsed.message.metadata;
+                                            this.scrollToBottom();
+                                        }
+                                    } catch (e) {
+                                        console.error('SSE parse error:', e);
                                     }
-                                } catch (e) {
-                                    console.error('SSE parse error:', e);
                                 }
                             }
                         }
+                    } catch (error) {
+                        this.messages.push({
+                            id: 'error-' + Date.now(),
+                            role: 'assistant',
+                            content: error.message || 'Maaf, jawaban belum berhasil dibuat. Coba kirim ulang pertanyaannya.',
+                        });
+                    } finally {
+                        this.sending = false;
+                        this.scrollToBottom();
                     }
-                } catch (error) {
-                    this.messages.push({
-                        id: 'error-' + Date.now(),
-                        role: 'assistant',
-                        content: error.message || 'Maaf, jawaban belum berhasil dibuat. Coba kirim ulang pertanyaannya.',
-                    });
-                } finally {
-                    this.sending = false;
-                    this.scrollToBottom();
-                }
-            },
+                },
             };
         };
     </script>
 
-    <div class="min-w-0 overflow-x-hidden" x-data="chatSessionPage()" x-init="scrollToBottom()">
-        <section class="mb-5 overflow-hidden rounded-[1.75rem] bg-campus-50 p-5 sm:p-7">
-            <a class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-campus-700 shadow-sm hover:bg-campus-100" href="{{ $session->folder ? route('folders.show', $session->folder) : route('documents.show', $session->document) }}">
-                <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke {{ $session->folder ? 'folder' : 'materi' }}
-            </a>
-            <div class="mt-5 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div class="h-full w-full flex flex-col bg-[#f8fbff]" x-data="chatSessionPage()" x-init="scrollToBottom()">
+        <!-- Header Page -->
+        <section class="flex-none px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between border-b border-slate-200/60 bg-white/80 backdrop-blur-md shadow-sm">
+            <div class="flex items-center gap-3">
+                <a class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-campus-700 shadow-sm transition hover:bg-campus-50 border border-slate-200" href="{{ $session->folder ? route('folders.show', $session->folder) : route('documents.show', $session->document) }}" title="Kembali">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                </a>
                 <div class="min-w-0">
-                    <p class="text-sm font-semibold text-campus-700">Tanya materi</p>
-                    <h1 class="mt-1 break-words text-2xl font-semibold tracking-tight text-campus-900" x-text="title"></h1>
-                    <p class="mt-1 truncate text-sm text-slate-600">{{ $source->title }}</p>
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <span class="inline-flex items-center rounded bg-campus-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-campus-700">
+                            {{ $session->folder ? 'Folder' : 'Materi' }}
+                        </span>
+                        <p class="line-clamp-1 text-xs font-semibold text-slate-500">{{ $source->title }}</p>
+                    </div>
+                    <h1 class="break-words text-[15px] font-bold tracking-tight text-campus-950" x-text="title"></h1>
                 </div>
-                <span class="inline-flex w-fit shrink-0 items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-semibold text-campus-700 shadow-sm">
-                    <i data-lucide="shield-check" class="h-4 w-4"></i> Jawaban dari {{ $session->folder ? 'folder ini' : 'file ini' }}
-                </span>
             </div>
         </section>
 
-        <div class="overflow-hidden rounded-[1.5rem] bg-white shadow-sm">
-            <div x-ref="messages" class="max-h-[62vh] space-y-4 overflow-y-auto bg-white p-4 sm:p-5">
+        <!-- Chat Canvas -->
+        <div class="flex-1 flex flex-col relative min-h-0">
+            
+            <!-- Messages Area -->
+            <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-40 pt-6 px-4 sm:px-6 lg:px-8" style="scroll-behavior: smooth;">
+                
+                <!-- Empty State / Welcome Message -->
                 <template x-if="messages.length === 0">
-                    <div class="py-12 text-center">
-                        <i data-lucide="message-circle-question" class="mx-auto h-10 w-10 text-slate-400"></i>
-                        <p class="mt-3 text-sm font-semibold text-slate-700">Mulai tanya AI dari {{ $session->folder ? 'folder' : 'file' }} ini.</p>
-                        <p class="mt-1 text-sm text-slate-500">Contoh: Jelaskan inti materi ini dengan bahasa sederhana.</p>
-                    </div>
-                </template>
-
-                <template x-for="message in messages" :key="message.id">
-                    <div class="flex min-w-0" :class="message.role === 'user' ? 'justify-end' : 'justify-start'">
-                        <div class="max-w-[min(42rem,92%)] rounded-[1.25rem] px-4 py-3 text-sm leading-6 shadow-sm" :class="message.role === 'user' ? 'bg-campus-700 text-white rounded-br-md' : 'bg-slate-50 text-slate-800 rounded-bl-md'">
-                            <div class="mb-1 text-xs font-semibold" :class="message.role === 'user' ? 'text-campus-100' : 'text-campus-700'" x-text="message.role === 'user' ? 'Kamu' : 'RuangBelajar AI'"></div>
-                            <div class="leading-6 [&_strong]:font-semibold [&_em]:italic" x-html="formatMessage(message.content)"></div>
-                            <template x-if="message.role === 'assistant' && message.metadata?.source_snippets?.length">
-                                <div class="mt-3 space-y-2 border-t border-slate-200 pt-3">
-                                    <p class="text-xs font-semibold text-slate-500">Sumber dari materi</p>
-                                    <template x-for="snippet in message.metadata.source_snippets" :key="snippet.document_id + snippet.snippet">
-                                        <div class="rounded-lg bg-white p-3 text-xs leading-5 text-slate-600">
-                                            <p class="mb-1 font-semibold text-campus-700" x-text="snippet.title"></p>
-                                            <p x-text="snippet.snippet"></p>
-                                        </div>
-                                    </template>
+                    <div class="flex h-full flex-col items-center justify-center p-4">
+                        <div class="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-100 text-campus-600">
+                            <i data-lucide="bot" class="h-8 w-8"></i>
+                        </div>
+                        <h3 class="mb-2 text-center text-2xl font-bold tracking-tight text-slate-900">Halo! Apa yang ingin kamu pelajari?</h3>
+                        <p class="mb-8 max-w-md text-center text-[15px] leading-relaxed text-slate-500">Aku siap membantu kamu mendalami materi ini. Pilih topik cepat di bawah atau ketik pertanyaanmu sendiri.</p>
+                        
+                        <div class="flex w-full max-w-3xl flex-wrap justify-center gap-3">
+                            <button @click="question = 'Jelaskan intisari materi ini dengan bahasa yang sangat sederhana.'; sendQuestion()" class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><i data-lucide="message-circle" class="h-4 w-4"></i></span>
+                                <div>
+                                    <span class="block text-sm font-bold text-slate-700">Jelaskan Sederhana</span>
+                                    <span class="mt-1 block text-[12px] text-slate-500">Ringkasan dengan bahasa awam</span>
                                 </div>
-                            </template>
+                            </button>
+                            <button @click="question = 'Bantu aku memahami konsep yang paling sulit di materi ini.'; sendQuestion()" class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600"><i data-lucide="lightbulb" class="h-4 w-4"></i></span>
+                                <div>
+                                    <span class="block text-sm font-bold text-slate-700">Pahami Konsep</span>
+                                    <span class="mt-1 block text-[12px] text-slate-500">Bedah bagian yang rumit</span>
+                                </div>
+                            </button>
+                            <button @click="question = 'Beri aku analogi atau contoh nyata untuk materi ini.'; sendQuestion()" class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600"><i data-lucide="sparkles" class="h-4 w-4"></i></span>
+                                <div>
+                                    <span class="block text-sm font-bold text-slate-700">Beri Analogi</span>
+                                    <span class="mt-1 block text-[12px] text-slate-500">Contoh di dunia nyata</span>
+                                </div>
+                            </button>
                         </div>
                     </div>
                 </template>
 
-                <div x-show="sending" x-cloak class="flex justify-start">
-                    <div class="rounded-[1.25rem] bg-slate-50 px-4 py-3 text-sm text-slate-600 shadow-sm">
-                        <span class="inline-flex items-center gap-2"><span class="h-3 w-3 animate-pulse rounded-full bg-campus-500"></span> RuangBelajar AI sedang menyusun jawaban...</span>
+                <!-- Chat Bubbles -->
+                <template x-for="message in messages" :key="message.id">
+                    <div class="flex w-full justify-center">
+                        <div class="w-full max-w-3xl flex" :class="message.role === 'user' ? 'justify-end pl-12' : 'justify-start pr-4 sm:pr-12'">
+                            
+                            <!-- User Message -->
+                            <template x-if="message.role === 'user'">
+                                <div class="max-w-[85%] rounded-3xl bg-slate-100 px-5 py-3.5 text-[15px] leading-relaxed text-slate-800">
+                                    <div x-html="formatMessage(message.content)" class="[&_p]:mb-0"></div>
+                                </div>
+                            </template>
+
+                            <!-- AI Message -->
+                            <template x-if="message.role === 'assistant'">
+                                <div class="flex w-full gap-4 sm:gap-6">
+                                    <div class="shrink-0 mt-1 hidden sm:block">
+                                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-campus-600 shadow-sm ring-1 ring-slate-100">
+                                            <i data-lucide="bot" class="h-5 w-5"></i>
+                                        </div>
+                                    </div>
+                                    <div x-data="{ showSources: false }" class="min-w-0 flex-1 text-[15px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[13px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
+                                        
+                                        <div x-html="formatMessage(message.content)"></div>
+                                        
+                                        <!-- Source Snippets Toggle -->
+                                        <template x-if="message.metadata?.source_snippets?.length">
+                                            <div class="mt-4 border-t border-slate-100 pt-3">
+                                                <button @click="showSources = !showSources" class="group flex items-center gap-1.5 text-xs font-semibold text-campus-600 transition hover:text-campus-800">
+                                                    <i data-lucide="book-open" class="h-3.5 w-3.5 text-campus-500"></i>
+                                                    <span x-text="showSources ? 'Sembunyikan Referensi' : 'Lihat Referensi Materi'"></span>
+                                                    <i data-lucide="chevron-down" class="h-3.5 w-3.5 text-campus-400 transition-transform duration-300" :class="showSources ? 'rotate-180' : ''"></i>
+                                                </button>
+                                                
+                                                <!-- Sources Content -->
+                                                <div x-show="showSources" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2">
+                                                    <div class="mt-3 space-y-2">
+                                                        <template x-for="snippet in message.metadata.source_snippets" :key="snippet.document_id + snippet.snippet">
+                                                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[13px] leading-5 text-slate-600 shadow-sm">
+                                                                <div class="mb-1.5 flex items-center gap-1.5 font-semibold text-campus-800">
+                                                                    <i data-lucide="file-text" class="h-3.5 w-3.5 text-campus-600"></i>
+                                                                    <span x-text="snippet.title"></span>
+                                                                </div>
+                                                                <p class="italic text-slate-500">"...<span x-text="snippet.snippet"></span>..."</p>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Typing Indicator -->
+                <div x-show="sending" x-cloak class="flex w-full justify-center">
+                    <div class="w-full max-w-3xl flex justify-start pr-4 sm:pr-12">
+                        <div class="flex gap-4 sm:gap-6 w-full">
+                            <div class="mt-1 shrink-0 hidden sm:block">
+                                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-campus-600 shadow-sm ring-1 ring-slate-100">
+                                    <i data-lucide="bot" class="h-5 w-5"></i>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 pt-2">
+                                <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_0ms]"></span>
+                                <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_200ms]"></span>
+                                <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_400ms]"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <form method="POST" action="{{ route('chat.store', $session) }}" class="border-t border-slate-100 bg-white p-3 sm:p-4" x-on:submit.prevent="sendQuestion()">
-                @csrf
-                <div class="flex min-w-0 gap-2">
-                    <input x-model="question" name="question" required placeholder="Tanyakan sesuatu dari materi..." class="min-w-0 flex-1 rounded-full border-slate-200 bg-slate-50 text-sm shadow-sm focus:border-campus-500 focus:ring-campus-500">
-                    <button x-bind:disabled="sending" class="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-campus-700 text-white shadow-sm hover:bg-campus-900 disabled:cursor-not-allowed disabled:opacity-60" title="Kirim">
-                        <i data-lucide="send" class="h-4 w-4"></i>
-                        <span class="sr-only" x-text="sending ? 'Menjawab...' : 'Kirim'"></span>
-                    </button>
-                </div>
-            </form>
+            <!-- Input Area -->
+            <div class="flex-none p-3 sm:p-4 bg-gradient-to-t from-[#f8fbff] to-transparent">
+                <form method="POST" action="{{ route('chat.store', $session) }}" @submit.prevent="sendQuestion()" class="flex w-full flex-col mx-auto max-w-3xl">
+                    @csrf
+                    <div class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-lg shadow-black/5 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
+                        <textarea 
+                            x-ref="textarea"
+                            x-model="question" 
+                            name="question" 
+                            rows="1"
+                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-5 pr-2 text-[15px] focus:ring-0" 
+                            placeholder="Tanya AI tentang materi ini..." 
+                            @keydown.enter.prevent="if(!$event.shiftKey) sendQuestion()"
+                            @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
+                        ></textarea>
+                        
+                        <button type="submit" :disabled="!question.trim() || sending" class="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
+                            <i data-lucide="arrow-up" class="h-5 w-5"></i>
+                            <span class="sr-only">Kirim</span>
+                        </button>
+                    </div>
+                    <div class="mt-2 text-center text-[11px] font-medium text-slate-400">
+                        AI bisa keliru. Periksa kembali info penting.
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </x-app-layout>
