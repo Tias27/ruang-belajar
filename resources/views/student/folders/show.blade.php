@@ -146,7 +146,7 @@
                     </span>
                     <span class="mt-3 text-sm font-semibold text-slate-900">Klik untuk pilih file tambahan</span>
                     <span class="mt-1 text-xs leading-5 text-slate-500">Maksimal 30 file sekali upload, 20 MB per file.</span>
-                    <input name="files[]" type="file" accept=".pdf,.docx,.pptx" multiple required class="sr-only" x-on:change="files = Array.from($event.target.files)">
+                    <input name="files[]" type="file" accept=".pdf,.docx,.pptx,.jpg,.jpeg,.png,.gif,.webp" multiple required class="sr-only" x-on:change="files = Array.from($event.target.files)">
                 </label>
 
                 <div x-show="files.length" x-cloak class="mt-4 min-w-0">

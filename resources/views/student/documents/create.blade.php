@@ -1,5 +1,33 @@
 <x-app-layout title="Upload Materi">
-    <div class="mx-auto max-w-5xl min-w-0 overflow-x-hidden" x-data="{ mode: '{{ old('upload_mode', 'files') }}', files: [] }">
+    <div class="mx-auto max-w-5xl min-w-0 overflow-x-hidden" x-data="{ 
+        mode: '{{ old('upload_mode', 'files') }}', 
+        files: [],
+        handleFileSelect(e) {
+            if (this.mode === 'folder') {
+                const dt = new DataTransfer();
+                // Tambahkan file lama
+                this.files.forEach(f => dt.items.add(f));
+                // Tambahkan file baru jika belum ada
+                Array.from(e.target.files).forEach(f => {
+                    if (!this.files.find(existing => existing.name === f.name && existing.size === f.size)) {
+                        dt.items.add(f);
+                    }
+                });
+                this.files = Array.from(dt.files);
+                e.target.files = dt.files;
+            } else {
+                this.files = Array.from(e.target.files);
+            }
+        },
+        removeFile(index) {
+            const dt = new DataTransfer();
+            this.files.forEach((f, i) => {
+                if (i !== index) dt.items.add(f);
+            });
+            this.files = Array.from(dt.files);
+            this.$refs.fileInput.files = dt.files;
+        }
+    }">
         <section class="overflow-hidden rounded-[1.75rem] bg-campus-50 p-5 sm:p-7">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
@@ -22,17 +50,17 @@
                 <p class="mt-1 text-sm text-slate-500">Ini menentukan cara AI membaca file kamu.</p>
 
                 <div class="mt-4 grid gap-3">
-                    <button type="button" x-on:click="mode = 'files'" class="flex w-full min-w-0 items-start gap-3 rounded-2xl border p-4 text-left transition" x-bind:class="mode === 'files' ? 'border-campus-200 bg-campus-50 text-campus-900' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'">
+                    <button type="button" x-on:click="mode = 'files'; files = []; $refs.fileInput.value = ''" class="flex w-full min-w-0 items-start gap-3 rounded-2xl border p-4 text-left transition" x-bind:class="mode === 'files' ? 'border-campus-200 bg-campus-50 text-campus-900' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'">
                         <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-campus-700 shadow-sm">
                             <i data-lucide="files" class="h-5 w-5"></i>
                         </span>
                         <span class="min-w-0">
                             <span class="block text-sm font-semibold">File satuan</span>
-                            <span class="mt-1 block text-xs leading-5 text-slate-500">Setiap file jadi materi sendiri. Cocok untuk pertemuan terpisah.</span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500">Satu file per upload untuk dijadikan materi terpisah.</span>
                         </span>
                     </button>
 
-                    <button type="button" x-on:click="mode = 'folder'" class="flex w-full min-w-0 items-start gap-3 rounded-2xl border p-4 text-left transition" x-bind:class="mode === 'folder' ? 'border-accent-200 bg-accent-50 text-accent-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'">
+                    <button type="button" x-on:click="mode = 'folder'; files = []; $refs.fileInput.value = ''" class="flex w-full min-w-0 items-start gap-3 rounded-2xl border p-4 text-left transition" x-bind:class="mode === 'folder' ? 'border-accent-200 bg-accent-50 text-accent-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'">
                         <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-accent-700 shadow-sm">
                             <i data-lucide="folder-plus" class="h-5 w-5"></i>
                         </span>
@@ -83,8 +111,8 @@
                                 <i data-lucide="upload-cloud" class="h-6 w-6"></i>
                             </span>
                             <span class="mt-4 text-sm font-semibold text-slate-900">Klik untuk pilih file</span>
-                            <span class="mt-1 text-xs leading-5 text-slate-500" x-text="mode === 'folder' ? 'Semua file akan masuk ke satu folder gabungan.' : 'Setiap file akan dibuat sebagai materi terpisah.'"></span>
-                            <input name="files[]" type="file" accept=".pdf,.docx,.pptx" multiple required class="sr-only" x-on:change="files = Array.from($event.target.files)">
+                            <span class="mt-1 text-xs leading-5 text-slate-500" x-text="mode === 'folder' ? 'Pilih beberapa file sekaligus (tahan Ctrl/Shift). Anda juga bisa klik lagi untuk menambahkan file lain.' : 'Pilih satu file materi.'"></span>
+                            <input x-ref="fileInput" name="files[]" type="file" accept=".pdf,.docx,.pptx,.jpg,.jpeg,.png,.gif,.webp" x-bind:multiple="mode === 'folder'" required class="sr-only" x-on:change="handleFileSelect($event)">
                         </label>
                     </div>
 
@@ -94,11 +122,14 @@
                             <p class="shrink-0 text-xs text-slate-500" x-text="mode === 'folder' ? 'Akan digabung' : 'Akan dipisah'"></p>
                         </div>
                         <div class="mt-3 max-h-48 min-w-0 space-y-2 overflow-y-auto overflow-x-hidden rounded-2xl bg-slate-50 p-2">
-                            <template x-for="file in files" :key="file.name">
-                                <div class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl bg-white px-3 py-2 shadow-sm">
+                            <template x-for="(file, index) in files" :key="file.name + file.size">
+                                <div class="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-xl bg-white px-3 py-2 shadow-sm">
                                     <i data-lucide="file-text" class="h-4 w-4 shrink-0 text-campus-700"></i>
                                     <span class="block min-w-0 truncate text-left text-sm text-slate-700" x-bind:title="file.name" x-text="file.name"></span>
                                     <span class="shrink-0 text-xs text-slate-500" x-text="(file.size / 1024 / 1024).toFixed(2) + ' MB'"></span>
+                                    <button type="button" @click="removeFile(index)" class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition" title="Hapus file ini">
+                                        <i data-lucide="x" class="h-3.5 w-3.5"></i>
+                                    </button>
                                 </div>
                             </template>
                         </div>

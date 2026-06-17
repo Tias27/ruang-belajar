@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Smalot\PdfParser\Parser;
 use ZipArchive;
 
@@ -16,9 +17,28 @@ class DocumentTextExtractor
         return match ($extension) {
             'docx' => $this->extractOfficeXml($path, ['word/document.xml']),
             'pptx' => $this->extractOfficeXml($path, ['ppt/slides/slide']),
-            'pdf' => $this->extractPdf($path),
+            'pdf'  => $this->extractPdf($path),
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp' => $this->extractImage($path, $extension),
             default => '',
         };
+    }
+
+    private function extractImage(string $path, string $extension): string
+    {
+        if (! class_exists(\thiagoalessio\TesseractOCR\TesseractOCR::class)) {
+            return '';
+        }
+
+        try {
+            $ocr = new \thiagoalessio\TesseractOCR\TesseractOCR($path);
+            $ocr->lang('ind', 'eng');
+            
+            $text = $ocr->run();
+            return $this->clean($text);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Tesseract OCR Error: " . $e->getMessage());
+            return '';
+        }
     }
 
     private function extractOfficeXml(string $path, array $targets): string
@@ -62,7 +82,7 @@ class DocumentTextExtractor
             return '';
         }
 
-        preg_match_all('/\(([^\\\\)]*(?:\\\\.[^\\\\)]*)*)\)/', $content, $matches);
+        preg_match_all('/\(([^\\\)]*(?:\\.[^\\\)]*)*)\)/', $content, $matches);
 
         $chunks = collect($matches[1] ?? [])
             ->map(fn (string $chunk) => stripcslashes($chunk))

@@ -1,8 +1,8 @@
-<x-app-layout title="RuangBelajar AI">
+<x-app-layout title="Ruang Belajar">
     <section class="grid min-h-[calc(100vh-3rem)] items-center gap-10 lg:grid-cols-[1.05fr_.95fr]">
         <div>
             <p class="mb-4 text-sm font-semibold uppercase tracking-wide text-campus-700">Asisten belajar untuk semua jenjang</p>
-            <h1 class="max-w-3xl text-4xl font-semibold leading-tight text-campus-900 sm:text-5xl">RuangBelajar AI</h1>
+            <h1 class="max-w-3xl text-4xl font-semibold leading-tight text-campus-900 sm:text-5xl">Ruang Belajar</h1>
             <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-600">Upload materi pelajaran, lalu gunakan AI untuk ringkas, tanya jawab, latihan soal, dan flashcard.</p>
             <div class="mt-8 flex flex-wrap gap-3">
                 <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-campus-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-campus-900">

@@ -37,18 +37,18 @@ class DocumentFolderController extends Controller
 
         $data = $request->validate([
             'files' => ['required', 'array', 'min:1', 'max:30'],
-            'files.*' => ['required', 'file', 'max:20480', 'mimes:pdf,docx,pptx'],
+            'files.*' => ['required', 'file', 'max:20480', 'mimes:pdf,docx,pptx,jpg,jpeg,png,gif,webp'],
         ], [
             'files.required' => 'Pilih minimal satu file materi.',
             'files.max' => 'Maksimal 30 file dalam sekali upload.',
             'files.*.required' => 'File materi wajib dipilih.',
             'files.*.file' => 'File materi belum valid. Jika ukuran di atas 2 MB gagal, naikkan upload_max_filesize dan post_max_size di PHP.',
             'files.*.max' => 'Ukuran maksimal 20 MB per file.',
-            'files.*.mimes' => 'Format file harus PDF, DOCX, atau PPTX.',
+            'files.*.mimes' => 'Format file harus PDF, DOCX, PPTX, atau gambar (JPG, PNG, GIF, WEBP).',
         ]);
 
         $files = $data['files'];
-        $allowedExtensions = ['pdf', 'docx', 'pptx'];
+        $allowedExtensions = ['pdf', 'docx', 'pptx', 'jpg', 'jpeg', 'png', 'gif', 'webp'];
         $storageDirectory = storage_path('app/private/documents');
 
         if (! is_dir($storageDirectory)) {
@@ -60,7 +60,7 @@ class DocumentFolderController extends Controller
 
             if (! in_array($extension, $allowedExtensions, true)) {
                 throw ValidationException::withMessages([
-                    "files.{$index}" => 'Format dokumen harus PDF, DOCX, atau PPTX.',
+                    "files.{$index}" => 'Format dokumen harus PDF, DOCX, PPTX, atau gambar (JPG, PNG, GIF, WEBP).',
                 ]);
             }
         }
@@ -137,9 +137,13 @@ class DocumentFolderController extends Controller
     private function mimeTypeFor(string $extension): string
     {
         return match (strtolower($extension)) {
-            'pdf' => 'application/pdf',
+            'pdf'  => 'application/pdf',
             'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png'  => 'image/png',
+            'gif'  => 'image/gif',
+            'webp' => 'image/webp',
             default => 'application/octet-stream',
         };
     }

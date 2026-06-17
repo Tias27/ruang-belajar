@@ -17,6 +17,9 @@ class ChatController extends Controller
 {
     public function index(Request $request)
     {
+        // Hapus sesi chat kosong milik user yang login agar tidak membebani database dan riwayat
+        auth()->user()->chatSessions()->doesntHave('messages')->delete();
+
         $search = trim((string) $request->query('q', ''));
         $sessions = auth()->user()
             ->chatSessions()

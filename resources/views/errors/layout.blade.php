@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Terjadi Kendala' }} - RuangBelajar AI</title>
+    <title>{{ $title ?? 'Terjadi Kendala' }} - Ruang Belajar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -22,7 +22,7 @@
     <main class="mx-auto flex min-h-screen max-w-3xl items-center px-5 py-10">
         <section class="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="inline-flex items-center gap-2 rounded-lg bg-campus-50 px-3 py-2 text-sm font-semibold text-campus-700">
-                <span>RuangBelajar AI</span>
+                <span>Ruang Belajar</span>
             </div>
             <p class="mt-6 text-sm font-semibold text-campus-700">{{ $code ?? 'Error' }}</p>
             <h1 class="mt-2 text-2xl font-semibold tracking-tight text-campus-900 sm:text-3xl">{{ $title ?? 'Terjadi kendala' }}</h1>

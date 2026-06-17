@@ -4,7 +4,7 @@
         <div class="grid min-w-0 gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)] lg:items-center">
             <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                    <span class="rounded-full bg-white px-3 py-1.5 text-campus-700 shadow-sm">RuangBelajar AI</span>
+                    <span class="rounded-full bg-white px-3 py-1.5 text-campus-700 shadow-sm">Ruang Belajar</span>
                     <span class="rounded-full bg-accent-50 px-3 py-1.5 text-accent-700">{{ auth()->user()->program_studi ?: 'Pembelajar' }}</span>
                 </div>
                 <h1 class="mt-5 max-w-2xl text-3xl font-semibold leading-tight tracking-tight text-campus-900 sm:text-4xl">
@@ -16,6 +16,9 @@
                 <div class="mt-6 flex flex-col gap-3 sm:flex-row">
                     <a href="{{ route('documents.create') }}" class="inline-flex items-center justify-center gap-2 rounded-full bg-campus-700 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-campus-900">
                         <i data-lucide="upload-cloud" class="h-4 w-4"></i> Upload Materi
+                    </a>
+                    <a href="{{ route('student.guide') }}" class="inline-flex items-center justify-center gap-2 rounded-full bg-campus-100 px-5 py-3 text-sm font-semibold text-campus-800 shadow-sm transition hover:bg-campus-200">
+                        <i data-lucide="map" class="h-4 w-4"></i> Lihat Panduan
                     </a>
                     <a href="{{ route('documents.index') }}" class="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-campus-700 shadow-sm transition hover:bg-campus-100">
                         <i data-lucide="library" class="h-4 w-4"></i> Materi Saya
@@ -44,6 +47,37 @@
         </div>
     </section>
 
+    <section class="mt-6 rounded-[1.5rem] bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="text-base font-semibold text-slate-900">Langkah belajar yang disarankan</h2>
+                <p class="mt-1 text-sm text-slate-500">Ikuti urutan ini kalau baru pertama kali memakai Ruang Belajar.</p>
+            </div>
+            <a href="{{ route('student.guide') }}" class="inline-flex w-fit items-center gap-2 rounded-full bg-campus-50 px-3 py-2 text-xs font-semibold text-campus-700 hover:bg-campus-100">
+                Panduan lengkap <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+            </a>
+        </div>
+        <div class="mt-4 grid gap-3 md:grid-cols-4">
+            @foreach([
+                ['title' => 'Upload', 'text' => 'Masukkan file atau folder materi.', 'icon' => 'upload-cloud', 'active' => $stats['materials'] === 0],
+                ['title' => 'Buka materi', 'text' => 'Pilih file/folder dari Materi Saya.', 'icon' => 'folder-open', 'active' => $stats['materials'] > 0],
+                ['title' => 'Pakai AI', 'text' => 'Ringkas, tanya, soal, atau flashcard.', 'icon' => 'sparkles', 'active' => $stats['materials'] > 0],
+                ['title' => 'Ulangi', 'text' => 'Cek riwayat dan ulang kartu belajar.', 'icon' => 'repeat-2', 'active' => $stats['flashcards'] > 0 || $stats['chats'] > 0],
+            ] as $index => $step)
+                <div class="rounded-2xl {{ $step['active'] ? 'bg-campus-50 ring-1 ring-campus-100' : 'bg-slate-50' }} p-4">
+                    <div class="flex items-center justify-between">
+                        <span class="grid h-10 w-10 place-items-center rounded-xl bg-white text-campus-700 shadow-sm">
+                            <i data-lucide="{{ $step['icon'] }}" class="h-4 w-4"></i>
+                        </span>
+                        <span class="text-xs font-semibold text-slate-400">0{{ $index + 1 }}</span>
+                    </div>
+                    <p class="mt-3 text-sm font-semibold text-slate-900">{{ $step['title'] }}</p>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">{{ $step['text'] }}</p>
+                </div>
+            @endforeach
+        </div>
+    </section>
+
     <section class="mt-6 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
         <div class="min-w-0">
             <p class="text-sm font-semibold text-campus-700">Menu belajar</p>
@@ -61,10 +95,10 @@
 
         <div class="min-w-0 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
             @foreach([
-                ['title' => 'Ringkas materi', 'caption' => 'Buat ringkasan singkat, lengkap, poin penting, dan kesimpulan.', 'icon' => 'notebook-tabs', 'href' => route('documents.index'), 'tone' => 'campus'],
-                ['title' => 'Tanya AI', 'caption' => 'Ajukan pertanyaan dan AI menjawab berdasarkan isi materi.', 'icon' => 'messages-square', 'href' => route('documents.index'), 'tone' => 'accent'],
-                ['title' => 'Latihan soal', 'caption' => 'Buat soal pilihan ganda otomatis beserta pembahasan.', 'icon' => 'list-checks', 'href' => route('documents.index'), 'tone' => 'campus'],
-                ['title' => 'Flashcard', 'caption' => 'Ulang konsep penting dengan kartu tanya jawab singkat.', 'icon' => 'copy-check', 'href' => route('documents.index'), 'tone' => 'accent'],
+                ['title' => 'Ringkas materi', 'caption' => 'Buat ringkasan singkat, lengkap, poin penting, dan kesimpulan.', 'icon' => 'notebook-tabs', 'href' => route('documents.index', ['intent' => 'summary']), 'tone' => 'campus'],
+                ['title' => 'Tanya AI', 'caption' => 'Ajukan pertanyaan dan AI menjawab berdasarkan isi materi.', 'icon' => 'messages-square', 'href' => route('documents.index', ['intent' => 'chat']), 'tone' => 'accent'],
+                ['title' => 'Latihan soal', 'caption' => 'Buat soal pilihan ganda otomatis beserta pembahasan.', 'icon' => 'list-checks', 'href' => route('documents.index', ['intent' => 'quiz']), 'tone' => 'campus'],
+                ['title' => 'Flashcard', 'caption' => 'Ulang konsep penting dengan kartu tanya jawab singkat.', 'icon' => 'copy-check', 'href' => route('documents.index', ['intent' => 'flashcard']), 'tone' => 'accent'],
             ] as $mode)
                 <a href="{{ $mode['href'] }}" class="group flex min-w-0 items-center gap-4 border-b border-slate-100 p-4 transition last:border-b-0 hover:bg-campus-50">
                     <span class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl {{ $mode['tone'] === 'accent' ? 'bg-accent-50 text-accent-700' : 'bg-campus-50 text-campus-700' }}">
