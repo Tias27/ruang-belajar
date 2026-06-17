@@ -33,7 +33,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(Auth::user()->isAdmin() ? route('admin.dashboard') : route('student.dashboard'));
+        return redirect()
+            ->route(Auth::user()->isAdmin() ? 'admin.dashboard' : 'student.dashboard')
+            ->with('status', 'Berhasil masuk. Selamat belajar lagi, '.Auth::user()->username.'!');
     }
 
     public function destroy(Request $request)

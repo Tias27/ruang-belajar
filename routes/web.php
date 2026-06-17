@@ -45,6 +45,7 @@ Route::middleware(['auth', 'role:mahasiswa,admin'])->group(function () {
 
 Route::middleware(['auth', 'role:mahasiswa'])->group(function () {
     Route::get('dashboard', StudentDashboardController::class)->name('student.dashboard');
+    Route::view('panduan', 'student.guide')->name('student.guide');
     Route::delete('documents-selected', [DocumentController::class, 'bulkDestroy'])->name('documents.bulk-destroy');
     Route::resource('documents', DocumentController::class)->except(['edit', 'update']);
     Route::get('folders/{folder}', [DocumentFolderController::class, 'show'])->name('folders.show');
