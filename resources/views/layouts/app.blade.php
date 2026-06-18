@@ -102,7 +102,7 @@
         }
     </style>
 </head>
-<body class="bg-[#f8fbff] text-slate-900 antialiased overflow-x-hidden flex flex-col {{ request()->routeIs('chat.show', 'chat.show.legacy', 'study-rooms.show') ? 'h-screen overflow-hidden' : 'min-h-screen' }}" x-data="{mobileNav:false}">
+<body class="bg-[#f8fbff] text-slate-900 antialiased overflow-x-hidden flex flex-col {{ request()->routeIs('chat.show', 'chat.show.legacy', 'study-rooms.show') ? 'h-screen h-[100dvh] overflow-hidden' : 'min-h-screen' }}" x-data="{mobileNav:false}">
     @auth
         @php
             $isAdmin = auth()->user()->isAdmin();
