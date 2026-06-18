@@ -47,13 +47,14 @@
     <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.0/dist/echo.iife.js"></script>
     <script>
         window.Pusher = Pusher;
+        const isHttpsProtocol = window.location.protocol === 'https:';
         window.Echo = new Echo({
             broadcaster: 'reverb',
             key: '{{ config('broadcasting.connections.reverb.key') }}',
             wsHost: window.location.hostname,
-            wsPort: {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
-            wssPort: {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
-            forceTLS: {{ config('broadcasting.connections.reverb.options.scheme') === 'https' ? 'true' : 'false' }},
+            wsPort: isHttpsProtocol ? 443 : {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
+            wssPort: isHttpsProtocol ? 443 : {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
+            forceTLS: isHttpsProtocol,
             enabledTransports: ['ws', 'wss'],
         });
     </script>
