@@ -350,7 +350,7 @@
                 </div>
             </div>
             <!-- Input Area — floating at bottom like ChatGPT -->
-            <div class="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6 sm:px-4 sm:pb-4 lg:px-8 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
+            <div class="absolute bottom-0 left-0 right-0 px-3 pt-6 sm:px-4 lg:px-8" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem)); background: linear-gradient(to top, white 60%, transparent);">
                 <form method="POST" action="{{ route('chat.store', $session) }}" @submit.prevent="sendQuestion()" class="flex w-full flex-col mx-auto max-w-3xl pointer-events-auto">
                     @csrf
                     <div class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-xl shadow-black/8 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
