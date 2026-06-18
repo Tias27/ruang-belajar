@@ -56,11 +56,9 @@
                                 });
                                 this.scrollToBottom();
                             }
-                            
-                            // Adjust sending/typing indicator
-                            if (!e.message.is_ai) {
-                                this.sending = true;
-                            } else {
+
+                            // If AI message arrives via WebSocket, clear sending indicator
+                            if (e.message.is_ai) {
                                 this.sending = false;
                             }
                         });
