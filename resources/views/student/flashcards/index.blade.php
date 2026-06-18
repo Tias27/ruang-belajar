@@ -11,9 +11,15 @@
 
     <div class="min-w-0 overflow-x-hidden">
         <section class="overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-campus-50 to-white p-5 sm:p-8 shadow-sm border border-campus-100 relative">
-            <a class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-campus-700 shadow-sm border border-slate-100 transition-colors hover:bg-campus-100" href="{{ $folder ? route('folders.show', $folder) : route('documents.show', $document) }}">
-                <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke {{ $folder ? 'folder' : 'materi' }}
-            </a>
+            @if(isset($room) && $room)
+                <a class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800" href="{{ route('study-rooms.show', $room) }}">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke Room Belajar
+                </a>
+            @else
+                <a class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-campus-700 shadow-sm border border-slate-100 transition-colors hover:bg-campus-100" href="{{ $folder ? route('folders.show', $folder) : route('documents.show', $document) }}">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke {{ $folder ? 'folder' : 'materi' }}
+                </a>
+            @endif
             <div class="mt-5 flex min-w-0 flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div class="min-w-0">
                     <span class="inline-flex rounded-full bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-campus-700 shadow-sm ring-1 ring-slate-100">Flashcards</span>

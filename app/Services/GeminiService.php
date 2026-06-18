@@ -25,12 +25,12 @@ Fokus ke penjabaran inti materi, penjelasan konsep, alasan, langkah-langkah, dan
         return $this->jsonPrompt($document, $prompt, 4000, 'summary');
     }
 
-    public function chat(Document|DocumentFolder $document, string $question): string
+    public function chat(Document|DocumentFolder $document, string $question, array $history = []): string
     {
         $prompt = "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
 Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
 Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
-Jika pertanyaan di luar topik materi yang diunggah (seperti obrolan santai, pertanyaan umum di luar topik, resep makanan, atau menghitung jumlah huruf/karakter kata acak), tolak secara sopan dan jelaskan bahwa kamu hanya bisa menjawab hal yang berkaitan dengan materi ini.
+Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka atau perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan benar-benar di luar topik materi (seperti resep makanan, menghitung jumlah huruf kata acak, atau di luar konteks belajar dokumen), tolak secara sopan dan jelaskan bahwa kamu fokus membantu memahami materi ini.
 Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban.
 Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
 Jika pertanyaan menanyakan karakteristik (ciri-ciri), jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
@@ -43,15 +43,15 @@ Jika jawaban berisi data perbandingan, daftar item dengan banyak atribut, atau s
 
 Pertanyaan: {$question}";
 
-        return $this->textPrompt($document, $prompt, $question, 1100, null, 'chat');
+        return $this->textPrompt($document, $prompt, $question, 1100, null, 'chat', $history);
     }
 
-    public function streamChat(Document|DocumentFolder $document, string $question): \Generator
+    public function streamChat(Document|DocumentFolder $document, string $question, array $history = []): \Generator
     {
         $prompt = "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
 Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
 Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
-Jika pertanyaan di luar topik materi yang diunggah (seperti obrolan santai, pertanyaan umum di luar topik, resep makanan, atau menghitung jumlah huruf/karakter kata acak), tolak secara sopan dan jelaskan bahwa kamu hanya bisa menjawab hal yang berkaitan dengan materi ini.
+Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka atau perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan benar-benar di luar topik materi (seperti resep makanan, menghitung jumlah huruf kata acak, atau di luar konteks belajar dokumen), tolak secara sopan dan jelaskan bahwa kamu fokus membantu memahami materi ini.
 Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban.
 Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
 Jika pertanyaan menanyakan karakteristik (ciri-ciri), jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
@@ -64,7 +64,7 @@ Jika jawaban berisi data perbandingan, daftar item dengan banyak atribut, atau s
 
 Pertanyaan: {$question}";
 
-        $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat');
+        $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history);
 
         if (config('services.ai.provider') === 'kimchi') {
             return $this->sendKimchiStream($builtPrompt, 1100, null, 'chat');
@@ -81,7 +81,7 @@ Pertanyaan: {$question}";
             return $this->jsonPrompt($document, "Buat {$questionCount} soal esai dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[],\"correct_answer\":\"contoh jawaban ideal\",\"explanation\":\"pembahasan singkat\"}]}. Soal menguji pemahaman konsep dari materi. Hindari cover/judul/identitas dokumen. Pertanyaan ringkas, jawaban ideal maksimal 3 kalimat, pembahasan maksimal 1 kalimat.", min(2800, 900 + ($questionCount * 160)), 'quiz');
         }
 
-        return $this->jsonPrompt($document, "Buat {$questionCount} soal pilihan ganda dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[\"A. ...\",\"B. ...\",\"C. ...\",\"D. ...\"],\"correct_answer\":\"A\",\"explanation\":\"\"}]}. Soal menguji pemahaman, bukan menyalin kalimat panjang. Pilihan pendek dan masuk akal. Hindari cover/judul/identitas dokumen. Pembahasan maksimal 1 kalimat.", min(2800, 800 + ($questionCount * 130)), 'quiz');
+        return $this->jsonPrompt($document, "Buat {$questionCount} soal pilihan ganda dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[\"A. ...\",\"B. ...\",\"C. ...\",\"D. ...\"],\"correct_answer\":\"A\",\"explanation\":\"\"}]}. Soal menguji pemahaman, bukan menyalin kalimat panjang. Pilihan pendek dan masuk akal. Hindari cover/judul/identitas dokumen. Pembahasan maksimal 1 kalimat. PENTING: Acak posisi jawaban yang benar secara merata di antara pilihan A, B, C, dan D pada setiap soal. Jangan menumpuk jawaban benar pada satu huruf pilihan saja (misalnya B terus-menerus atau A terus-menerus).", min(2800, 800 + ($questionCount * 130)), 'quiz');
     }
 
     public function generateFlashcards(Document|DocumentFolder $document): array
@@ -124,9 +124,9 @@ Balas hanya JSON valid:
         return json_last_error() === JSON_ERROR_NONE ? $json : [];
     }
 
-    private function textPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
+    private function textPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default', array $history = []): string
     {
-        return $this->sendText($this->buildPrompt($document, $instruction, $question, $task), $maxOutputTokens, $responseMimeType, $task);
+        return $this->sendText($this->buildPrompt($document, $instruction, $question, $task, $history), $maxOutputTokens, $responseMimeType, $task);
     }
 
     private function jsonPrompt(Document|DocumentFolder $document, string $instruction, int $maxOutputTokens = 4096, string $task = 'default'): array
@@ -223,7 +223,7 @@ Balas hanya JSON valid:
         $connectTimeout = max(3, min((int) config('services.gemini.connect_timeout', 15), $timeout));
 
         $generationConfig = [
-            'temperature' => 0.2,
+            'temperature' => 0.4,
             'topP' => 0.9,
             'maxOutputTokens' => max(512, min($maxOutputTokens, 8192)),
         ];
@@ -281,7 +281,7 @@ Balas hanya JSON valid:
         $connectTimeout = max(3, min((int) config('services.gemini.connect_timeout', 15), $timeout));
 
         $generationConfig = [
-            'temperature' => 0.2,
+            'temperature' => 0.4,
             'topP' => 0.9,
             'maxOutputTokens' => max(512, min($maxOutputTokens, 8192)),
         ];
@@ -573,7 +573,7 @@ Balas hanya JSON valid:
         @ini_set('max_execution_time', '300');
     }
 
-    private function buildPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, string $task = 'default'): string
+    private function buildPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, string $task = 'default', array $history = []): string
     {
         $sourceType = $document instanceof DocumentFolder ? 'FOLDER MATERI' : 'DOKUMEN';
         
@@ -585,6 +585,32 @@ Balas hanya JSON valid:
             $contextPart = "KONTEKS DOKUMEN:\n" . $this->generationContext($document, $task);
         }
 
+        $historyPart = "";
+        if (!empty($history)) {
+            $historyPart = "RIWAYAT CHAT SEBELUMNYA:\n";
+            foreach ($history as $msg) {
+                $sender = $msg['role'] === 'user' ? 'User' : 'RuangBelajar AI';
+                $historyPart .= "[{$sender}]: {$msg['content']}\n";
+            }
+            $historyPart .= "\n";
+        }
+
+        $memoryPart = "";
+        if (auth()->check()) {
+            $userId = auth()->id();
+            $documentId = $document instanceof Document ? $document->id : null;
+            $folderId = $document instanceof DocumentFolder ? $document->id : null;
+
+            $memoryRecord = \App\Models\AiMemory::where('user_id', $userId)
+                ->when($documentId, fn ($q) => $q->where('document_id', $documentId))
+                ->when($folderId, fn ($q) => $q->where('folder_id', $folderId))
+                ->first();
+
+            if ($memoryRecord && filled($memoryRecord->content)) {
+                $memoryPart = "MEMORI/INGATAN DISKUSI SEBELUMNYA (Gunakan ini untuk mengingat pemahaman siswa, preferensi belajar, atau materi yang sudah pernah dibahas sebelumnya untuk membuat percakapan terasa natural, berkesinambungan, dan cerdas):\n{$memoryRecord->content}\n\n";
+            }
+        }
+
         return "Kamu adalah RuangBelajar AI, asisten belajar untuk pelajar SD, SMP, SMA/SMK, mahasiswa, dan pembelajar umum.
 Tugasmu membantu pengguna memahami materi, bukan sekadar memberi jawaban pendek.
 Aturan:
@@ -592,42 +618,112 @@ Aturan:
 2. Sesuaikan kedalaman jawaban dengan tingkat materi pada konteks.
 3. Jelaskan dari konsep dasar ke detail penting.
 4. Cari jawaban dari istilah yang sama, sinonim, contoh, definisi, atau penjelasan konsep yang berkaitan.
-5. Batasi ruang lingkup (scope) jawabanmu secara ketat HANYA pada isi/topik DOKUMEN/FOLDER MATERI yang diunggah.
-6. Jika pertanyaan pengguna sama sekali tidak berhubungan dengan materi yang diunggah (seperti obrolan santai, pertanyaan umum di luar topik materi, resep makanan, atau menghitung jumlah huruf/karakter dari kata acak seperti \"strawberry\"), kamu WAJIB menolak untuk menjawab secara sopan dan ingatkan pengguna bahwa kamu hanya diperbolehkan menjawab pertanyaan seputar materi yang diunggah.
-7. Jangan pernah mengarang sumber atau informasi di luar konteks materi. Jika tidak ada di materi dan tidak relevan, tolak untuk menjawab.
+5. Berfokuslah pada topik dan konsep materi yang diunggah sebagai acuan fakta utama. Namun, Anda diizinkan dan sangat didorong untuk mengobrol secara terbuka, ramah, interaktif, dan luwes (seperti ChatGPT pada umumnya) selama pembahasan masih berhubungan dengan konsep materi tersebut. Anda boleh menggunakan analogi umum, contoh eksternal, atau memberikan tips belajar terkait topik untuk membantu pemahaman siswa.
+6. Jawab dengan gaya bahasa yang santai, bersahabat, interaktif, terbuka, dan asyik untuk diajak berdiskusi/debat konseptual. Jangan kaku menolak pertanyaan selama masih ada relevansi konsep dengan materi. Jika siswa menyapa di awal chat, sapa balik dengan ramah. Di setiap respons baru, langsung jawab atau tanggapi secara asyik tanpa mengulang perkenalan diri.
+7. Jangan pernah mengarang fakta administratif atau informasi yang kontradiktif dengan materi. Jika tidak ada di materi dan tidak dapat dinalar secara ilmiah dari topik materi, jelaskan secara jujur.
 8. Untuk materi teknis, beri contoh sederhana jika membantu.
 9. Jangan tampilkan proses berpikir, reasoning internal, tag <think>, atau catatan internal.
 10. Jangan gunakan LaTeX mentah seperti $$...$$. Jika ada rumus, tulis sebagai teks biasa yang rapi, contoh: Bobot = Jumlah Baris / Jumlah Kriteria.
 11. Susun jawaban seperti tutor belajar: judul pendek, penjelasan bertahap, poin bernomor/bullet, lalu kesimpulan singkat.
 12. Utamakan kualitas pemahaman: jelaskan hubungan antar konsep, sebab-akibat, langkah, contoh, dan batasan jika ada.
-13. Abaikan cover, daftar isi, identitas tugas, nama kelompok, nama dosen, dan teks administratif kecuali pengguna memang menanyakannya.
+13. Jika pengguna menanyakan informasi tentang identitas dokumen, nama penulis, nama kelompok, nama dosen, tanggal, atau teks administratif lainnya yang tertulis di dalam dokumen, jawablah dengan jujur dan lengkap berdasarkan informasi yang tertulis di dalam dokumen tersebut.
 14. Jangan menyalin mentah potongan materi panjang. Olah menjadi penjelasan belajar yang rapi.
+15. Jadilah mitra diskusi yang kritis dan aktif. Jika relevan, berikan satu pertanyaan pemantik singkat di akhir respons untuk mengajak siswa berpikir kritis, menantang logika konseptual mereka, atau memicu debat edukatif yang seru.
 
-{$sourceType}: {$document->title}
+{$memoryPart}{$sourceType}: {$document->title}
 
 {$contextPart}
 
-INSTRUKSI:
+{$historyPart}INSTRUKSI:
 {$instruction}";
+    }
+
+    public function consolidateMemory(Document|DocumentFolder $document, \App\Models\User $user, array $newMessages): void
+    {
+        if (empty($newMessages)) {
+            return;
+        }
+
+        $documentId = $document instanceof Document ? $document->id : null;
+        $folderId = $document instanceof DocumentFolder ? $document->id : null;
+
+        $memoryRecord = \App\Models\AiMemory::where('user_id', $user->id)
+            ->when($documentId, fn ($q) => $q->where('document_id', $documentId))
+            ->when($folderId, fn ($q) => $q->where('folder_id', $folderId))
+            ->first();
+
+        $currentMemory = $memoryRecord ? $memoryRecord->content : "Belum ada memori tercatat.";
+
+        $chatSegment = "";
+        foreach ($newMessages as $msg) {
+            $sender = ($msg['is_ai'] ?? false) ? 'RuangBelajar AI' : 'Siswa';
+            $chatSegment .= "[{$sender}]: {$msg['message']}\n";
+        }
+
+        $prompt = "Tugasmu adalah bertindak sebagai modul pembuat memori jangka panjang AI.
+Analisis segmen percakapan terbaru di bawah dan gabungkan informasi barunya ke dalam daftar memori yang sudah ada.
+
+Aturan Konsolidasi Memori:
+1. Catat poin ingatan penting tentang: konsep materi yang sedang dipelajari, riwayat kesalahan pemahaman siswa, materi yang sudah berhasil dipahami siswa, preferensi belajar, atau kesimpulan diskusi penting.
+2. Singkat, padat, dan gunakan format bullet points (contoh: '- Siswa sempat keliru mengira rumus X menggunakan Y, namun sekarang sudah paham bahwa Y adalah Z').
+3. Gabungkan poin baru dengan memori lama agar tetap rapi, ringkas, dan tidak duplikat.
+4. JANGAN catat hal-hal administratif yang tidak penting seperti sapaan, ucapan terima kasih, atau percakapan di luar materi.
+5. Maksimal hasilkan 6-8 bullet points terpenting agar hemat ruang.
+
+MEMORI LAMA:
+{$currentMemory}
+
+PERCAKAPAN TERBARU:
+{$chatSegment}
+
+Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia. Jangan sertakan kalimat pembuka, penutup, atau tanda markdown code block.";
+
+        try {
+            $updatedMemory = trim($this->sendText($prompt, 1000, null, 'chat'));
+
+            if (filled($updatedMemory) && !str_contains($updatedMemory, 'AI belum memberikan jawaban')) {
+                if ($memoryRecord) {
+                    $memoryRecord->update(['content' => $updatedMemory]);
+                } else {
+                    \App\Models\AiMemory::create([
+                        'user_id' => $user->id,
+                        'document_id' => $documentId,
+                        'folder_id' => $folderId,
+                        'content' => $updatedMemory,
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     private function chatContext(Document|DocumentFolder $document, string $question): string
     {
         if ($document instanceof Document) {
-            return $this->relevantContext($document->extracted_text ?: '', $question, 3600);
+            $text = $document->extracted_text ?: '';
+            if (mb_strlen($text) < 120000) {
+                return $text !== '' ? $text : 'Materi dokumen belum memiliki teks yang berhasil diekstrak.';
+            }
+            return $this->relevantContext($text, $question, 40000);
+        }
+
+        $combinedText = $document->combinedExtractedText();
+        if (mb_strlen($combinedText) < 120000) {
+            return $combinedText !== '' ? $combinedText : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
         }
 
         $sections = $document->documentsForPrompt()
             ->filter(fn (Document $item) => filled($item->extracted_text))
             ->map(function (Document $item) use ($question) {
-                $context = $this->relevantContext($item->extracted_text ?: '', $question, 900);
+                $context = $this->relevantContext($item->extracted_text ?: '', $question, 10000);
 
                 return "### {$item->title}\n{$context}";
             })
             ->implode("\n\n");
 
         return $sections !== ''
-            ? Str::limit($sections, 4200)
+            ? Str::limit($sections, 45000)
             : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
     }
 

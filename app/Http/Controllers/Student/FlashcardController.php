@@ -18,27 +18,73 @@ class FlashcardController extends Controller
 {
     public function store(Document $document, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
     {
-        abort_if($document->user_id !== auth()->id(), 403);
+        $room = null;
+        if (request()->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', request('room'))->first();
+        }
+
+        $isAuthorized = false;
+        if ($document->user_id === auth()->id()) {
+            $isAuthorized = true;
+        } elseif ($room) {
+            $isAuthorized = $room->host_id === auth()->id() || $room->users()->where('users.id', auth()->id())->exists();
+        }
+
+        abort_if(! $isAuthorized, 403);
 
         GenerateFlashcardsJob::dispatch('document', $document->id, auth()->id());
         $logger->log('queue_flashcards', $document);
 
-        return redirect()->route('flashcards.index', $document)->with('status', 'Kartu belajar selesai diproses.');
+        $redirectUrl = route('flashcards.index', $document);
+        if ($room) {
+            $redirectUrl .= '?room=' . $room->uuid;
+        }
+
+        return redirect($redirectUrl)->with('status', 'Kartu belajar selesai diproses.');
     }
 
     public function storeFolder(DocumentFolder $folder, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
     {
-        abort_if($folder->user_id !== auth()->id(), 403);
+        $room = null;
+        if (request()->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', request('room'))->first();
+        }
+
+        $isAuthorized = false;
+        if ($folder->user_id === auth()->id()) {
+            $isAuthorized = true;
+        } elseif ($room) {
+            $isAuthorized = $room->host_id === auth()->id() || $room->users()->where('users.id', auth()->id())->exists();
+        }
+
+        abort_if(! $isAuthorized, 403);
 
         GenerateFlashcardsJob::dispatch('folder', $folder->id, auth()->id());
         $logger->log('queue_folder_flashcards', $folder);
 
-        return redirect()->route('folders.flashcards.index', $folder)->with('status', 'Kartu belajar folder selesai diproses.');
+        $redirectUrl = route('folders.flashcards.index', $folder);
+        if ($room) {
+            $redirectUrl .= '?room=' . $room->uuid;
+        }
+
+        return redirect($redirectUrl)->with('status', 'Kartu belajar folder selesai diproses.');
     }
 
     public function index(Document $document, LearningSourceService $sources)
     {
-        abort_if($document->user_id !== auth()->id(), 403);
+        $room = null;
+        if (request()->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', request('room'))->first();
+        }
+
+        $isAuthorized = false;
+        if ($document->user_id === auth()->id()) {
+            $isAuthorized = true;
+        } elseif ($room) {
+            $isAuthorized = $room->host_id === auth()->id() || $room->users()->where('users.id', auth()->id())->exists();
+        }
+
+        abort_if(! $isAuthorized, 403);
 
         $flashcards = $document->flashcards()
             ->orderByRaw("FIELD(study_status, 'sulit', 'ulang', 'baru', 'paham')")
@@ -52,12 +98,25 @@ class FlashcardController extends Controller
             'folder' => null,
             'flashcards' => $flashcards,
             'stats' => $this->studyStats($document->flashcards()),
+            'room' => $room,
         ]);
     }
 
     public function indexFolder(DocumentFolder $folder, LearningSourceService $sources)
     {
-        abort_if($folder->user_id !== auth()->id(), 403);
+        $room = null;
+        if (request()->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', request('room'))->first();
+        }
+
+        $isAuthorized = false;
+        if ($folder->user_id === auth()->id()) {
+            $isAuthorized = true;
+        } elseif ($room) {
+            $isAuthorized = $room->host_id === auth()->id() || $room->users()->where('users.id', auth()->id())->exists();
+        }
+
+        abort_if(! $isAuthorized, 403);
 
         $flashcards = $folder->flashcards()
             ->orderByRaw("FIELD(study_status, 'sulit', 'ulang', 'baru', 'paham')")
@@ -71,12 +130,35 @@ class FlashcardController extends Controller
             'folder' => $folder,
             'flashcards' => $flashcards,
             'stats' => $this->studyStats($folder->flashcards()),
+            'room' => $room,
         ]);
     }
 
     public function review(Request $request, Flashcard $flashcard, ActivityLogger $logger)
     {
-        abort_if($flashcard->user_id !== auth()->id(), 403);
+        $isAuthorized = false;
+        if ($flashcard->user_id === auth()->id()) {
+            $isAuthorized = true;
+        } else {
+            $targetType = $flashcard->document_id ? \App\Models\Document::class : \App\Models\DocumentFolder::class;
+            $targetId = $flashcard->document_id ?: $flashcard->folder_id;
+            
+            $room = \App\Models\StudyRoom::where('target_type', $targetType)
+                ->where('target_id', $targetId)
+                ->where('status', 'active')
+                ->where(function($q) {
+                    $q->where('host_id', auth()->id())
+                      ->orWhereHas('users', function($uq) {
+                          $uq->where('users.id', auth()->id());
+                      });
+                })
+                ->exists();
+            if ($room) {
+                $isAuthorized = true;
+            }
+        }
+
+        abort_if(! $isAuthorized, 403);
 
         $data = $request->validate([
             'study_status' => ['required', 'in:paham,ulang,sulit'],

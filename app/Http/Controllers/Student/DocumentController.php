@@ -160,23 +160,26 @@ class DocumentController extends Controller
 
         return redirect()->route('documents.index')->with('status', $documents->count().' dokumen berhasil diunggah.');
     }
-
     public function show(Document $document)
     {
         $this->authorizeOwner($document);
 
         return view('student.documents.show', [
             'document' => $document
-                ->loadCount(['summaries', 'flashcards', 'quizzes', 'chatSessions'])
+                ->loadCount([
+                    'summaries',
+                    'flashcards',
+                    'quizzes' => fn ($query) => $query->whereNull('study_room_id'),
+                    'chatSessions'
+                ])
                 ->load([
                     'summaries' => fn ($query) => $query->latest()->take(5),
-                    'quizzes' => fn ($query) => $query->latest()->take(5),
+                    'quizzes' => fn ($query) => $query->whereNull('study_room_id')->latest()->take(5),
                     'chatSessions' => fn ($query) => $query->latest()->take(5),
                     'notes' => fn ($query) => $query->where('user_id', auth()->id())->latest()->take(1),
                 ]),
         ]);
     }
-
     public function download(Document $document)
     {
         $this->authorizeOwner($document);

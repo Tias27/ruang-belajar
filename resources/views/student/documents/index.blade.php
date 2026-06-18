@@ -167,21 +167,30 @@
                         @endif
                     @else
                         <!-- Normal Mode Folder Card -->
-                        <a href="{{ route('folders.show', $folder) }}" class="group flex flex-col justify-between rounded-[1.25rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:border-accent-200 hover:shadow-md relative overflow-hidden">
+                        <div class="group flex flex-col justify-between rounded-[1.25rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:border-accent-200 hover:shadow-md relative overflow-hidden">
                             <div class="absolute right-0 top-0 h-24 w-24 -translate-y-6 translate-x-6 rounded-full bg-accent-50/50 transition-transform group-hover:scale-125"></div>
                             <div class="relative flex items-center gap-4">
                                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-accent-50 to-accent-100 text-accent-700 shadow-sm transition-colors group-hover:from-accent-100 group-hover:to-accent-200">
                                     <i data-lucide="folder" class="h-5 w-5"></i>
                                 </div>
                                 <div class="min-w-0 flex-1 pr-8">
-                                    <h3 class="block truncate text-[15px] font-bold text-slate-900 group-hover:text-accent-800 transition-colors">{{ $folder->name }}</h3>
+                                    <a href="{{ route('folders.show', $folder) }}" class="block truncate text-[15px] font-bold text-slate-900 hover:text-accent-800 transition-colors">{{ $folder->name }}</a>
                                     <p class="mt-0.5 text-xs text-slate-500">{{ $folder->documents_count }} file dalam folder</p>
                                 </div>
                             </div>
-                            <div class="absolute right-4 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-all group-hover:bg-accent-600 group-hover:text-white group-hover:shadow-sm group-hover:scale-110">
-                                <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                            
+                            <!-- Action buttons for folder -->
+                            <div class="relative mt-4 pt-3 border-t border-slate-50 flex items-center justify-between z-10">
+                                <form method="POST" action="{{ route('folders.study-rooms.store', $folder) }}">@csrf
+                                    <button class="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-accent-50 px-3 text-[11px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white">
+                                        <i data-lucide="users" class="h-3.5 w-3.5"></i> Belajar Bareng
+                                    </button>
+                                </form>
+                                <a href="{{ route('folders.show', $folder) }}" class="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-slate-100 px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-200 transition">
+                                    Detail <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
+                                </a>
                             </div>
-                        </a>
+                        </div>
                     @endif
                 @endforeach
             </div>
@@ -363,6 +372,11 @@
                             <form method="POST" action="{{ route('chat.create', $document) }}">@csrf
                                 <button class="flex h-9 items-center justify-center gap-2 rounded-xl bg-campus-50 px-4 text-[12px] font-bold text-campus-700 shadow-sm transition-colors hover:bg-campus-600 hover:text-white">
                                     <i data-lucide="messages-square" class="h-4 w-4"></i> Tanya AI
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('documents.study-rooms.store', $document) }}">@csrf
+                                <button class="flex h-9 items-center justify-center gap-2 rounded-xl bg-accent-50 px-4 text-[12px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white">
+                                    <i data-lucide="users" class="h-4 w-4"></i> Belajar Bareng
                                 </button>
                             </form>
                             <form method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="loading=true">@csrf

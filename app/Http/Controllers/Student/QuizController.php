@@ -21,9 +21,18 @@ class QuizController extends Controller
         abort_if($document->user_id !== auth()->id(), 403);
         [$questionType, $questionCount] = $this->quizOptions(request());
 
+        $studyRoomId = null;
+        if (request()->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', request('room'))->first();
+            if ($room) {
+                $studyRoomId = $room->id;
+            }
+        }
+
         $quiz = Quiz::create([
             'document_id' => $document->id,
             'user_id' => auth()->id(),
+            'study_room_id' => $studyRoomId,
             'title' => $this->quizTitle('Latihan', $questionType, $document->title),
             'question_type' => $questionType,
             'question_count' => $questionCount,
@@ -33,7 +42,12 @@ class QuizController extends Controller
         GenerateQuizJob::dispatch($quiz->id);
         $logger->log('queue_quiz', $quiz, ['document_id' => $document->id]);
 
-        return redirect()->route('quizzes.show', $quiz)->with('status', 'Soal selesai diproses.');
+        $redirectUrl = route('quizzes.show', $quiz);
+        if (request()->has('room')) {
+            $redirectUrl .= '?room=' . request('room');
+        }
+
+        return redirect($redirectUrl)->with('status', 'Soal selesai diproses.');
     }
 
     public function storeFolder(DocumentFolder $folder, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
@@ -41,9 +55,18 @@ class QuizController extends Controller
         abort_if($folder->user_id !== auth()->id(), 403);
         [$questionType, $questionCount] = $this->quizOptions(request());
 
+        $studyRoomId = null;
+        if (request()->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', request('room'))->first();
+            if ($room) {
+                $studyRoomId = $room->id;
+            }
+        }
+
         $quiz = Quiz::create([
             'folder_id' => $folder->id,
             'user_id' => auth()->id(),
+            'study_room_id' => $studyRoomId,
             'title' => $this->quizTitle('Latihan Folder', $questionType, $folder->name),
             'question_type' => $questionType,
             'question_count' => $questionCount,
@@ -53,22 +76,86 @@ class QuizController extends Controller
         GenerateQuizJob::dispatch($quiz->id);
         $logger->log('queue_folder_quiz', $quiz, ['folder_id' => $folder->id]);
 
-        return redirect()->route('quizzes.show', $quiz)->with('status', 'Soal folder selesai diproses.');
+        $redirectUrl = route('quizzes.show', $quiz);
+        if (request()->has('room')) {
+            $redirectUrl .= '?room=' . request('room');
+        }
+
+        return redirect($redirectUrl)->with('status', 'Soal folder selesai diproses.');
     }
 
     public function show(Quiz $quiz)
     {
-        abort_if($quiz->user_id !== auth()->id(), 403);
+        $room = null;
+        if (request()->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', request('room'))->first();
+        }
+
+        $isAuthorized = false;
+        if ($quiz->user_id === auth()->id()) {
+            $isAuthorized = true;
+        } elseif ($room) {
+            $isAuthorized = $room->host_id === auth()->id() || $room->users()->where('users.id', auth()->id())->exists();
+        }
+
+        abort_if(! $isAuthorized, 403);
+
+        $latestAttempt = null;
+        if (! request()->has('retake')) {
+            if ($room) {
+                $latestAttempt = $quiz->attempts()
+                    ->where('user_id', auth()->id())
+                    ->where('created_at', '>=', $room->created_at)
+                    ->latest()
+                    ->first();
+            } else {
+                $latestAttempt = $quiz->attempts()->where('user_id', auth()->id())->latest()->first();
+            }
+        }
+
+        $roomMembersAttempts = [];
+        if ($room) {
+            $members = collect([$room->host])->concat($room->users)->filter();
+            
+            $roomMembersAttempts = $members->map(function ($member) use ($quiz, $room) {
+                $latest = $quiz->attempts()
+                    ->where('user_id', $member->id)
+                    ->where('created_at', '>=', $room->created_at)
+                    ->latest()
+                    ->first();
+                
+                return [
+                    'user' => $member,
+                    'attempt' => $latest,
+                ];
+            })->sortByDesc(function ($item) {
+                return $item['attempt']?->score ?? -1;
+            });
+        }
 
         return view('student.quizzes.show', [
             'quiz' => $quiz->load('document', 'folder', 'questions'),
-            'latestAttempt' => $quiz->attempts()->where('user_id', auth()->id())->latest()->first(),
+            'latestAttempt' => $latestAttempt,
+            'room' => $room,
+            'roomMembersAttempts' => $roomMembersAttempts,
         ]);
     }
 
     public function storeAttempt(Request $request, Quiz $quiz, GeminiService $gemini, ActivityLogger $logger)
     {
-        abort_if($quiz->user_id !== auth()->id(), 403);
+        $room = null;
+        if ($request->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', $request->query('room'))->first();
+        }
+
+        $isAuthorized = false;
+        if ($quiz->user_id === auth()->id()) {
+            $isAuthorized = true;
+        } elseif ($room) {
+            $isAuthorized = $room->host_id === auth()->id() || $room->users()->where('users.id', auth()->id())->exists();
+        }
+
+        abort_if(! $isAuthorized, 403);
 
         $data = $request->validate([
             'answers' => ['required', 'array'],
@@ -104,11 +191,16 @@ class QuizController extends Controller
 
         $logger->log('submit_quiz_attempt', $attempt, ['quiz_id' => $quiz->id, 'score' => $score, 'total' => $attempt->total]);
 
-        if ($quiz->question_type === 'essay') {
-            return redirect()->route('quizzes.show', $quiz)->with('status', 'Jawaban esai sudah dinilai. Skor kamu '.$score.'/'.$attempt->total.'.');
+        $redirectUrl = route('quizzes.show', $quiz);
+        if ($room) {
+            $redirectUrl .= '?room=' . $room->uuid;
         }
 
-        return redirect()->route('quizzes.show', $quiz)->with('status', 'Jawaban dikoreksi. Skor kamu '.$score.'/'.$attempt->total.'.');
+        if ($quiz->question_type === 'essay') {
+            return redirect($redirectUrl)->with('status', 'Jawaban esai sudah dinilai. Skor kamu '.$score.'/'.$attempt->total.'.');
+        }
+
+        return redirect($redirectUrl)->with('status', 'Jawaban dikoreksi. Skor kamu '.$score.'/'.$attempt->total.'.');
     }
 
     private function isCorrectAnswer(string $selected, string $correctAnswer, array $options): bool

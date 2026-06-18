@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id">
+<html lang="id" class="h-full">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,6 +41,23 @@
             }
         });
     </script>
+
+    <!-- Pusher & Echo CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pusher/8.3.0/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.0/dist/echo.iife.js"></script>
+    <script>
+        window.Pusher = Pusher;
+        window.Echo = new Echo({
+            broadcaster: 'reverb',
+            key: '{{ config('broadcasting.connections.reverb.key') }}',
+            wsHost: window.location.hostname,
+            wsPort: {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
+            wssPort: {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
+            forceTLS: {{ config('broadcasting.connections.reverb.options.scheme') === 'https' ? 'true' : 'false' }},
+            enabledTransports: ['ws', 'wss'],
+        });
+    </script>
+
     <style>
         [x-cloak]{display:none!important}
         input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
@@ -85,7 +102,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-[#f8fbff] text-slate-900 antialiased overflow-x-hidden flex flex-col" x-data="{mobileNav:false}">
+<body class="bg-[#f8fbff] text-slate-900 antialiased overflow-x-hidden flex flex-col {{ request()->routeIs('chat.show', 'chat.show.legacy', 'study-rooms.show') ? 'h-screen overflow-hidden' : 'min-h-screen' }}" x-data="{mobileNav:false}">
     @auth
         @php
             $isAdmin = auth()->user()->isAdmin();
@@ -109,6 +126,7 @@
                     <x-nav-link href="{{ route('student.guide') }}" icon="map" label="Panduan" :active="request()->routeIs('student.guide')" />
                     <x-nav-link href="{{ route('documents.index') }}" icon="library" label="Materi Saya" :active="request()->routeIs('documents.index', 'documents.show', 'folders.*', 'summaries.*', 'quizzes.*', 'flashcards.*')" />
                     <x-nav-link href="{{ route('chat.index') }}" icon="messages-square" label="Riwayat AI" :active="request()->routeIs('chat.*')" />
+                    <x-nav-link href="{{ route('study-rooms.index') }}" icon="users" label="Belajar Bareng" :active="request()->routeIs('study-rooms.index', 'study-rooms.show')" />
                     <x-nav-link href="{{ route('documents.create') }}" icon="folder-plus" label="Upload Materi" :active="request()->routeIs('documents.create')" />
                 @endif
                 <x-nav-link href="{{ route('profile.edit') }}" icon="user-round" label="{{ $isAdmin ? 'Profil' : 'Akun Saya' }}" :active="request()->routeIs('profile.*')" />
@@ -156,6 +174,7 @@
                         <x-nav-link href="{{ route('student.guide') }}" icon="map" label="Panduan" :active="request()->routeIs('student.guide')" />
                         <x-nav-link href="{{ route('documents.index') }}" icon="library" label="Materi Saya" :active="request()->routeIs('documents.index', 'documents.show', 'folders.*', 'summaries.*', 'quizzes.*', 'flashcards.*')" />
                         <x-nav-link href="{{ route('chat.index') }}" icon="messages-square" label="Riwayat AI" :active="request()->routeIs('chat.*')" />
+                        <x-nav-link href="{{ route('study-rooms.index') }}" icon="users" label="Belajar Bareng" :active="request()->routeIs('study-rooms.index', 'study-rooms.show')" />
                         <x-nav-link href="{{ route('documents.create') }}" icon="folder-plus" label="Upload Materi" :active="request()->routeIs('documents.create')" />
                     @endif
                     <x-nav-link href="{{ route('profile.edit') }}" icon="user-round" label="{{ $isAdmin ? 'Profil' : 'Akun Saya' }}" :active="request()->routeIs('profile.*')" />
@@ -163,8 +182,8 @@
             </div>
         </header>
     @endauth
-    <main class="@auth lg:ml-64 @endauth flex flex-col flex-1">
-        <div class="{{ request()->routeIs('chat.show') ? 'flex flex-col flex-1 h-full' : 'mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 w-full' }}">
+    <main class="@auth lg:ml-64 @endauth flex flex-col flex-1 {{ request()->routeIs('chat.show', 'chat.show.legacy', 'study-rooms.show') ? 'min-h-0 overflow-hidden' : '' }}">
+        <div class="{{ request()->routeIs('chat.show', 'chat.show.legacy', 'study-rooms.show') ? 'flex flex-col flex-1 h-full min-h-0 overflow-hidden' : 'mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 w-full' }}">
             @if(session('status'))
                 <div class="mb-5 flex items-start gap-3 rounded-[1.25rem] border border-emerald-100 bg-emerald-50 px-4 py-4 text-sm text-emerald-900 shadow-sm sm:px-5">
                     <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-emerald-700 shadow-sm">
@@ -183,7 +202,7 @@
                 </div>
             @endif
             {{ $slot }}
-            @unless(request()->routeIs('chat.show'))
+            @unless(request()->routeIs('chat.show', 'chat.show.legacy', 'study-rooms.show'))
             <footer class="mt-8 pb-2 text-center text-xs text-slate-400">
                 <span>Ruang Belajar by Yasti 2026</span>
             </footer>
@@ -197,7 +216,7 @@
                 $guideOnCreate = request()->routeIs('documents.create');
                 $guideOnGuide = request()->routeIs('student.guide');
                 $guideOnMaterial = request()->routeIs('documents.show', 'folders.show');
-                $guideOnChat = request()->routeIs('chat.show');
+                $guideOnChat = request()->routeIs('chat.show', 'chat.show.legacy', 'study-rooms.show');
             @endphp
             @unless($guideOnGuide || $guideOnChat)
                 <div

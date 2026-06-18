@@ -6,11 +6,17 @@
         $isEssay = $quiz->question_type === 'essay';
     @endphp
 
-    <div class="min-w-0 overflow-x-hidden">
+    <div class="min-w-0 overflow-x-hidden" x-data="{ showQuestions: {{ ($latestAttempt && $room) ? 'false' : 'true' }} }">
         <section class="overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-campus-50 to-white p-5 sm:p-8 shadow-sm border border-campus-100 relative">
-            <a class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-campus-700 shadow-sm border border-slate-100 transition-colors hover:bg-campus-100" href="{{ $quiz->folder ? route('folders.show', $quiz->folder) : route('documents.show', $quiz->document) }}">
-                <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke {{ $quiz->folder ? 'folder' : 'materi' }}
-            </a>
+            @if(isset($room) && $room)
+                <a class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-campus-700 shadow-sm border border-slate-100 transition-colors hover:bg-campus-100" href="{{ route('study-rooms.show', $room) }}">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke Room Belajar Bareng
+                </a>
+            @else
+                <a class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-campus-700 shadow-sm border border-slate-100 transition-colors hover:bg-campus-100" href="{{ $quiz->folder ? route('folders.show', $quiz->folder) : route('documents.show', $quiz->document) }}">
+                    <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke {{ $quiz->folder ? 'folder' : 'materi' }}
+                </a>
+            @endif
 
             <div class="mt-5 flex min-w-0 flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div class="min-w-0">
@@ -40,6 +46,91 @@
             @endif
         </section>
 
+        @if($latestAttempt && isset($room) && $room)
+            <!-- Leaderboard / Skor Akhir Sesi -->
+            <section class="mt-5 rounded-[2rem] bg-white border border-slate-200/80 p-6 sm:p-8 shadow-md relative overflow-hidden">
+                <div class="absolute right-0 top-0 transform translate-x-8 -translate-y-8 opacity-[0.03] pointer-events-none">
+                    <i data-lucide="award" class="w-64 h-64 text-campus-700"></i>
+                </div>
+
+                <div class="text-center max-w-xl mx-auto mb-8">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-100 px-3 py-1 text-xs font-bold text-amber-700 shadow-sm mb-3">
+                        <i data-lucide="trophy" class="h-3.5 w-3.5"></i>
+                        Sesi Belajar Bareng Selesai
+                    </span>
+                    <h2 class="text-2xl font-black text-slate-800 tracking-tight sm:text-3xl">Peringkat & Skor Akhir</h2>
+                    <p class="text-sm text-slate-500 mt-2">Hebat! Kamu dan teman-temanmu telah menyelesaikan kuis ini. Berikut adalah daftar skor tertinggi di room ini.</p>
+                </div>
+
+                <!-- Leaderboard Grid list -->
+                <div class="max-w-2xl mx-auto space-y-3">
+                    @foreach($roomMembersAttempts as $rankIndex => $item)
+                        @php
+                            $member = $item['user'];
+                            $attempt = $item['attempt'];
+                            $isMe = $member->id === auth()->id();
+                            $isHost = $member->id === $room->host_id;
+                            $rank = $rankIndex + 1;
+                        @endphp
+                        <div class="relative flex items-center justify-between p-4 rounded-2xl border transition duration-200 {{ $isMe ? 'bg-campus-50/50 border-campus-200 shadow-sm ring-2 ring-campus-100' : 'bg-slate-50/40 border-slate-100 hover:bg-slate-50' }}">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <!-- Rank Badge / Icon -->
+                                <div class="shrink-0 flex items-center justify-center h-8 w-8 rounded-full font-black text-sm
+                                    {{ $rank === 1 ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-300 shadow-sm' : 
+                                       ($rank === 2 ? 'bg-slate-200 text-slate-700 ring-2 ring-slate-300 shadow-sm' : 
+                                       ($rank === 3 ? 'bg-orange-100 text-orange-700 ring-2 ring-orange-200 shadow-sm' : 'bg-slate-100 text-slate-500')) }}">
+                                    @if($rank === 1)
+                                        <i data-lucide="crown" class="h-4 w-4"></i>
+                                    @else
+                                        {{ $rank }}
+                                    @endif
+                                </div>
+
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($member->name) }}&background={{ $isHost ? '1456a3' : '7c5cff' }}&color=fff" 
+                                     class="h-10 w-10 rounded-full shadow-sm shrink-0" 
+                                     alt="{{ $member->name }}">
+                                <div class="min-w-0">
+                                    <span class="block text-sm font-extrabold text-slate-700 truncate leading-tight flex items-center gap-1.5">
+                                        {{ $member->name }}
+                                        @if($isMe)
+                                            <span class="text-[9px] font-bold bg-campus-600 text-white px-2 py-0.5 rounded-full">Saya</span>
+                                        @endif
+                                    </span>
+                                    <span class="block text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                                        {{ $isHost ? 'Host / Pembuat' : 'Peserta' }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-right shrink-0">
+                                @if($attempt)
+                                    <span class="text-base font-black text-campus-700 bg-white border border-slate-200/80 px-3.5 py-1.5 rounded-2xl shadow-sm">
+                                        {{ $attempt->score }}<span class="text-xs text-slate-400 font-semibold">/{{ $attempt->total }}</span>
+                                    </span>
+                                    <span class="block text-[10px] text-slate-400 mt-1.5 font-medium">{{ $attempt->submitted_at->diffForHumans() }}</span>
+                                @else
+                                    <span class="text-xs font-semibold text-slate-400 italic">Belum mengerjakan</span>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- Action buttons below leaderboard -->
+                <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 border-t border-slate-100 pt-6">
+                    <a href="{{ route('study-rooms.show', $room) }}" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-900 hover:bg-slate-800 text-[14px] font-bold text-white px-6 shadow-md shadow-black/10 transition-all hover:-translate-y-0.5 w-full sm:w-auto">
+                        <i data-lucide="arrow-left" class="h-4.5 w-4.5"></i>
+                        Kembali ke Room Belajar
+                    </a>
+                    
+                    <button type="button" @click="showQuestions = !showQuestions" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-campus-50 hover:bg-campus-100 text-[14px] font-bold text-campus-700 px-6 border border-campus-100 shadow-sm transition-all hover:-translate-y-0.5 w-full sm:w-auto">
+                        <i data-lucide="list-checks" class="h-4.5 w-4.5"></i>
+                        <span x-text="showQuestions ? 'Sembunyikan Pembahasan Soal' : 'Lihat Pembahasan & Jawaban Saya'"></span>
+                    </button>
+                </div>
+            </section>
+        @endif
+
         @if($quiz->status === 'processing')
             <section class="mt-5 rounded-[1.5rem] bg-white p-5 text-center shadow-sm">
                 <script>
@@ -56,12 +147,16 @@
                     <i data-lucide="alert-circle" class="h-5 w-5"></i>
                 </span>
                 <h2 class="mt-4 text-lg font-semibold text-campus-900">Soal belum berhasil dibuat</h2>
-                <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">Layanan AI belum berhasil merespons. Kembali ke materi lalu coba buat soal lagi.</p>
-                <a href="{{ $quiz->folder ? route('folders.show', $quiz->folder) : route('documents.show', $quiz->document) }}" class="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-campus-700 px-5 text-sm font-semibold text-white">Kembali ke materi</a>
+                <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">Layanan AI belum berhasil merespons. Kembali ke room belajar atau materi untuk mencoba lagi.</p>
+                @if(isset($room) && $room)
+                    <a href="{{ route('study-rooms.show', $room) }}" class="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-campus-700 px-5 text-sm font-semibold text-white">Kembali ke Room Belajar</a>
+                @else
+                    <a href="{{ $quiz->folder ? route('folders.show', $quiz->folder) : route('documents.show', $quiz->document) }}" class="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-campus-700 px-5 text-sm font-semibold text-white">Kembali ke materi</a>
+                @endif
             </section>
         @else
 
-        <form method="POST" action="{{ route('quizzes.attempts.store', $quiz) }}" class="mt-5 space-y-4">
+        <form x-show="showQuestions" method="POST" action="{{ route('quizzes.attempts.store', $quiz) }}{{ request()->has('room') ? '?room=' . request('room') : '' }}" class="mt-5 space-y-4">
             @csrf
             @foreach($quiz->questions as $question)
                 @php
@@ -185,10 +280,30 @@
             @endforeach
 
             <div class="sticky bottom-6 z-10 flex justify-center mt-8">
-                <button class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-700 px-8 text-[15px] font-bold text-white shadow-xl shadow-campus-700/30 ring-1 ring-white/20 transition-all hover:-translate-y-1 hover:bg-campus-800 hover:shadow-campus-700/40 w-full sm:w-auto">
-                    <i data-lucide="check-circle" class="h-5 w-5"></i>
-                    {{ $latestAttempt ? 'Kerjakan Ulang' : ($isEssay ? 'Simpan Jawaban Esai' : 'Koreksi Jawaban Saya') }}
-                </button>
+                @if($latestAttempt)
+                    @if(isset($room) && $room)
+                        <div class="flex flex-wrap gap-3 justify-center">
+                            <a href="{{ route('study-rooms.show', $room) }}" class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-slate-900 px-8 text-[15px] font-bold text-white shadow-xl shadow-black/10 transition-all hover:-translate-y-1 hover:bg-slate-800 w-full sm:w-auto">
+                                <i data-lucide="arrow-left" class="h-5 w-5"></i>
+                                Kembali ke Room Belajar
+                            </a>
+                            <button type="button" @click="showQuestions = false; window.scrollTo({top: 0, behavior: 'smooth'})" class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-50 border border-campus-100 px-8 text-[15px] font-bold text-campus-700 shadow-xl shadow-campus-700/5 transition-all hover:-translate-y-1 hover:bg-campus-100 w-full sm:w-auto">
+                                <i data-lucide="award" class="h-5 w-5"></i>
+                                Kembali ke Skor Akhir
+                            </button>
+                        </div>
+                    @else
+                        <a href="{{ route('quizzes.show', $quiz) }}?retake=true" class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-700 px-8 text-[15px] font-bold text-white shadow-xl shadow-campus-700/30 ring-1 ring-white/20 transition-all hover:-translate-y-1 hover:bg-campus-800 hover:shadow-campus-700/40 w-full sm:w-auto">
+                            <i data-lucide="refresh-cw" class="h-5 w-5"></i>
+                            Kerjakan Ulang
+                        </a>
+                    @endif
+                @else
+                    <button class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-700 px-8 text-[15px] font-bold text-white shadow-xl shadow-campus-700/30 ring-1 ring-white/20 transition-all hover:-translate-y-1 hover:bg-campus-800 hover:shadow-campus-700/40 w-full sm:w-auto">
+                        <i data-lucide="check-circle" class="h-5 w-5"></i>
+                        {{ $isEssay ? 'Simpan Jawaban Esai' : 'Koreksi Jawaban Saya' }}
+                    </button>
+                @endif
             </div>
         </form>
         @endif

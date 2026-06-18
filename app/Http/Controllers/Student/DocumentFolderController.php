@@ -20,17 +20,22 @@ class DocumentFolderController extends Controller
 
         return view('student.folders.show', [
             'folder' => $folder
-                ->loadCount(['documents', 'summaries', 'flashcards', 'quizzes', 'chatSessions'])
+                ->loadCount([
+                    'documents',
+                    'summaries',
+                    'flashcards',
+                    'quizzes' => fn ($query) => $query->whereNull('study_room_id'),
+                    'chatSessions'
+                ])
                 ->load([
                     'documents' => fn ($query) => $query->oldest(),
                     'summaries' => fn ($query) => $query->latest()->take(5),
-                    'quizzes' => fn ($query) => $query->latest()->take(5),
+                    'quizzes' => fn ($query) => $query->whereNull('study_room_id')->latest()->take(5),
                     'chatSessions' => fn ($query) => $query->latest()->take(5),
                     'notes' => fn ($query) => $query->where('user_id', auth()->id())->latest()->take(1),
                 ]),
         ]);
     }
-
     public function storeDocuments(Request $request, DocumentFolder $folder, DocumentTextExtractor $extractor, ActivityLogger $logger)
     {
         $this->authorizeOwner($folder);

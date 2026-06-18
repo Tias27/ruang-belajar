@@ -10,7 +10,12 @@ class Quiz extends Model
 {
     use HasFactory, HasPublicId;
 
-    protected $fillable = ['document_id', 'folder_id', 'user_id', 'title', 'question_type', 'question_count', 'status', 'generation_error'];
+    protected $fillable = ['document_id', 'folder_id', 'user_id', 'study_room_id', 'title', 'question_type', 'question_count', 'status', 'generation_error'];
+
+    public function studyRoom()
+    {
+        return $this->belongsTo(StudyRoom::class, 'study_room_id');
+    }
 
     public function document()
     {

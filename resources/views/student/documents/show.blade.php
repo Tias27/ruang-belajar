@@ -36,7 +36,7 @@
                 </div>
             </div>
 
-            <div class="mt-6 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="mt-6 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <form method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
                     @csrf
                     <button x-bind:disabled="aiBusy || loading" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
@@ -96,6 +96,17 @@
                         <span x-show="!loading" class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-accent-50 text-accent-700"><i data-lucide="copy-check" class="h-5 w-5"></i></span>
                         <span x-show="loading" x-cloak class="h-10 w-10 shrink-0 animate-spin rounded-full border-2 border-campus-100 border-t-campus-700"></span>
                         <span class="min-w-0"><span class="block truncate text-sm font-semibold text-slate-900" x-text="loading ? 'Membuat kartu...' : 'Kartu belajar'"></span><span class="mt-1 block text-xs leading-5 text-slate-500">Flashcard singkat.</span></span>
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ route('documents.study-rooms.store', $document) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true" class="min-w-0">
+                    @csrf
+                    <button x-bind:disabled="aiBusy" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
+                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-accent-50 text-accent-700"><i data-lucide="users" class="h-5 w-5"></i></span>
+                        <span class="min-w-0">
+                            <span class="block truncate text-sm font-semibold text-slate-900">Belajar bareng</span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500">Mulai room real-time.</span>
+                        </span>
                     </button>
                 </form>
             </div>

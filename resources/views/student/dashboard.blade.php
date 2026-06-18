@@ -26,7 +26,7 @@
                 </div>
             </div>
 
-            <div class="min-w-0 overflow-hidden rounded-[1.5rem] bg-white p-4 shadow-sm">
+            <div class="min-w-0 overflow-hidden rounded-[1.5rem] bg-white p-4 shadow-sm flex flex-col gap-4">
                 <div class="grid grid-cols-2 gap-2">
                     @foreach([
                         ['label' => 'Materi', 'value' => $stats['materials'], 'icon' => 'library'],

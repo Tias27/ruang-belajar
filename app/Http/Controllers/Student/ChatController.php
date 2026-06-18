@@ -97,12 +97,25 @@ class ChatController extends Controller
         abort_if($session->user_id !== auth()->id(), 403);
 
         $data = $request->validate(['question' => ['required', 'string', 'max:2000']]);
+
+        // Fetch recent messages before saving the new one as chat history context
+        $history = $session->messages()
+            ->latest()
+            ->take(10)
+            ->get()
+            ->reverse()
+            ->map(fn($msg) => [
+                'role' => $msg->role,
+                'content' => $msg->content,
+            ])
+            ->all();
+
         $userMessage = $session->messages()->create(['role' => 'user', 'content' => $data['question']]);
 
         $source = $session->folder ?: $session->document;
 
         if ($request->header('Accept') === 'text/event-stream' || $request->expectsJson()) {
-            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger) {
+            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history) {
                 $session->update(['title' => Str::limit($data['question'], 70)]);
                 $logger->log('chat_document', $session, ['document_id' => $session->document_id, 'folder_id' => $session->folder_id]);
 
@@ -110,7 +123,7 @@ class ChatController extends Controller
                 $sourceSnippets = [];
 
                 try {
-                    $stream = $gemini->streamChat($source, $data['question']);
+                    $stream = $gemini->streamChat($source, $data['question'], $history);
                     foreach ($stream as $chunk) {
                         $fullAnswer .= $chunk;
                         echo "data: " . json_encode(['chunk' => $chunk]) . "\n\n";
@@ -136,6 +149,12 @@ class ChatController extends Controller
                     ],
                 ]);
 
+                // Dispatch job to consolidate long-term memory in the background
+                \App\Jobs\ConsolidateAiMemoryJob::dispatch($source, auth()->user(), [
+                    ['is_ai' => false, 'message' => $data['question']],
+                    ['is_ai' => true, 'message' => $fullAnswer],
+                ])->afterResponse();
+
                 echo "data: " . json_encode([
                     'done' => true,
                     'title' => $session->title,
@@ -157,14 +176,13 @@ class ChatController extends Controller
 
         // Fallback for non-AJAX / non-streaming requests
         try {
-            $answer = $gemini->chat($source, $data['question']);
+            $answer = $gemini->chat($source, $data['question'], $history);
             $sourceSnippets = $sources->snippetsFor($source, $data['question'].' '.$answer);
         } catch (Throwable $exception) {
             report($exception);
             $answer = $sources->fallbackAnswer($source, $data['question'], $exception->getMessage());
             $sourceSnippets = $sources->snippetsFor($source, $data['question']);
         }
-
         $session->messages()->create([
             'role' => 'assistant',
             'content' => $answer,
@@ -174,6 +192,12 @@ class ChatController extends Controller
         ]);
         $session->update(['title' => Str::limit($data['question'], 70)]);
         $logger->log('chat_document', $session, ['document_id' => $session->document_id, 'folder_id' => $session->folder_id]);
+
+        // Dispatch job to consolidate long-term memory in the background
+        \App\Jobs\ConsolidateAiMemoryJob::dispatch($source, auth()->user(), [
+            ['is_ai' => false, 'message' => $data['question']],
+            ['is_ai' => true, 'message' => $answer],
+        ])->afterResponse();
 
         return redirect()->route('chat.show', $session);
     }

@@ -16,6 +16,7 @@ use App\Http\Controllers\Student\FlashcardController;
 use App\Http\Controllers\Student\QuizController;
 use App\Http\Controllers\Student\StudyNoteController;
 use App\Http\Controllers\Student\SummaryController;
+use App\Http\Controllers\Student\StudyRoomController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -77,6 +78,17 @@ Route::middleware(['auth', 'role:mahasiswa'])->group(function () {
     Route::get('documents/{document}/flashcards', [FlashcardController::class, 'index'])->name('flashcards.index');
     Route::get('folders/{folder}/flashcards', [FlashcardController::class, 'indexFolder'])->name('folders.flashcards.index');
     Route::patch('flashcards/{flashcard}/review', [FlashcardController::class, 'review'])->name('flashcards.review');
+
+    // Study Room Routes
+    Route::get('study-rooms', [StudyRoomController::class, 'index'])->name('study-rooms.index');
+    Route::post('study-rooms', [StudyRoomController::class, 'store'])->name('study-rooms.store');
+    Route::post('documents/{document}/study-rooms', [StudyRoomController::class, 'storeDocument'])->name('documents.study-rooms.store');
+    Route::post('folders/{folder}/study-rooms', [StudyRoomController::class, 'storeFolder'])->name('folders.study-rooms.store');
+    Route::post('study-rooms/join', [StudyRoomController::class, 'join'])->name('study-rooms.join');
+    Route::get('study-rooms/{room}', [StudyRoomController::class, 'show'])->name('study-rooms.show');
+    Route::post('study-rooms/{room}/messages', [StudyRoomController::class, 'sendMessage'])->name('study-rooms.messages.store');
+    Route::get('study-rooms/{room}/messages', [StudyRoomController::class, 'getMessages'])->name('study-rooms.messages.index');
+    Route::post('study-rooms/{room}/close', [StudyRoomController::class, 'close'])->name('study-rooms.close');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
