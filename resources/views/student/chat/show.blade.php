@@ -234,10 +234,10 @@
         </section>
 
         <!-- Chat Canvas -->
-        <div class="flex-1 flex flex-col relative min-h-0">
+        <div class="flex-1 flex flex-col relative min-h-0 overflow-hidden">
             
             <!-- Messages Area -->
-            <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-40 pt-6 px-4 sm:px-6 lg:px-8" style="scroll-behavior: smooth;">
+            <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-44 pt-6 px-4 sm:px-6 lg:px-8" style="scroll-behavior: smooth;">
                 
                 <!-- Empty State / Welcome Message -->
                 <template x-if="messages.length === 0">
@@ -349,23 +349,23 @@
                     </div>
                 </div>
             </div>
-            <!-- Input Area -->
-            <div class="flex-none p-3 sm:p-4 bg-gradient-to-t from-[#f8fbff] to-transparent">
-                <form method="POST" action="{{ route('chat.store', $session) }}" @submit.prevent="sendQuestion()" class="flex w-full flex-col mx-auto max-w-3xl">
+            <!-- Input Area — floating at bottom like ChatGPT -->
+            <div class="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6 sm:px-4 sm:pb-4 lg:px-8 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
+                <form method="POST" action="{{ route('chat.store', $session) }}" @submit.prevent="sendQuestion()" class="flex w-full flex-col mx-auto max-w-3xl pointer-events-auto">
                     @csrf
-                    <div class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-lg shadow-black/5 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
+                    <div class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-xl shadow-black/8 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
                         <textarea 
                             x-ref="textarea"
                             x-model="question" 
                             name="question" 
                             rows="1"
-                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-5 pr-2 text-[15px] focus:ring-0" 
+                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-5 pr-2 text-[15px] focus:ring-0 focus:outline-none" 
                             placeholder="Tanya AI tentang materi ini..." 
                             @keydown.enter.prevent="if(!$event.shiftKey) sendQuestion()"
                             @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
                         ></textarea>
                         
-                        <button type="submit" :disabled="!question.trim() || sending" class="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
+                        <button type="submit" :disabled="!question.trim() || sending" class="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                             <i data-lucide="arrow-up" class="h-5 w-5"></i>
                             <span class="sr-only">Kirim</span>
                         </button>
