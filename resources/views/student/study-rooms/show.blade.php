@@ -421,6 +421,7 @@
                                 placeholder="Ketik pesan untuk didiskusikan..." 
                                 @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"
                                 @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
+                                style="border: none !important; background: transparent !important; box-shadow: none !important; outline: none !important; resize: none !important; overflow-y: hidden;"
                             ></textarea>
                             
                             <button type="submit" :disabled="!messageText.trim() || sending" class="group flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
