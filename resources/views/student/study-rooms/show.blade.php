@@ -45,14 +45,14 @@
                         })
                         .listen('.message.sent', (e) => {
                             // Only append if it's from another user or it's an AI message, and not already in the list
-                            if ((e.message.user_id !== this.userId || e.message.is_ai) && !this.messages.some(m => m.id === e.message.id)) {
+                            if ((parseInt(e.message.user_id) !== parseInt(this.userId) || e.message.is_ai) && !this.messages.some(m => m.id === e.message.id)) {
                                 this.messages.push({
                                     id: e.message.id,
                                     user_id: e.message.user_id,
                                     user_name: e.message.is_ai ? 'RuangBelajar AI' : (e.message.user ? e.message.user.name : 'Siswa'),
                                     message: e.message.message,
                                     is_ai: !!e.message.is_ai,
-                                    created_at: new Date(e.message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                                    created_at: this.formatTime(e.message.created_at),
                                 });
                                 this.scrollToBottom();
                             }
@@ -110,11 +110,26 @@
                     return this.onlineUsers.some(u => parseInt(u.id) === parseInt(userId));
                 },
                 
+                formatTime(dateVal) {
+                    if (!dateVal) return '';
+                    if (typeof dateVal === 'string' && /^\d{2}[:\.]\d{2}$/.test(dateVal)) {
+                        return dateVal.replace('.', ':');
+                    }
+                    try {
+                        const d = new Date(dateVal);
+                        if (isNaN(d.getTime())) return '';
+                        const hours = String(d.getHours()).padStart(2, '0');
+                        const minutes = String(d.getMinutes()).padStart(2, '0');
+                        return `${hours}:${minutes}`;
+                    } catch (e) {
+                        return '';
+                    }
+                },
+                
                 async sendMessage() {
                     const text = this.messageText.trim();
                     if (!text || this.sending) return;
-                    
-                    // Append message locally immediately to feel super snappy
+                                       // Append message locally immediately to feel super snappy
                     const tempId = 'temp-' + Date.now();
                     this.messages.push({
                         id: tempId,
@@ -122,7 +137,7 @@
                         user_name: 'Saya',
                         message: text,
                         is_ai: false,
-                        created_at: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                        created_at: this.formatTime(new Date()),
                     });
                     
                     this.messageText = '';
@@ -143,7 +158,7 @@
                         if (!response.ok) {
                             throw new Error('Gagal mengirim pesan.');
                         }
-
+ 
                         const data = await response.json();
                         if (data.status === 'success') {
                             // Replace the temp message with the actual saved user message to get the real database ID
@@ -153,9 +168,9 @@
                                 user_name: 'Saya',
                                 message: data.user_message.message,
                                 is_ai: false,
-                                created_at: new Date(data.user_message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                                created_at: this.formatTime(data.user_message.created_at),
                             } : m);
-
+  
                             // Append the AI message if it is not already in the messages list
                             if (data.ai_message && !this.messages.some(m => m.id === data.ai_message.id)) {
                                 this.messages.push({
@@ -164,9 +179,10 @@
                                     user_name: 'RuangBelajar AI',
                                     message: data.ai_message.message,
                                     is_ai: true,
-                                    created_at: new Date(data.ai_message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                                    created_at: this.formatTime(data.ai_message.created_at),
                                 });
                             }
+                            
                             // Advance the polling cursor so next poll skips already-shown messages
                             if (data.ai_message && data.ai_message.id > this.lastMessageId) {
                                 this.lastMessageId = data.ai_message.id;
