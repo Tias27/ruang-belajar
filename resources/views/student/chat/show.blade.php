@@ -1,7 +1,7 @@
 <x-app-layout title="Tanya AI">
     @php
         $source = $session->folder ?: $session->document;
-        $initialMessages = $session->messages->map(fn ($message) => [
+        $initialMessages = $session->messages->map(fn($message) => [
             'id' => $message->id,
             'role' => $message->role,
             'content' => $message->content,
@@ -54,7 +54,7 @@
                     let tableBuffer = [];
 
                     const closeList = () => {
-                        if (! listOpen) return '';
+                        if (!listOpen) return '';
                         listOpen = false;
                         return '</ul>';
                     };
@@ -97,7 +97,7 @@
                             result.push(flushTable());
                         }
 
-                        if (! trimmed) {
+                        if (!trimmed) {
                             result.push(closeList());
                             continue;
                         }
@@ -161,7 +161,7 @@
                         if (!response.ok) {
                             const raw = await response.text();
                             let data = {};
-                            try { data = JSON.parse(raw); } catch (e) {}
+                            try { data = JSON.parse(raw); } catch (e) { }
                             throw new Error(data.message || 'Pertanyaan belum bisa diproses.');
                         }
 
@@ -216,14 +216,18 @@
 
     <div class="h-full w-full flex flex-col bg-[#f8fbff]" x-data="chatSessionPage()" x-init="scrollToBottom()">
         <!-- Header Page -->
-        <section class="flex-none px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between border-b border-slate-200/60 bg-white/80 backdrop-blur-md shadow-sm">
+        <section
+            class="flex-none px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between border-b border-slate-200/60 bg-white/80 backdrop-blur-md shadow-sm">
             <div class="flex items-center gap-3">
-                <a class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-campus-700 shadow-sm transition hover:bg-campus-50 border border-slate-200" href="{{ $session->folder ? route('folders.show', $session->folder) : route('documents.show', $session->document) }}" title="Kembali">
+                <a class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-campus-700 shadow-sm transition hover:bg-campus-50 border border-slate-200"
+                    href="{{ $session->folder ? route('folders.show', $session->folder) : route('documents.show', $session->document) }}"
+                    title="Kembali">
                     <i data-lucide="arrow-left" class="h-4 w-4"></i>
                 </a>
                 <div class="min-w-0">
                     <div class="flex items-center gap-2 mb-0.5">
-                        <span class="inline-flex items-center rounded bg-campus-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-campus-700">
+                        <span
+                            class="inline-flex items-center rounded bg-campus-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-campus-700">
                             {{ $session->folder ? 'Folder' : 'Materi' }}
                         </span>
                         <p class="line-clamp-1 text-xs font-semibold text-slate-500">{{ $source->title }}</p>
@@ -235,36 +239,54 @@
 
         <!-- Chat Canvas -->
         <div class="flex-1 flex flex-col relative min-h-0 overflow-hidden">
-            
+
             <!-- Messages Area -->
-            <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-44 pt-6 px-4 sm:px-6 lg:px-8" style="scroll-behavior: smooth;">
-                
+            <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-44 pt-6 px-4 sm:px-6 lg:px-8"
+                style="scroll-behavior: smooth;">
+
                 <!-- Empty State / Welcome Message -->
                 <template x-if="messages.length === 0">
                     <div class="flex h-full flex-col items-center justify-center p-4">
-                        <div class="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-100 text-campus-600">
+                        <div
+                            class="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-100 text-campus-600">
                             <i data-lucide="bot" class="h-8 w-8"></i>
                         </div>
-                        <h3 class="mb-2 text-center text-2xl font-bold tracking-tight text-slate-900">Halo! Apa yang ingin kamu pelajari?</h3>
-                        <p class="mb-8 max-w-md text-center text-[15px] leading-relaxed text-slate-500">Aku siap membantu kamu mendalami materi ini. Pilih topik cepat di bawah atau ketik pertanyaanmu sendiri.</p>
-                        
+                        <h3 class="mb-2 text-center text-2xl font-bold tracking-tight text-slate-900">Halo! Apa yang
+                            ingin kamu pelajari?</h3>
+                        <p class="mb-8 max-w-md text-center text-[15px] leading-relaxed text-slate-500">Aku siap
+                            membantu kamu mendalami materi ini. Pilih topik cepat di bawah atau ketik pertanyaanmu
+                            sendiri.</p>
+
                         <div class="flex w-full max-w-3xl flex-wrap justify-center gap-3">
-                            <button @click="question = 'Jelaskan intisari materi ini dengan bahasa yang sangat sederhana.'; sendQuestion()" class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
-                                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><i data-lucide="message-circle" class="h-4 w-4"></i></span>
+                            <button
+                                @click="question = 'Jelaskan intisari materi ini dengan bahasa yang sangat sederhana.'; sendQuestion()"
+                                class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
+                                <span
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><i
+                                        data-lucide="message-circle" class="h-4 w-4"></i></span>
                                 <div>
                                     <span class="block text-sm font-bold text-slate-700">Jelaskan Sederhana</span>
-                                    <span class="mt-1 block text-[12px] text-slate-500">Ringkasan dengan bahasa awam</span>
+                                    <span class="mt-1 block text-[12px] text-slate-500">Ringkasan dengan bahasa
+                                        awam</span>
                                 </div>
                             </button>
-                            <button @click="question = 'Bantu aku memahami konsep yang paling sulit di materi ini.'; sendQuestion()" class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
-                                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600"><i data-lucide="lightbulb" class="h-4 w-4"></i></span>
+                            <button
+                                @click="question = 'Bantu aku memahami konsep yang paling sulit di materi ini.'; sendQuestion()"
+                                class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
+                                <span
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600"><i
+                                        data-lucide="lightbulb" class="h-4 w-4"></i></span>
                                 <div>
                                     <span class="block text-sm font-bold text-slate-700">Pahami Konsep</span>
                                     <span class="mt-1 block text-[12px] text-slate-500">Bedah bagian yang rumit</span>
                                 </div>
                             </button>
-                            <button @click="question = 'Beri aku analogi atau contoh nyata untuk materi ini.'; sendQuestion()" class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
-                                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600"><i data-lucide="sparkles" class="h-4 w-4"></i></span>
+                            <button
+                                @click="question = 'Beri aku analogi atau contoh nyata untuk materi ini.'; sendQuestion()"
+                                class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
+                                <span
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600"><i
+                                        data-lucide="sparkles" class="h-4 w-4"></i></span>
                                 <div>
                                     <span class="block text-sm font-bold text-slate-700">Beri Analogi</span>
                                     <span class="mt-1 block text-[12px] text-slate-500">Contoh di dunia nyata</span>
@@ -277,11 +299,13 @@
                 <!-- Chat Bubbles -->
                 <template x-for="message in messages" :key="message.id">
                     <div class="flex w-full justify-center">
-                        <div class="w-full max-w-3xl flex" :class="message.role === 'user' ? 'justify-end pl-12' : 'justify-start pr-4 sm:pr-12'">
-                            
+                        <div class="w-full max-w-3xl flex"
+                            :class="message.role === 'user' ? 'justify-end pl-12' : 'justify-start pr-4 sm:pr-12'">
+
                             <!-- User Message -->
                             <template x-if="message.role === 'user'">
-                                <div class="max-w-[85%] rounded-3xl bg-slate-100 px-5 py-3.5 text-[15px] leading-relaxed text-slate-800">
+                                <div
+                                    class="max-w-[85%] rounded-3xl bg-slate-100 px-5 py-3.5 text-[15px] leading-relaxed text-slate-800">
                                     <div x-html="formatMessage(message.content)" class="[&_p]:mb-0"></div>
                                 </div>
                             </template>
@@ -290,33 +314,50 @@
                             <template x-if="message.role === 'assistant'">
                                 <div class="flex w-full gap-4 sm:gap-6">
                                     <div class="shrink-0 mt-1 hidden sm:block">
-                                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-campus-600 shadow-sm ring-1 ring-slate-100">
+                                        <div
+                                            class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-campus-600 shadow-sm ring-1 ring-slate-100">
                                             <i data-lucide="bot" class="h-5 w-5"></i>
                                         </div>
                                     </div>
-                                    <div x-data="{ showSources: false }" class="min-w-0 flex-1 text-[15px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[13px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
-                                        
+                                    <div x-data="{ showSources: false }"
+                                        class="min-w-0 flex-1 text-[15px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[13px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
+
                                         <div x-html="formatMessage(message.content)"></div>
-                                        
+
                                         <!-- Source Snippets Toggle -->
                                         <template x-if="message.metadata?.source_snippets?.length">
                                             <div class="mt-4 border-t border-slate-100 pt-3">
-                                                <button @click="showSources = !showSources" class="group flex items-center gap-1.5 text-xs font-semibold text-campus-600 transition hover:text-campus-800">
+                                                <button @click="showSources = !showSources"
+                                                    class="group flex items-center gap-1.5 text-xs font-semibold text-campus-600 transition hover:text-campus-800">
                                                     <i data-lucide="book-open" class="h-3.5 w-3.5 text-campus-500"></i>
-                                                    <span x-text="showSources ? 'Sembunyikan Referensi' : 'Lihat Referensi Materi'"></span>
-                                                    <i data-lucide="chevron-down" class="h-3.5 w-3.5 text-campus-400 transition-transform duration-300" :class="showSources ? 'rotate-180' : ''"></i>
+                                                    <span
+                                                        x-text="showSources ? 'Sembunyikan Referensi' : 'Lihat Referensi Materi'"></span>
+                                                    <i data-lucide="chevron-down"
+                                                        class="h-3.5 w-3.5 text-campus-400 transition-transform duration-300"
+                                                        :class="showSources ? 'rotate-180' : ''"></i>
                                                 </button>
-                                                
+
                                                 <!-- Sources Content -->
-                                                <div x-show="showSources" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2">
+                                                <div x-show="showSources"
+                                                    x-transition:enter="transition ease-out duration-200"
+                                                    x-transition:enter-start="opacity-0 -translate-y-2"
+                                                    x-transition:enter-end="opacity-100 translate-y-0"
+                                                    x-transition:leave="transition ease-in duration-150"
+                                                    x-transition:leave-start="opacity-100 translate-y-0"
+                                                    x-transition:leave-end="opacity-0 -translate-y-2">
                                                     <div class="mt-3 space-y-2">
-                                                        <template x-for="snippet in message.metadata.source_snippets" :key="snippet.document_id + snippet.snippet">
-                                                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[13px] leading-5 text-slate-600 shadow-sm">
-                                                                <div class="mb-1.5 flex items-center gap-1.5 font-semibold text-campus-800">
-                                                                    <i data-lucide="file-text" class="h-3.5 w-3.5 text-campus-600"></i>
+                                                        <template x-for="snippet in message.metadata.source_snippets"
+                                                            :key="snippet.document_id + snippet.snippet">
+                                                            <div
+                                                                class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[13px] leading-5 text-slate-600 shadow-sm">
+                                                                <div
+                                                                    class="mb-1.5 flex items-center gap-1.5 font-semibold text-campus-800">
+                                                                    <i data-lucide="file-text"
+                                                                        class="h-3.5 w-3.5 text-campus-600"></i>
                                                                     <span x-text="snippet.title"></span>
                                                                 </div>
-                                                                <p class="italic text-slate-500">"...<span x-text="snippet.snippet"></span>..."</p>
+                                                                <p class="italic text-slate-500">"...<span
+                                                                        x-text="snippet.snippet"></span>..."</p>
                                                             </div>
                                                         </template>
                                                     </div>
@@ -336,43 +377,46 @@
                     <div class="w-full max-w-3xl flex justify-start pr-4 sm:pr-12">
                         <div class="flex gap-4 sm:gap-6 w-full">
                             <div class="mt-1 shrink-0 hidden sm:block">
-                                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-campus-600 shadow-sm ring-1 ring-slate-100">
+                                <div
+                                    class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-campus-600 shadow-sm ring-1 ring-slate-100">
                                     <i data-lucide="bot" class="h-5 w-5"></i>
                                 </div>
                             </div>
                             <div class="flex items-center gap-1.5 pt-2">
                                 <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_0ms]"></span>
-                                <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_200ms]"></span>
-                                <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_400ms]"></span>
+                                <span
+                                    class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_200ms]"></span>
+                                <span
+                                    class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_400ms]"></span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Input Area — floating at bottom like ChatGPT -->
-            <div class="absolute bottom-0 left-0 right-0 px-3 pt-6 sm:px-4 lg:px-8 pointer-events-none" style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem)); background: linear-gradient(to top, white 60%, transparent);">
-                <form method="POST" action="{{ route('chat.store', $session) }}" @submit.prevent="sendQuestion()" class="flex w-full flex-col mx-auto max-w-3xl pointer-events-auto">
+            <div class="absolute bottom-0 left-0 right-0 px-3 pt-6 sm:px-4 lg:px-8 pointer-events-none"
+                style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem)); background: linear-gradient(to top, white 60%, transparent);">
+                <form method="POST" action="{{ route('chat.store', $session) }}" @submit.prevent="sendQuestion()"
+                    class="flex w-full flex-col mx-auto max-w-3xl pointer-events-auto">
                     @csrf
-                    <div class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-xl shadow-black/8 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
-                        <textarea 
-                            x-ref="textarea"
-                            x-model="question" 
-                            name="question" 
-                            rows="1"
-                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-5 pr-2 text-[15px] focus:ring-0 focus:outline-none" 
-                            placeholder="Tanya AI tentang materi ini..." 
+                    <div
+                        class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-xl shadow-black/8 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
+                        <textarea x-ref="textarea" x-model="question" name="question" rows="1"
+                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-5 pr-2 text-[15px] focus:ring-0 focus:outline-none"
+                            placeholder="Tanya AI tentang materi ini..."
                             @keydown.enter.prevent="if(!$event.shiftKey) sendQuestion()"
                             @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
-                            style="border: none !important; background: transparent !important; box-shadow: none !important; outline: none !important; resize: none !important; overflow-y: hidden;"
-                        ></textarea>
-                        
-                        <button type="submit" :disabled="!question.trim() || sending" class="group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
+                            style="border: none !important; background: transparent !important; box-shadow: none !important; outline: none !important; resize: none !important; overflow-y: hidden;"></textarea>
+
+                        <button type="submit" :disabled="!question.trim() || sending"
+                            class="group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                             <i data-lucide="arrow-up" class="h-5 w-5"></i>
                             <span class="sr-only">Kirim</span>
                         </button>
                     </div>
                     <div class="mt-2 text-center text-[11px] font-medium text-slate-400">
-                        AI bisa keliru. Periksa kembali info penting.
+                        AI bisa aja keliru buat jawabannya, jadi jangan lupa cek lagii yaa, AI akan merespon secara
+                        realtime
                     </div>
                 </form>
             </div>
