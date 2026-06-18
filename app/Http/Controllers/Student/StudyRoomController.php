@@ -428,7 +428,7 @@ class StudyRoomController extends Controller
                 'user_name'  => $m->is_ai ? 'RuangBelajar AI' : ($m->user ? $m->user->name : 'Siswa'),
                 'message'    => $m->message,
                 'is_ai'      => (bool) $m->is_ai,
-                'created_at' => $m->created_at->format('H:i'),
+                'created_at' => $m->created_at->toIso8601String(),
             ])
             ->values();
 

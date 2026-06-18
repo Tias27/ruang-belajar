@@ -17,7 +17,7 @@
                     'user_name' => $m->is_ai ? 'RuangBelajar AI' : ($m->user ? $m->user->name : 'Siswa'),
                     'message' => $m->message,
                     'is_ai' => (bool)$m->is_ai,
-                    'created_at' => $m->created_at->format('H:i'),
+                    'created_at' => $m->created_at->toIso8601String(),
                 ])->values()),
                 onlineUsers: [],
                 messageText: '',
@@ -28,6 +28,11 @@
                 _pollInterval: null,
 
                 init() {
+                    // Format initial messages' timestamps to local timezone
+                    this.messages.forEach(m => {
+                        m.created_at = this.formatTime(m.created_at);
+                    });
+
                     this.scrollToBottom();
                     
                     // Listen to Reverb Presence Channel
@@ -77,8 +82,34 @@
                         if (data.messages && data.messages.length > 0) {
                             let added = false;
                             data.messages.forEach(msg => {
+                                // Deduplicate sender's own message if it was polled before the POST request finished
+                                if (parseInt(msg.user_id) === parseInt(this.userId)) {
+                                    const tempMsgIndex = this.messages.findIndex(m => String(m.id).startsWith('temp-') && m.message === msg.message);
+                                    if (tempMsgIndex !== -1) {
+                                        this.messages[tempMsgIndex] = {
+                                            id: msg.id,
+                                            user_id: msg.user_id,
+                                            user_name: 'Saya',
+                                            message: msg.message,
+                                            is_ai: false,
+                                            created_at: this.formatTime(msg.created_at),
+                                        };
+                                        if (msg.id > this.lastMessageId) {
+                                            this.lastMessageId = msg.id;
+                                        }
+                                        return;
+                                    }
+                                }
+
                                 if (!this.messages.some(m => m.id === msg.id)) {
-                                    this.messages.push(msg);
+                                    this.messages.push({
+                                        id: msg.id,
+                                        user_id: msg.user_id,
+                                        user_name: msg.is_ai ? 'RuangBelajar AI' : (msg.user_name || (msg.user ? msg.user.name : 'Siswa')),
+                                        message: msg.message,
+                                        is_ai: !!msg.is_ai,
+                                        created_at: this.formatTime(msg.created_at),
+                                    });
                                     added = true;
                                 }
                                 if (msg.id > this.lastMessageId) {
