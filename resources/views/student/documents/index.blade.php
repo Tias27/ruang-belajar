@@ -23,6 +23,7 @@
     :title="$title" 
     :subtitle="$subtitle"
 >
+    <div x-data="{ aiBusy: false, setBusy(val) { this.aiBusy = val; } }">
     <!-- Header Page -->
     <section class="overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-campus-50 to-white p-5 sm:p-8 shadow-sm border border-campus-100 relative">
         <div class="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-start">
@@ -114,7 +115,7 @@
                                     </div>
                                 </div>
                                 
-                                <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false, type: 'multiple_choice', count: 10 }" x-on:submit="loading = true" class="mt-5 border-t border-slate-50 pt-4">
+                                <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false, type: 'multiple_choice', count: 10 }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true" class="mt-5 border-t border-slate-50 pt-4">
                                     @csrf
                                     <input type="hidden" name="question_type" x-bind:value="type">
                                     <input type="hidden" name="question_count" x-bind:value="count">
@@ -132,7 +133,7 @@
                                         </div>
                                     </div>
                                     
-                                    <button type="submit" x-bind:disabled="loading" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-campus-800 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75 disabled:hover:scale-100">
+                                    <button type="submit" x-bind:disabled="aiBusy || loading" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-campus-800 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75 disabled:hover:scale-100">
                                         <span x-show="!loading"><i data-lucide="list-checks" class="h-4 w-4"></i></span>
                                         <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
                                         <span x-text="loading ? 'Menyusun Soal...' : 'Mulai Latihan'"></span>
@@ -140,9 +141,9 @@
                                 </form>
                             </div>
                         @else
-                            <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false }" x-on:submit="loading = true" class="w-full h-full min-w-0">
+                            <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true" class="w-full h-full min-w-0">
                                 @csrf
-                                <button type="submit" x-bind:disabled="loading" class="group flex h-full w-full flex-col justify-between rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:border-{{ $tone }}-200 hover:shadow-md text-left disabled:cursor-wait relative overflow-hidden">
+                                <button type="submit" x-bind:disabled="aiBusy || loading" class="group flex h-full w-full flex-col justify-between rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:border-{{ $tone }}-200 hover:shadow-md text-left disabled:cursor-wait relative overflow-hidden">
                                     <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-{{ $tone }}-50/50 transition-transform group-hover:scale-150"></div>
                                     
                                     <div class="relative flex min-w-0 items-start gap-4">
@@ -181,9 +182,11 @@
                             
                             <!-- Action buttons for folder -->
                             <div class="relative mt-4 pt-3 border-t border-slate-50 flex items-center justify-between z-10">
-                                <form method="POST" action="{{ route('folders.study-rooms.store', $folder) }}">@csrf
-                                    <button class="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-accent-50 px-3 text-[11px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white">
-                                        <i data-lucide="users" class="h-3.5 w-3.5"></i> Belajar Bareng
+                                <form method="POST" action="{{ route('folders.study-rooms.store', $folder) }}" x-data="{ loading: false }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true">@csrf
+                                    <button x-bind:disabled="aiBusy || loading" class="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-accent-50 px-3 text-[11px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
+                                        <i data-lucide="users" class="h-3.5 w-3.5" x-show="!loading"></i>
+                                        <span x-show="loading" x-cloak class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-700 border-t-white"></span>
+                                        <span>Belajar Bareng</span>
                                     </button>
                                 </form>
                                 <a href="{{ route('folders.show', $folder) }}" class="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-slate-100 px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-200 transition">
@@ -292,7 +295,7 @@
                                 </div>
                             </div>
                             
-                            <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false, type: 'multiple_choice', count: 10 }" x-on:submit="loading = true" class="mt-5 border-t border-slate-50 pt-4">
+                            <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false, type: 'multiple_choice', count: 10 }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true" class="mt-5 border-t border-slate-50 pt-4">
                                 @csrf
                                 <input type="hidden" name="question_type" x-bind:value="type">
                                 <input type="hidden" name="question_count" x-bind:value="count">
@@ -309,7 +312,7 @@
                                     </div>
                                 </div>
                                 
-                                <button type="submit" x-bind:disabled="loading" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-campus-800 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75 disabled:hover:scale-100">
+                                <button type="submit" x-bind:disabled="aiBusy || loading" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-campus-800 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75 disabled:hover:scale-100">
                                     <span x-show="!loading"><i data-lucide="list-checks" class="h-4 w-4"></i></span>
                                     <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
                                     <span x-text="loading ? 'Menyusun...' : 'Mulai Latihan'"></span>
@@ -317,9 +320,9 @@
                             </form>
                         </div>
                     @else
-                        <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false }" x-on:submit="loading = true" class="w-full min-w-0">
+                        <form method="POST" action="{{ $actionUrl }}" x-data="{ loading: false }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true" class="w-full min-w-0">
                             @csrf
-                            <button type="submit" x-bind:disabled="loading" class="group flex w-full min-w-0 items-center gap-4 rounded-[1.25rem] bg-white p-4 shadow-sm border border-slate-100 transition-all hover:-translate-y-0.5 hover:border-{{ $tone }}-200 hover:shadow-md text-left disabled:cursor-wait">
+                            <button type="submit" x-bind:disabled="aiBusy || loading" class="group flex w-full min-w-0 items-center gap-4 rounded-[1.25rem] bg-white p-4 shadow-sm border border-slate-100 transition-all hover:-translate-y-0.5 hover:border-{{ $tone }}-200 hover:shadow-md text-left disabled:cursor-wait disabled:opacity-75">
                                 <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-colors group-hover:bg-{{ $tone }}-50 group-hover:text-{{ $tone }}-600">
                                     <i data-lucide="file-text" class="h-5 w-5" x-show="!loading"></i>
                                     <span x-show="loading" x-cloak class="h-5 w-5 animate-spin rounded-full border-2 border-{{ $tone }}-400 border-t-{{ $tone }}-700"></span>
@@ -369,30 +372,36 @@
 
                         <!-- Actions row -->
                         <div class="flex flex-wrap items-center gap-2 pt-4 xl:pt-0 border-t border-slate-50 xl:border-0 mt-2 xl:mt-0 xl:shrink-0">
-                            <form method="POST" action="{{ route('chat.create', $document) }}">@csrf
-                                <button class="flex h-9 items-center justify-center gap-2 rounded-xl bg-campus-50 px-4 text-[12px] font-bold text-campus-700 shadow-sm transition-colors hover:bg-campus-600 hover:text-white">
-                                    <i data-lucide="messages-square" class="h-4 w-4"></i> Tanya AI
+                        <!-- Actions row -->
+                        <div class="flex flex-wrap items-center gap-2 pt-4 xl:pt-0 border-t border-slate-50 xl:border-0 mt-2 xl:mt-0 xl:shrink-0">
+                            <form method="POST" action="{{ route('chat.create', $document) }}" x-data="{ loading: false }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true">@csrf
+                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-2 rounded-xl bg-campus-50 px-4 text-[12px] font-bold text-campus-700 shadow-sm transition-colors hover:bg-campus-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
+                                    <i data-lucide="messages-square" class="h-4 w-4" x-show="!loading"></i>
+                                    <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-campus-700 border-t-white"></span>
+                                    <span>Tanya AI</span>
                                 </button>
                             </form>
-                            <form method="POST" action="{{ route('documents.study-rooms.store', $document) }}">@csrf
-                                <button class="flex h-9 items-center justify-center gap-2 rounded-xl bg-accent-50 px-4 text-[12px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white">
-                                    <i data-lucide="users" class="h-4 w-4"></i> Belajar Bareng
+                            <form method="POST" action="{{ route('documents.study-rooms.store', $document) }}" x-data="{ loading: false }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true">@csrf
+                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-2 rounded-xl bg-accent-50 px-4 text-[12px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
+                                    <i data-lucide="users" class="h-4 w-4" x-show="!loading"></i>
+                                    <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-accent-700 border-t-white"></span>
+                                    <span>Belajar Bareng</span>
                                 </button>
                             </form>
-                            <form method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="loading=true">@csrf
-                                <button x-bind:disabled="loading" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50">
+                            <form method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true">@csrf
+                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-wait">
                                     <i data-lucide="notebook-tabs" class="h-4 w-4 text-slate-500" x-show="!loading"></i>
                                     <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-campus-700"></span>
                                     <span>Ringkas</span>
                                 </button>
                             </form>
                             <div x-data="{loading:false, open:false, type:'multiple_choice', count:10}" class="relative">
-                                <button type="button" @click="open=!open; $event.preventDefault()" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-300">
+                                <button type="button" x-bind:disabled="aiBusy" @click="if (!aiBusy) open=!open; $event.preventDefault()" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed">
                                     <i data-lucide="list-checks" class="h-4 w-4 text-slate-500"></i> <span>Latihan</span>
                                 </button>
                                 <!-- Quiz Dropdown Popover -->
                                 <div x-show="open" @click.outside="open=false" x-transition.opacity x-cloak class="absolute bottom-full right-0 mb-2 w-[240px] rounded-2xl border border-slate-100 bg-white p-4 shadow-xl z-50">
-                                    <form method="POST" action="{{ route('quizzes.store', $document) }}" x-on:submit="loading=true">@csrf
+                                    <form method="POST" action="{{ route('quizzes.store', $document) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true">@csrf
                                         <input type="hidden" name="question_type" x-bind:value="type">
                                         <input type="hidden" name="question_count" x-bind:value="count">
                                         <p class="mb-3 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pengaturan Quiz</p>
@@ -408,18 +417,18 @@
                                                 <button type="button" @click="count = Math.min(30, Number(count) + 1)" class="h-6 w-6 rounded-full bg-white flex items-center justify-center text-slate-500 shadow-sm hover:bg-slate-100"><i data-lucide="plus" class="h-3 w-3"></i></button>
                                             </div>
                                         </div>
-                                        <button x-bind:disabled="loading" class="flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-campus-800 active:scale-[0.98] disabled:opacity-75">
+                                        <button x-bind:disabled="aiBusy || loading" class="flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-campus-800 active:scale-[0.98] disabled:opacity-75 disabled:cursor-wait">
                                             <span x-show="loading" x-cloak class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
                                             <span x-text="loading ? 'Menyiapkan...' : 'Buat Quiz Sekarang'"></span>
                                         </button>
                                     </form>
                                 </div>
                             </div>
-                            <form method="POST" action="{{ route('flashcards.store', $document) }}" x-data="{loading:false}" x-on:submit="loading=true">@csrf
-                                <button x-bind:disabled="loading" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50">
+                            <form method="POST" action="{{ route('flashcards.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true">@csrf
+                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-wait">
                                     <i data-lucide="copy-check" class="h-4 w-4" x-show="!loading"></i>
-                                    <span x-text="loading ? '...' : 'Flashcard'" x-show="loading" x-cloak></span>
-                                    <span x-show="!loading">Flashcard</span>
+                                    <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-campus-700"></span>
+                                    <span>Flashcard</span>
                                 </button>
                             </form>
                             <form method="POST" action="{{ route('documents.destroy', $document) }}" @submit.prevent="confirmDelete($event, 'Hapus File?', 'Hapus permanen file ini beserta seluruh riwayat AI terkait? Tindakan ini tidak dapat dibatalkan.')">
@@ -476,5 +485,5 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 </x-app-layout>
