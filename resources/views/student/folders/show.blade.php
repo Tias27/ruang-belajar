@@ -7,6 +7,9 @@
 
     <div class="min-w-0 overflow-x-hidden" x-data="{ 
         aiBusy: false,
+        setBusy(val) {
+            this.aiBusy = val;
+        },
         confirmOpen: false,
         confirmTitle: '',
         confirmMessage: '',
@@ -68,7 +71,7 @@
             </div>
 
             <div class="mt-6 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                <form method="POST" action="{{ route('folders.summaries.store', $folder) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
+                <form method="POST" action="{{ route('folders.summaries.store', $folder) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
                     @csrf
                     <template x-for="id in selected" :key="id">
                         <input type="hidden" name="document_ids[]" :value="id">
@@ -78,12 +81,12 @@
                         <span x-show="loading" x-cloak class="h-10 w-10 shrink-0 animate-spin rounded-full border-2 border-campus-100 border-t-campus-700"></span>
                         <span class="min-w-0">
                             <span class="block truncate text-sm font-semibold text-slate-900" x-text="loading ? 'Sedang meringkas...' : (selected.length > 0 ? 'Ringkas terpilih' : 'Ringkas folder')"></span>
-                            <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'AI membaca file terpilih dan menyusun hasil.' : (selected.length > 0 ? 'Ambil inti ' + selected.length + ' file terpilih.' : 'Ambil inti seluruh materi.')"></span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'AI membaca file terpilih and menyusun hasil.' : (selected.length > 0 ? 'Ambil inti ' + selected.length + ' file terpilih.' : 'Ambil inti seluruh materi.')"></span>
                         </span>
                     </button>
                 </form>
 
-                <form method="POST" action="{{ route('folders.chat.create', $folder) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true" class="min-w-0">
+                <form method="POST" action="{{ route('folders.chat.create', $folder) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true)" class="min-w-0">
                     @csrf
                     <template x-for="id in selected" :key="id">
                         <input type="hidden" name="document_ids[]" :value="id">
@@ -97,7 +100,7 @@
                     </button>
                 </form>
 
-                <form method="POST" action="{{ route('folders.quizzes.store', $folder) }}" x-data="{loading:false, open:false, type:'multiple_choice', count:10}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
+                <form method="POST" action="{{ route('folders.quizzes.store', $folder) }}" x-data="{loading:false, open:false, type:'multiple_choice', count:10}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
                     @csrf
                     <template x-for="id in selected" :key="id">
                         <input type="hidden" name="document_ids[]" :value="id">
@@ -142,7 +145,7 @@
                     </div>
                 </form>
 
-                 <form method="POST" action="{{ route('folders.flashcards.store', $folder) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
+                 <form method="POST" action="{{ route('folders.flashcards.store', $folder) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
                     @csrf
                     <template x-for="id in selected" :key="id">
                         <input type="hidden" name="document_ids[]" :value="id">
@@ -157,7 +160,7 @@
                     </button>
                 </form>
 
-                <form method="POST" action="{{ route('folders.study-rooms.store', $folder) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true" class="min-w-0">
+                <form method="POST" action="{{ route('folders.study-rooms.store', $folder) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true)" class="min-w-0">
                     @csrf
                     <template x-for="id in selected" :key="id">
                         <input type="hidden" name="document_ids[]" :value="id">

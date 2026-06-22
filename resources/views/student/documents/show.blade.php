@@ -1,6 +1,9 @@
 <x-app-layout title="{{ $document->title }}">
     <div class="min-w-0 overflow-x-hidden" x-data="{ 
         aiBusy: false,
+        setBusy(val) {
+            this.aiBusy = val;
+        },
         confirmOpen: false,
         confirmTitle: '',
         confirmMessage: '',
@@ -55,7 +58,7 @@
             </div>
 
             <div class="mt-6 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                <form method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
+                <form method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
                     @csrf
                     <button x-bind:disabled="aiBusy || loading" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span x-show="!loading" class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-campus-50 text-campus-700"><i data-lucide="notebook-tabs" class="h-5 w-5"></i></span>
@@ -63,14 +66,14 @@
                         <span class="min-w-0"><span class="block truncate text-sm font-semibold text-slate-900" x-text="loading ? 'Sedang meringkas...' : 'Ringkas materi'"></span><span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'AI sedang membaca dan menyusun hasil.' : 'Inti, poin penting, kesimpulan.'"></span></span>
                     </button>
                 </form>
-                <form method="POST" action="{{ route('chat.create', $document) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true" class="min-w-0">
+                <form method="POST" action="{{ route('chat.create', $document) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true)" class="min-w-0">
                     @csrf
                     <button x-bind:disabled="aiBusy" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-accent-50 text-accent-700"><i data-lucide="messages-square" class="h-5 w-5"></i></span>
                         <span class="min-w-0"><span class="block truncate text-sm font-semibold text-slate-900">Tanya materi</span><span class="mt-1 block text-xs leading-5 text-slate-500">Chat berdasarkan file ini.</span></span>
                     </button>
                 </form>
-                <form method="POST" action="{{ route('quizzes.store', $document) }}" x-data="{loading:false, open:false, type:'multiple_choice', count:10}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
+                <form method="POST" action="{{ route('quizzes.store', $document) }}" x-data="{loading:false, open:false, type:'multiple_choice', count:10}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
                     @csrf
                     <button type="button" x-show="!open" x-on:click="if (! aiBusy) open=true" x-bind:disabled="aiBusy" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span x-show="!loading" class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-campus-50 text-campus-700"><i data-lucide="list-checks" class="h-5 w-5"></i></span>
@@ -108,7 +111,7 @@
                         </button>
                     </div>
                 </form>
-                <form method="POST" action="{{ route('flashcards.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
+                <form method="POST" action="{{ route('flashcards.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
                     @csrf
                     <button x-bind:disabled="aiBusy || loading" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span x-show="!loading" class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-accent-50 text-accent-700"><i data-lucide="copy-check" class="h-5 w-5"></i></span>
@@ -117,7 +120,7 @@
                     </button>
                 </form>
 
-                <form method="POST" action="{{ route('documents.study-rooms.store', $document) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true" class="min-w-0">
+                <form method="POST" action="{{ route('documents.study-rooms.store', $document) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true)" class="min-w-0">
                     @csrf
                     <button x-bind:disabled="aiBusy" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-accent-50 text-accent-700"><i data-lucide="users" class="h-5 w-5"></i></span>
