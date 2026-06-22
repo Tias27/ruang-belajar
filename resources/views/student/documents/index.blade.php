@@ -235,20 +235,20 @@
             
             @if(! $isSelectionMode && $documents->count() > 0)
                 <div class="flex items-center gap-2 sm:justify-end">
-                    <form method="POST" action="{{ route('documents.bulk-destroy') }}" @submit.prevent="if(selected.length > 0) confirmDelete($event, 'Hapus ' + selected.length + ' File?', 'Hapus permanen ' + selected.length + ' file terpilih beserta seluruh riwayat AI terkait? Tindakan ini tidak dapat dibatalkan.')">
+                    <form method="POST" action="{{ route('documents.bulk-destroy') }}" @submit.prevent="if(!aiBusy && selected.length > 0) confirmDelete($event, 'Hapus ' + selected.length + ' File?', 'Hapus permanen ' + selected.length + ' file terpilih beserta seluruh riwayat AI terkait? Tindakan ini tidak dapat dibatalkan.')">
                         @csrf
                         @method('DELETE')
                         <input type="hidden" name="redirect_to" value="{{ request()->getRequestUri() }}">
                         <template x-for="id in selected" :key="id">
                             <input type="hidden" name="document_ids[]" :value="id">
                         </template>
-                        <button type="submit" x-bind:disabled="selected.length === 0" class="inline-flex h-9 items-center justify-center gap-2 rounded-full px-4 text-xs font-bold shadow-sm transition" :class="selected.length > 0 ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed'">
+                        <button type="submit" x-bind:disabled="selected.length === 0 || aiBusy" class="inline-flex h-9 items-center justify-center gap-2 rounded-full px-4 text-xs font-bold shadow-sm transition" :class="selected.length > 0 && !aiBusy ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed'">
                             <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
                             <span x-text="selected.length > 0 ? 'Hapus ' + selected.length : 'Hapus'"></span>
                         </button>
                     </form>
 
-                    <button type="button" x-on:click="toggleAll()" class="inline-flex h-9 w-[120px] items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900">
+                    <button type="button" x-bind:disabled="aiBusy" x-on:click="if (!aiBusy) toggleAll()" class="inline-flex h-9 w-[120px] items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed">
                         <i data-lucide="check-square" class="h-4 w-4 text-slate-400" x-show="!allSelected"></i>
                         <i data-lucide="x-square" class="h-4 w-4 text-slate-400" x-show="allSelected" x-cloak></i>
                         <span x-text="allSelected ? 'Batal Pilih' : 'Pilih Semua'"></span>
@@ -350,7 +350,7 @@
                     <article class="group flex flex-col xl:flex-row xl:items-center gap-4 xl:gap-6 rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 transition-all hover:-translate-y-1 hover:shadow-md relative min-w-0">
                         <div class="flex min-w-0 flex-1 items-start gap-4">
                             <label class="mt-3.5 flex h-6 w-6 shrink-0 items-center justify-center">
-                                <input type="checkbox" value="{{ $document->public_id }}" x-model="selected" aria-label="Pilih {{ $document->title }}" class="h-5 w-5 rounded border-slate-300 text-campus-600 focus:ring-campus-500">
+                                <input type="checkbox" value="{{ $document->public_id }}" x-model="selected" x-bind:disabled="aiBusy" aria-label="Pilih {{ $document->title }}" class="h-5 w-5 rounded border-slate-300 text-campus-600 focus:ring-campus-500 disabled:opacity-50 disabled:cursor-not-allowed">
                             </label>
                             <a href="{{ route('documents.show', $document) }}" class="flex min-w-0 flex-1 items-center gap-4">
                                 <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-slate-500 shadow-sm transition-colors group-hover:bg-campus-50 group-hover:text-campus-600">
@@ -431,10 +431,10 @@
                                     <span>Flashcard</span>
                                 </button>
                             </form>
-                            <form method="POST" action="{{ route('documents.destroy', $document) }}" @submit.prevent="confirmDelete($event, 'Hapus File?', 'Hapus permanen file ini beserta seluruh riwayat AI terkait? Tindakan ini tidak dapat dibatalkan.')">
+                            <form method="POST" action="{{ route('documents.destroy', $document) }}" @submit.prevent="if (!aiBusy) confirmDelete($event, 'Hapus File?', 'Hapus permanen file ini beserta seluruh riwayat AI terkait? Tindakan ini tidak dapat dibatalkan.')">
                                 @csrf @method('DELETE')
                                 <input type="hidden" name="redirect_to" value="{{ request()->getRequestUri() }}">
-                                <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-[12px] font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700" title="Hapus">
+                                <button x-bind:disabled="aiBusy" class="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-[12px] font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 disabled:opacity-50 disabled:cursor-not-allowed" title="Hapus">
                                     <i data-lucide="trash-2" class="h-4 w-4"></i>
                                 </button>
                             </form>

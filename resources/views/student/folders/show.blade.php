@@ -64,7 +64,7 @@
                 <form id="delete-folder-form" x-ref="deleteFolderForm" method="POST" action="{{ route('folders.destroy', $folder) }}" class="shrink-0">
                     @csrf
                     @method('DELETE')
-                    <button type="button" @click="triggerConfirm('Hapus Folder?', 'Semua file dan hasil belajar di dalam folder ini juga akan terhapus secara permanen.', () => $refs.deleteFolderForm.submit())" class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 shadow-sm hover:bg-rose-50 sm:w-auto">
+                    <button type="button" x-bind:disabled="aiBusy" @click="if (!aiBusy) triggerConfirm('Hapus Folder?', 'Semua file dan hasil belajar di dalam folder ini juga akan terhapus secara permanen.', () => $refs.deleteFolderForm.submit())" class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 shadow-sm hover:bg-rose-50 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
                         <i data-lucide="trash-2" class="h-4 w-4"></i> Hapus Folder
                     </button>
                 </form>
@@ -333,7 +333,7 @@
                     </div>
                     @if($folder->documents->count() > 0)
                         <div class="flex shrink-0 flex-col gap-2 sm:flex-row">
-                            <button type="button" x-on:click="toggleAll()" class="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-slate-100 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-200">
+                             <button type="button" x-bind:disabled="aiBusy" x-on:click="if (!aiBusy) toggleAll()" class="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-slate-100 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i data-lucide="check-square" class="h-3.5 w-3.5"></i>
                                 <span x-text="allSelected ? 'Batal pilih semua' : 'Pilih semua'"></span>
                             </button>
@@ -344,7 +344,7 @@
                                 <template x-for="id in selected" :key="id">
                                     <input type="hidden" name="document_ids[]" :value="id">
                                 </template>
-                                <button type="button" x-bind:disabled="selected.length === 0" @click="triggerConfirm('Hapus File Terpilih?', 'Hapus ' + selected.length + ' file terpilih dari folder ini? Hasil belajar terkait juga ikut terhapus.', () => $refs.bulkDeleteForm.submit())" class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-rose-600 px-3 text-xs font-semibold text-white shadow-sm hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+                                 <button type="button" x-bind:disabled="selected.length === 0 || aiBusy" @click="if (!aiBusy && selected.length > 0) triggerConfirm('Hapus File Terpilih?', 'Hapus ' + selected.length + ' file terpilih dari folder ini? Hasil belajar terkait juga ikut terhapus.', () => $refs.bulkDeleteForm.submit())" class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-rose-600 px-3 text-xs font-semibold text-white shadow-sm hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:opacity-50">
                                     <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
                                     <span>Hapus terpilih</span>
                                     <span x-show="selected.length > 0" x-text="selected.length" class="rounded-md bg-white/20 px-1.5 py-0.5"></span>
@@ -359,9 +359,9 @@
                         <div class="min-w-0 rounded-[1.1rem] bg-slate-50 p-3 text-sm">
                             <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="flex min-w-0 flex-1 items-start gap-3">
-                                    <label class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm">
-                                        <input type="checkbox" value="{{ $document->public_id }}" x-model="selected" aria-label="Pilih {{ $document->title }}">
-                                    </label>
+                                     <label class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm">
+                                        <input type="checkbox" value="{{ $document->public_id }}" x-model="selected" x-bind:disabled="aiBusy" aria-label="Pilih {{ $document->title }}" class="disabled:opacity-50 disabled:cursor-not-allowed">
+                                     </label>
                                     <a href="{{ route('documents.show', $document) }}" class="min-w-0 flex-1 font-medium text-slate-700 hover:text-campus-700">
                                         <span class="block truncate text-sm font-semibold text-slate-900">{{ $document->title }}</span>
                                         <span class="mt-1 block truncate text-xs font-normal text-slate-500">{{ $document->original_name }}</span>
@@ -378,7 +378,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <input type="hidden" name="redirect_to" value="{{ request()->getRequestUri() }}">
-                                        <button type="button" @click="triggerConfirm('Hapus File?', 'Hapus file ini dari folder? Hasil belajar terkait juga ikut terhapus.', () => $el.closest('form').submit())" class="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-rose-700 shadow-sm hover:bg-rose-50">
+                                         <button type="button" x-bind:disabled="aiBusy" @click="if (!aiBusy) triggerConfirm('Hapus File?', 'Hapus file ini dari folder? Hasil belajar terkait juga ikut terhapus.', () => $el.closest('form').submit())" class="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-rose-700 shadow-sm hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed">
                                             <i data-lucide="trash-2" class="h-3.5 w-3.5"></i> Hapus
                                         </button>
                                     </form>

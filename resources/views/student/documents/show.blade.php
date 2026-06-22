@@ -50,7 +50,7 @@
                     <form method="POST" action="{{ route('documents.destroy', $document) }}" x-ref="deleteDocForm">
                         @csrf
                         @method('DELETE')
-                        <button type="button" @click="triggerConfirm('Hapus File?', 'Hapus file ini? Semua hasil belajar terkait juga akan terhapus secara permanen.', () => $refs.deleteDocForm.submit())" class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-rose-700 shadow-sm hover:bg-rose-50">
+                        <button type="button" x-bind:disabled="aiBusy" @click="if (!aiBusy) triggerConfirm('Hapus File?', 'Hapus file ini? Semua hasil belajar terkait juga akan terhapus secara permanen.', () => $refs.deleteDocForm.submit())" class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-rose-700 shadow-sm hover:bg-rose-50 disabled:opacity-50 disabled:cursor-not-allowed">
                             <i data-lucide="trash-2" class="h-4 w-4"></i> Hapus
                         </button>
                     </form>
