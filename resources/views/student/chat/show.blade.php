@@ -189,12 +189,10 @@
                                         const parsed = JSON.parse(dataStr);
                                         if (parsed.chunk) {
                                             this.messages[assistantIndex].content += parsed.chunk;
-                                            this.scrollToBottom();
                                         } else if (parsed.done) {
                                             this.title = parsed.title || this.title;
                                             this.messages[assistantIndex].id = parsed.message.id;
                                             this.messages[assistantIndex].metadata = parsed.message.metadata;
-                                            this.scrollToBottom();
                                         }
                                     } catch (e) {
                                         console.error('SSE parse error:', e);
@@ -210,7 +208,6 @@
                         });
                     } finally {
                         this.sending = false;
-                        this.scrollToBottom();
                     }
                 },
             };
