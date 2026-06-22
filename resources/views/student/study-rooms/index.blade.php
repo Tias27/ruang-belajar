@@ -250,7 +250,7 @@
 
                 <!-- Tab 2: Upload New Material -->
                 <div x-show="activeTab === 'upload-new'" class="max-w-2xl">
-                    <form method="POST" action="{{ route('study-rooms.store') }}" enctype="multipart/form-data" @submit="uploading = true">
+                    <form method="POST" action="{{ route('study-rooms.store') }}" enctype="multipart/form-data" @submit.prevent="submitForm($event)">
                         @csrf
                         <input type="hidden" name="source_type" value="upload">
                         
@@ -361,25 +361,21 @@
                                 </div>
                             </div>
 
-                            <!-- Submit Button with loading state -->
+                            <!-- Error Alert -->
+                            <div x-show="errorMessage" x-cloak class="p-4 mb-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-sm flex gap-3 text-left">
+                                <i data-lucide="alert-circle" class="h-5 w-5 shrink-0 mt-0.5"></i>
+                                <div>
+                                    <span class="font-bold">Gagal mengunggah:</span>
+                                    <p class="mt-1" x-text="errorMessage"></p>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
                             <div class="flex justify-end">
                                 <button type="submit" :disabled="uploading"
                                         class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-campus-700 px-6 text-sm font-bold text-white shadow-md hover:bg-campus-850 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <template x-if="uploading">
-                                        <div class="flex items-center gap-2">
-                                            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            <span>Mengekstrak materi & membuat room...</span>
-                                        </div>
-                                    </template>
-                                    <template x-if="!uploading">
-                                        <div class="flex items-center gap-2">
-                                            <i data-lucide="sparkles" class="h-4 w-4"></i>
-                                            <span>Mulai Belajar Bareng</span>
-                                        </div>
-                                    </template>
+                                    <i data-lucide="sparkles" class="h-4 w-4"></i>
+                                    <span>Mulai Belajar Bareng</span>
                                 </button>
                             </div>
                         </div>
@@ -388,6 +384,30 @@
 
             </div>
 
+        </div>
+
+        <!-- Progress Overlay Modal -->
+        <div x-show="uploading" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div class="w-full max-w-md transform overflow-hidden rounded-[1.75rem] bg-white p-6 shadow-2xl border border-slate-100 text-center">
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-campus-50 text-campus-700 shadow-inner mb-4">
+                    <i data-lucide="upload-cloud" class="h-7 w-7 animate-bounce"></i>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-800 tracking-tight" x-text="statusText">Mengunggah file...</h3>
+                
+                <!-- Progress Bar -->
+                <div class="mt-4 w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner border border-slate-200/50">
+                    <div class="bg-gradient-to-r from-campus-500 to-campus-700 h-full rounded-full transition-all duration-300 ease-out" :style="`width: ${progress}%`"></div>
+                </div>
+
+                <!-- Progress Percentage -->
+                <div class="mt-2 text-sm font-bold text-campus-700" x-text="`${progress}%`">0%</div>
+
+                <p class="text-xs text-slate-500 mt-4 leading-relaxed">
+                    Proses upload tergantung cepat atau lambatnya jaringan internet Anda.<br>
+                    Harap tunggu dan jangan menutup halaman ini.
+                </p>
+            </div>
         </div>
 
     </div>

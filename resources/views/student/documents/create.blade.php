@@ -2,6 +2,10 @@
     <div class="mx-auto max-w-5xl min-w-0 overflow-x-hidden" x-data="{ 
         mode: '{{ old('upload_mode', 'files') }}', 
         files: [],
+        uploading: false,
+        progress: 0,
+        statusText: '',
+        errorMessage: '',
         handleFileSelect(e) {
             if (this.mode === 'folder') {
                 const dt = new DataTransfer();
@@ -26,6 +30,61 @@
             });
             this.files = Array.from(dt.files);
             this.$refs.fileInput.files = dt.files;
+        },
+        submitForm(e) {
+            if (this.files.length === 0) return;
+            this.uploading = true;
+            this.progress = 0;
+            this.statusText = 'Menghubungkan ke server...';
+            this.errorMessage = '';
+
+            const form = e.target;
+            const formData = new FormData(form);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', form.action);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            // Progress listener
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    this.progress = percent;
+                    if (percent < 100) {
+                        this.statusText = `Mengunggah file... ${percent}%`;
+                    } else {
+                        this.statusText = 'Upload selesai. Server sedang membaca isi materi...';
+                    }
+                }
+            });
+
+            // Completion listener
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    this.statusText = 'Selesai! Mengalihkan halaman...';
+                    window.location.href = xhr.responseURL || '{{ route('documents.index') }}';
+                } else {
+                    this.uploading = false;
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.errors) {
+                            const firstErrKey = Object.keys(response.errors)[0];
+                            this.errorMessage = response.errors[firstErrKey][0];
+                        } else {
+                            this.errorMessage = response.message || 'Gagal mengunggah file. Silakan coba lagi.';
+                        }
+                    } catch (err) {
+                        this.errorMessage = 'Gagal mengunggah file. Silakan periksa ukuran file atau coba lagi.';
+                    }
+                }
+            };
+
+            xhr.onerror = () => {
+                this.uploading = false;
+                this.errorMessage = 'Koneksi ke server terputus. Harap periksa jaringan internet Anda.';
+            };
+
+            xhr.send(formData);
         }
     }">
         <section class="overflow-hidden rounded-[1.75rem] bg-campus-50 p-5 sm:p-7">
@@ -41,7 +100,7 @@
             </div>
         </section>
 
-        <form method="POST" action="{{ route('documents.store') }}" enctype="multipart/form-data" class="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
+        <form method="POST" action="{{ route('documents.store') }}" enctype="multipart/form-data" @submit.prevent="submitForm($event)" class="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
             @csrf
             <input type="hidden" name="upload_mode" x-bind:value="mode">
 
@@ -136,13 +195,46 @@
                     </div>
                 </div>
 
+                <!-- Error Alert -->
+                <div x-show="errorMessage" x-cloak class="mb-4 p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-sm flex gap-3 text-left">
+                    <i data-lucide="alert-circle" class="h-5 w-5 shrink-0 mt-0.5"></i>
+                    <div>
+                        <span class="font-bold">Gagal mengunggah:</span>
+                        <p class="mt-1" x-text="errorMessage"></p>
+                    </div>
+                </div>
+
                 <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                     <a href="{{ route('documents.index') }}" class="inline-flex justify-center rounded-full bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-200">Batal</a>
-                    <button class="inline-flex items-center justify-center gap-2 rounded-full bg-campus-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-campus-900">
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-full bg-campus-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-campus-900">
                         <i data-lucide="upload-cloud" class="h-4 w-4"></i> Upload Sekarang
                     </button>
                 </div>
             </section>
         </form>
+
+        <!-- Progress Overlay Modal -->
+        <div x-show="uploading" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div class="w-full max-w-md transform overflow-hidden rounded-[1.75rem] bg-white p-6 shadow-2xl border border-slate-100 text-center">
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-campus-50 text-campus-700 shadow-inner mb-4">
+                    <i data-lucide="upload-cloud" class="h-7 w-7 animate-bounce"></i>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-800 tracking-tight" x-text="statusText">Mengunggah file...</h3>
+                
+                <!-- Progress Bar -->
+                <div class="mt-4 w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner border border-slate-200/50">
+                    <div class="bg-gradient-to-r from-campus-500 to-campus-700 h-full rounded-full transition-all duration-300 ease-out" :style="`width: ${progress}%`"></div>
+                </div>
+
+                <!-- Progress Percentage -->
+                <div class="mt-2 text-sm font-bold text-campus-700" x-text="`${progress}%`">0%</div>
+
+                <p class="text-xs text-slate-500 mt-4 leading-relaxed">
+                    Proses upload tergantung cepat atau lambatnya jaringan internet Anda.<br>
+                    Harap tunggu dan jangan menutup halaman ini.
+                </p>
+            </div>
+        </div>
     </div>
 </x-app-layout>
