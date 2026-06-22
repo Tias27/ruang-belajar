@@ -1,5 +1,23 @@
 <x-app-layout title="{{ $document->title }}">
-    <div class="min-w-0 overflow-x-hidden" x-data="{ aiBusy: false }">
+    <div class="min-w-0 overflow-x-hidden" x-data="{ 
+        aiBusy: false,
+        confirmOpen: false,
+        confirmTitle: '',
+        confirmMessage: '',
+        confirmAction: null,
+        triggerConfirm(title, message, callback) {
+            this.confirmTitle = title;
+            this.confirmMessage = message;
+            this.confirmAction = callback;
+            this.confirmOpen = true;
+        },
+        executeConfirm() {
+            if (this.confirmAction) {
+                this.confirmAction();
+            }
+            this.confirmOpen = false;
+        }
+    }">
         <section class="overflow-hidden rounded-[1.75rem] bg-campus-50 p-5 sm:p-7">
             <div class="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div class="min-w-0">
@@ -26,10 +44,10 @@
                     <a href="{{ route('documents.download', $document) }}" class="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">
                         <i data-lucide="download" class="h-4 w-4"></i> Unduh
                     </a>
-                    <form method="POST" action="{{ route('documents.destroy', $document) }}" onsubmit="return confirm('Hapus file ini? Semua hasil belajar terkait juga ikut terhapus.')">
+                    <form method="POST" action="{{ route('documents.destroy', $document) }}" x-ref="deleteDocForm">
                         @csrf
                         @method('DELETE')
-                        <button class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-rose-700 shadow-sm hover:bg-rose-50">
+                        <button type="button" @click="triggerConfirm('Hapus File?', 'Hapus file ini? Semua hasil belajar terkait juga akan terhapus secara permanen.', () => $refs.deleteDocForm.submit())" class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-rose-700 shadow-sm hover:bg-rose-50">
                             <i data-lucide="trash-2" class="h-4 w-4"></i> Hapus
                         </button>
                     </form>
@@ -193,5 +211,21 @@
                 </div>
             </section>
         </section>
+        <!-- Custom Confirmation Modal -->
+        <div x-show="confirmOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+            <div class="w-full max-w-sm transform overflow-hidden rounded-[1.75rem] bg-white p-6 shadow-2xl border border-slate-100 text-center" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 shadow-inner mb-4">
+                    <i data-lucide="alert-triangle" class="h-7 w-7"></i>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-800 tracking-tight" x-text="confirmTitle">Konfirmasi</h3>
+                <p class="mt-2 text-sm text-slate-500 leading-relaxed" x-text="confirmMessage"></p>
+
+                <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <button type="button" @click="confirmOpen = false" class="inline-flex justify-center rounded-full bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">Batal</button>
+                    <button type="button" @click="executeConfirm()" class="inline-flex justify-center rounded-full bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 transition">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
     </div>
 </x-app-layout>
