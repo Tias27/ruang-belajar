@@ -4,6 +4,9 @@
         uploading: false,
         files: [],
         folderSelection: '',
+        progress: 0,
+        statusText: '',
+        errorMessage: '',
         handleFileSelect(e) {
             const newFiles = Array.from(e.target.files);
             if (newFiles.length > 0) {
@@ -14,6 +17,61 @@
             if (this.files.length === 0) return '';
             if (this.files.length === 1) return this.files[0].name;
             return this.files.length + ' file terpilih';
+        },
+        submitForm(e) {
+            if (this.files.length === 0) return;
+            this.uploading = true;
+            this.progress = 0;
+            this.statusText = 'Menghubungkan ke server...';
+            this.errorMessage = '';
+
+            const form = e.target;
+            const formData = new FormData(form);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', form.action);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            // Progress listener
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    this.progress = percent;
+                    if (percent < 100) {
+                        this.statusText = `Mengunggah file... ${percent}%`;
+                    } else {
+                        this.statusText = 'Upload selesai. Server sedang membaca isi materi...';
+                    }
+                }
+            });
+
+            // Completion listener
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    this.statusText = 'Selesai! Mengalihkan halaman...';
+                    window.location.href = xhr.responseURL || '{{ route('study-rooms.index') }}';
+                } else {
+                    this.uploading = false;
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.errors) {
+                            const firstErrKey = Object.keys(response.errors)[0];
+                            this.errorMessage = response.errors[firstErrKey][0];
+                        } else {
+                            this.errorMessage = response.message || 'Gagal mengunggah file. Silakan coba lagi.';
+                        }
+                    } catch (err) {
+                        this.errorMessage = 'Gagal mengunggah file. Silakan periksa ukuran file atau coba lagi.';
+                    }
+                }
+            };
+
+            xhr.onerror = () => {
+                this.uploading = false;
+                this.errorMessage = 'Koneksi ke server terputus. Harap periksa jaringan internet Anda.';
+            };
+
+            xhr.send(formData);
         }
     }">
         
