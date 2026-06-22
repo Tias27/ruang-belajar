@@ -325,7 +325,18 @@
                                     <div x-data="{ showSources: false }"
                                         class="min-w-0 flex-1 text-[15px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[13px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
 
-                                        <div x-html="formatMessage(message.content)"></div>
+                                        <!-- Typing indicator inside empty assistant message -->
+                                        <template x-if="!message.content.trim()">
+                                            <div class="flex items-center gap-1.5 pt-2.5">
+                                                <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_0ms]"></span>
+                                                <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_200ms]"></span>
+                                                <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_400ms]"></span>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="message.content.trim()">
+                                            <div x-html="formatMessage(message.content)"></div>
+                                        </template>
 
                                         <!-- Source Snippets Toggle -->
                                         <template x-if="message.metadata?.source_snippets?.length">
@@ -374,27 +385,6 @@
                         </div>
                     </div>
                 </template>
-
-                <!-- Typing Indicator -->
-                <div x-show="sending" x-cloak class="flex w-full justify-center">
-                    <div class="w-full max-w-3xl flex justify-start pr-4 sm:pr-12">
-                        <div class="flex gap-4 sm:gap-6 w-full">
-                            <div class="mt-1 shrink-0 hidden sm:block">
-                                <div
-                                    class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-campus-600 shadow-sm ring-1 ring-slate-100">
-                                    <i data-lucide="bot" class="h-5 w-5"></i>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-1.5 pt-2">
-                                <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_0ms]"></span>
-                                <span
-                                    class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_200ms]"></span>
-                                <span
-                                    class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_400ms]"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
             <!-- Input Area — floating at bottom like ChatGPT -->
             <div class="absolute bottom-0 left-0 right-0 px-3 pt-6 sm:px-4 lg:px-8 pointer-events-none"
