@@ -30,9 +30,11 @@ class SummaryController extends Controller
         return redirect()->route('summaries.show', $summary)->with('status', 'Ringkasan selesai diproses.');
     }
 
-    public function storeFolder(DocumentFolder $folder)
+    public function storeFolder(\Illuminate\Http\Request $request, DocumentFolder $folder)
     {
         abort_if($folder->user_id !== auth()->id(), 403);
+
+        $selectedDocIds = $request->input('document_ids');
 
         $summary = Summary::create([
             'folder_id' => $folder->id,
@@ -43,9 +45,10 @@ class SummaryController extends Controller
             'conclusion' => null,
             'raw_response' => [],
             'status' => 'processing',
+            'selected_document_ids' => $selectedDocIds,
         ]);
 
-        GenerateSummaryJob::dispatch($summary->id);
+        GenerateSummaryJob::dispatch($summary->id, $selectedDocIds);
 
         return redirect()->route('summaries.show', $summary)->with('status', 'Ringkasan folder selesai diproses.');
     }

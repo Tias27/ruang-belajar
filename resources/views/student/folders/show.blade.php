@@ -22,6 +22,14 @@
                 this.confirmAction();
             }
             this.confirmOpen = false;
+        },
+        selected: [],
+        allIds: @js($folder->documents->pluck('public_id')->values()),
+        get allSelected() {
+            return this.allIds.length > 0 && this.selected.length === this.allIds.length;
+        },
+        toggleAll() {
+            this.selected = this.allSelected ? [] : [...this.allIds];
         }
     }">
         <section class="overflow-hidden rounded-[1.75rem] bg-campus-50 p-5 sm:p-7">
@@ -62,40 +70,49 @@
             <div class="mt-6 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <form method="POST" action="{{ route('folders.summaries.store', $folder) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
                     @csrf
+                    <template x-for="id in selected" :key="id">
+                        <input type="hidden" name="document_ids[]" :value="id">
+                    </template>
                     <button x-bind:disabled="aiBusy || loading" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm transition hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span x-show="!loading" class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-campus-50 text-campus-700"><i data-lucide="notebook-tabs" class="h-5 w-5"></i></span>
                         <span x-show="loading" x-cloak class="h-10 w-10 shrink-0 animate-spin rounded-full border-2 border-campus-100 border-t-campus-700"></span>
                         <span class="min-w-0">
-                            <span class="block truncate text-sm font-semibold text-slate-900" x-text="loading ? 'Sedang meringkas...' : 'Ringkas folder'"></span>
-                            <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'AI membaca semua file dan menyusun hasil.' : 'Ambil inti seluruh materi.'"></span>
+                            <span class="block truncate text-sm font-semibold text-slate-900" x-text="loading ? 'Sedang meringkas...' : (selected.length > 0 ? 'Ringkas terpilih' : 'Ringkas folder')"></span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'AI membaca file terpilih dan menyusun hasil.' : (selected.length > 0 ? 'Ambil inti ' + selected.length + ' file terpilih.' : 'Ambil inti seluruh materi.')"></span>
                         </span>
                     </button>
                 </form>
 
                 <form method="POST" action="{{ route('folders.chat.create', $folder) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true" class="min-w-0">
                     @csrf
+                    <template x-for="id in selected" :key="id">
+                        <input type="hidden" name="document_ids[]" :value="id">
+                    </template>
                     <button x-bind:disabled="aiBusy" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm transition hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-accent-50 text-accent-700"><i data-lucide="messages-square" class="h-5 w-5"></i></span>
                         <span class="min-w-0">
-                            <span class="block truncate text-sm font-semibold text-slate-900">Tanya materi</span>
-                            <span class="mt-1 block text-xs leading-5 text-slate-500">Chat dari isi folder ini.</span>
+                            <span class="block truncate text-sm font-semibold text-slate-900" x-text="selected.length > 0 ? 'Tanya file terpilih' : 'Tanya materi'"></span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="selected.length > 0 ? 'Chat dari ' + selected.length + ' file terpilih.' : 'Chat dari isi folder ini.'"></span>
                         </span>
                     </button>
                 </form>
 
                 <form method="POST" action="{{ route('folders.quizzes.store', $folder) }}" x-data="{loading:false, open:false, type:'multiple_choice', count:10}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
                     @csrf
+                    <template x-for="id in selected" :key="id">
+                        <input type="hidden" name="document_ids[]" :value="id">
+                    </template>
                     <button type="button" x-show="!open" x-on:click="if (! aiBusy) open=true" x-bind:disabled="aiBusy" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm transition hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span x-show="!loading" class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-campus-50 text-campus-700"><i data-lucide="list-checks" class="h-5 w-5"></i></span>
                         <span x-show="loading" x-cloak class="h-10 w-10 shrink-0 animate-spin rounded-full border-2 border-campus-100 border-t-campus-700"></span>
                         <span class="min-w-0">
-                            <span class="block truncate text-sm font-semibold text-slate-900">Buat soal</span>
-                            <span class="mt-1 block text-xs leading-5 text-slate-500">Pilih PG/esai dan jumlah.</span>
+                            <span class="block truncate text-sm font-semibold text-slate-900" x-text="selected.length > 0 ? 'Buat soal terpilih' : 'Buat soal'"></span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="selected.length > 0 ? 'Soal dari ' + selected.length + ' file terpilih.' : 'Pilih PG/esai dan jumlah.'"></span>
                         </span>
                     </button>
                     <div x-show="open" x-cloak class="rounded-[1.25rem] bg-white p-4 shadow-sm">
                         <div class="flex items-center justify-between gap-3">
-                            <p class="text-sm font-semibold text-slate-900" x-text="loading ? 'Membuat soal...' : 'Atur soal folder'"></p>
+                            <p class="text-sm font-semibold text-slate-900" x-text="loading ? 'Membuat soal...' : (selected.length > 0 ? 'Atur soal terpilih' : 'Atur soal folder')"></p>
                             <button type="button" x-on:click="open=false" x-bind:disabled="aiBusy || loading" class="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 disabled:cursor-wait disabled:opacity-60" title="Tutup">
                                 <i data-lucide="x" class="h-4 w-4"></i>
                             </button>
@@ -127,23 +144,29 @@
 
                  <form method="POST" action="{{ route('folders.flashcards.store', $folder) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true; loading=true" class="min-w-0">
                     @csrf
+                    <template x-for="id in selected" :key="id">
+                        <input type="hidden" name="document_ids[]" :value="id">
+                    </template>
                     <button x-bind:disabled="aiBusy || loading" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm transition hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span x-show="!loading" class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-accent-50 text-accent-700"><i data-lucide="copy-check" class="h-5 w-5"></i></span>
                         <span x-show="loading" x-cloak class="h-10 w-10 shrink-0 animate-spin rounded-full border-2 border-campus-100 border-t-campus-700"></span>
                         <span class="min-w-0">
-                            <span class="block truncate text-sm font-semibold text-slate-900" x-text="loading ? 'Membuat kartu...' : 'Kartu belajar'"></span>
-                            <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'AI memilih poin penting.' : 'Flashcard singkat.'"></span>
+                            <span class="block truncate text-sm font-semibold text-slate-900" x-text="loading ? 'Membuat kartu...' : (selected.length > 0 ? 'Kartu terpilih' : 'Kartu belajar')"></span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'AI memilih poin penting.' : (selected.length > 0 ? 'Flashcard dari ' + selected.length + ' file terpilih.' : 'Flashcard singkat.')"></span>
                         </span>
                     </button>
                 </form>
 
                 <form method="POST" action="{{ route('folders.study-rooms.store', $folder) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } aiBusy=true" class="min-w-0">
                     @csrf
+                    <template x-for="id in selected" :key="id">
+                        <input type="hidden" name="document_ids[]" :value="id">
+                    </template>
                     <button x-bind:disabled="aiBusy" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm transition hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-accent-50 text-accent-700"><i data-lucide="users" class="h-5 w-5"></i></span>
                         <span class="min-w-0">
-                            <span class="block truncate text-sm font-semibold text-slate-900">Belajar bareng</span>
-                            <span class="mt-1 block text-xs leading-5 text-slate-500">Mulai room real-time.</span>
+                            <span class="block truncate text-sm font-semibold text-slate-900" x-text="selected.length > 0 ? 'Belajar bareng terpilih' : 'Belajar bareng'"></span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="selected.length > 0 ? 'Mulai room ' + selected.length + ' file terpilih.' : 'Mulai room real-time.'"></span>
                         </span>
                     </button>
                 </form>
@@ -152,7 +175,7 @@
 
         <div class="mt-5 flex min-w-0 items-start gap-3 rounded-[1.25rem] bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
             <i data-lucide="folder-check" class="mt-0.5 h-4 w-4 shrink-0 text-accent-700"></i>
-            <span class="min-w-0 break-words">AI membaca semua file di folder ini sebagai satu paket. {{ $processedDocuments }}/{{ $folder->documents_count }} file sudah terbaca.</span>
+            <span class="min-w-0 break-words" x-text="selected.length > 0 ? 'AI hanya membaca ' + selected.length + ' file yang dicentang di folder ini sebagai materi pembelajaran.' : 'AI membaca semua file di folder ini sebagai satu paket. ' + {{ $processedDocuments }} + '/' + {{ $folder->documents_count }} + ' file sudah terbaca.'"></span>
         </div>
 
         <section class="mt-5 min-w-0 overflow-hidden rounded-[1.5rem] bg-white p-5 shadow-sm" x-data="{ 
@@ -221,7 +244,7 @@
             <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">
                     <h2 class="text-base font-semibold text-slate-900">Ada materi yang kelupaan?</h2>
-                    <p class="mt-1 text-sm leading-6 text-slate-500">Tambahkan PDF, DOCX, atau PPTX ke folder ini tanpa membuat folder baru.</p>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">Tambahkan PDF, DOCX, PPTX, atau Gambar (PNG, JPG) ke folder ini tanpa membuat folder baru.</p>
                 </div>
                 <button type="button" x-on:click="open = ! open" class="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-campus-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-campus-900">
                     <i data-lucide="file-plus-2" class="h-4 w-4"></i>
@@ -299,16 +322,7 @@
         </section>
 
         <div class="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,.8fr)]">
-            <section class="min-w-0 overflow-hidden rounded-[1.5rem] bg-white p-5 shadow-sm" x-data="{
-                selected: [],
-                allIds: @js($folder->documents->pluck('public_id')->values()),
-                get allSelected() {
-                    return this.allIds.length > 0 && this.selected.length === this.allIds.length;
-                },
-                toggleAll() {
-                    this.selected = this.allSelected ? [] : [...this.allIds];
-                },
-            }">
+            <section class="min-w-0 overflow-hidden rounded-[1.5rem] bg-white p-5 shadow-sm">
                 <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div class="min-w-0">
                         <h2 class="text-base font-semibold text-slate-900">File dalam folder</h2>

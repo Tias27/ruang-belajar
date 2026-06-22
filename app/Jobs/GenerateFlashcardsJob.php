@@ -21,6 +21,7 @@ class GenerateFlashcardsJob implements ShouldQueue
         public string $sourceType,
         public int $sourceId,
         public int $userId,
+        public ?array $selectedDocIds = null,
     ) {
         $this->onQueue('ai');
     }
@@ -33,7 +34,7 @@ class GenerateFlashcardsJob implements ShouldQueue
         }
 
         try {
-            $result = $gemini->generateFlashcards($source);
+            $result = $gemini->generateFlashcards($source, $this->selectedDocIds);
             $flashcards = $result['flashcards'] ?? [];
 
             if (count($flashcards) === 0) {

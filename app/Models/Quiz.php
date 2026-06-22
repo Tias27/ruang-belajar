@@ -10,7 +10,12 @@ class Quiz extends Model
 {
     use HasFactory, HasPublicId;
 
-    protected $fillable = ['document_id', 'folder_id', 'user_id', 'study_room_id', 'title', 'question_type', 'question_count', 'status', 'generation_error'];
+    protected $fillable = ['document_id', 'folder_id', 'user_id', 'study_room_id', 'title', 'question_type', 'question_count', 'status', 'generation_error', 'selected_document_ids'];
+
+    protected function casts(): array
+    {
+        return ['selected_document_ids' => 'array'];
+    }
 
     public function studyRoom()
     {

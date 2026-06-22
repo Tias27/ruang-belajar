@@ -53,18 +53,24 @@ class DocumentFolder extends Model
         return $this->name;
     }
 
-    public function combinedExtractedText(): string
+    public function combinedExtractedText(?array $selectedDocIds = null): string
     {
-        return $this->documents()
-            ->oldest()
-            ->get(['title', 'extracted_text'])
+        $query = $this->documents()->oldest();
+        if ($selectedDocIds !== null && !empty($selectedDocIds)) {
+            $query->whereIn('public_id', $selectedDocIds);
+        }
+        return $query->get(['title', 'extracted_text'])
             ->filter(fn (Document $document) => filled($document->extracted_text))
             ->map(fn (Document $document) => "### {$document->title}\n{$document->extracted_text}")
             ->implode("\n\n");
     }
 
-    public function documentsForPrompt(): Collection
+    public function documentsForPrompt(?array $selectedDocIds = null): Collection
     {
-        return $this->documents()->oldest()->get(['title', 'extracted_text']);
+        $query = $this->documents()->oldest();
+        if ($selectedDocIds !== null && !empty($selectedDocIds)) {
+            $query->whereIn('public_id', $selectedDocIds);
+        }
+        return $query->get(['title', 'extracted_text', 'public_id']);
     }
 }

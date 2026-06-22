@@ -10,7 +10,12 @@ class ChatSession extends Model
 {
     use HasFactory, HasPublicId;
 
-    protected $fillable = ['document_id', 'folder_id', 'user_id', 'title'];
+    protected $fillable = ['document_id', 'folder_id', 'user_id', 'title', 'selected_document_ids'];
+
+    protected function casts(): array
+    {
+        return ['selected_document_ids' => 'array'];
+    }
 
     public function document()
     {

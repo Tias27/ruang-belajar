@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class StudyRoom extends Model
 {
-    protected $fillable = ['uuid', 'host_id', 'target_type', 'target_id', 'pin', 'status'];
+    protected $fillable = ['uuid', 'host_id', 'target_type', 'target_id', 'pin', 'status', 'selected_document_ids'];
+
+    protected function casts(): array
+    {
+        return ['selected_document_ids' => 'array'];
+    }
 
     public function getRouteKeyName()
     {

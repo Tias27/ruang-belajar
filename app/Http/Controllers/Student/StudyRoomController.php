@@ -226,16 +226,18 @@ class StudyRoomController extends Controller
         return redirect()->route('study-rooms.show', $room)->with('status', 'Room belajar bareng berhasil dibuat!');
     }
 
-    public function storeFolder(DocumentFolder $folder)
+    public function storeFolder(Request $request, DocumentFolder $folder)
     {
         abort_if($folder->user_id !== Auth::id(), 403);
 
-        $room = $this->createRoom($folder);
+        $selectedDocIds = $request->input('document_ids');
+
+        $room = $this->createRoom($folder, $selectedDocIds);
 
         return redirect()->route('study-rooms.show', $room)->with('status', 'Room belajar bareng berhasil dibuat!');
     }
 
-    private function createRoom($target)
+    private function createRoom($target, ?array $selectedDocIds = null)
     {
         // Close any other active rooms hosted by this user
         StudyRoom::where('host_id', Auth::id())
@@ -253,6 +255,7 @@ class StudyRoomController extends Controller
             'target_id' => $target->id,
             'pin' => $pin,
             'status' => 'active',
+            'selected_document_ids' => $selectedDocIds,
         ]);
     }
 
@@ -370,7 +373,7 @@ class StudyRoomController extends Controller
         $target = $room->target;
         $aiResponse = '';
         try {
-            $aiResponse = $gemini->chat($target, $request->message, $history);
+            $aiResponse = $gemini->chat($target, $request->message, $history, $room->selected_document_ids);
         } catch (\Throwable $exception) {
             report($exception);
             $aiResponse = $sources->fallbackAnswer($target, $request->message, $exception->getMessage());

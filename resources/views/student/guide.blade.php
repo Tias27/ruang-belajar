@@ -18,7 +18,7 @@
 
         <section class="mt-6 grid gap-4 lg:grid-cols-4">
             @foreach([
-                ['no' => '1', 'title' => 'Upload materi', 'text' => 'Masukkan PDF, DOCX, atau PPTX. Bisa satu file, banyak file, atau folder gabungan.', 'icon' => 'file-up-2'],
+                ['no' => '1', 'title' => 'Upload materi', 'text' => 'Masukkan PDF, DOCX, PPTX, atau Gambar (PNG, JPG). Bisa satu file, banyak file, atau folder gabungan.', 'icon' => 'file-up-2'],
                 ['no' => '2', 'title' => 'Buka file/folder', 'text' => 'Semua fitur AI ada di halaman detail materi, bukan dari dashboard utama.', 'icon' => 'folder-open'],
                 ['no' => '3', 'title' => 'Pilih fitur AI', 'text' => 'Gunakan Ringkas, Tanya materi, Latihan soal, atau Kartu belajar sesuai kebutuhan.', 'icon' => 'sparkles'],
                 ['no' => '4', 'title' => 'Lanjutkan belajar', 'text' => 'Cek riwayat AI, ulang flashcard, atau kerjakan soal lagi kapan saja.', 'icon' => 'repeat-2'],

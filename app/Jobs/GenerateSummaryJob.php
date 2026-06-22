@@ -18,7 +18,7 @@ class GenerateSummaryJob implements ShouldQueue
 
     public int $timeout = 300;
 
-    public function __construct(public int $summaryId)
+    public function __construct(public int $summaryId, public ?array $selectedDocIds = null)
     {
         $this->onQueue('ai');
     }
@@ -41,7 +41,7 @@ class GenerateSummaryJob implements ShouldQueue
         }
 
         try {
-            $result = $gemini->summarize($source);
+            $result = $gemini->summarize($source, $this->selectedDocIds);
             $keyPointsText = is_array($result['key_points'] ?? null)
                 ? implode(' ', $result['key_points'])
                 : (string) ($result['key_points'] ?? '');

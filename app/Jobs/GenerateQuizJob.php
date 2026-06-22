@@ -40,7 +40,7 @@ class GenerateQuizJob implements ShouldQueue
         }
 
         try {
-            $result = $gemini->generateQuiz($source, $quiz->question_type, $quiz->question_count);
+            $result = $gemini->generateQuiz($source, $quiz->question_type, $quiz->question_count, $quiz->selected_document_ids);
             $questions = $result['questions'] ?? [];
 
             if (count($questions) === 0) {

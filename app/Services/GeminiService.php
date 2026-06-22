@@ -12,7 +12,7 @@ use RuntimeException;
 
 class GeminiService
 {
-    public function summarize(Document|DocumentFolder $document): array
+    public function summarize(Document|DocumentFolder $document, ?array $selectedDocIds = null): array
     {
         $typeLabel = $document instanceof DocumentFolder ? 'seluruh materi dari kumpulan file dalam folder ini' : 'materi ini';
         $prompt = "Buat ringkasan belajar yang sangat komprehensif, mendalam, dan rapi dari {$typeLabel} dalam format JSON dengan kunci:
@@ -22,10 +22,10 @@ class GeminiService
 
 Fokus ke penjabaran inti materi, penjelasan konsep, alasan, langkah-langkah, dan insight penting. Jangan membuat ringkasan yang terlalu singkat jika materinya panjang. Abaikan bagian tidak penting seperti cover, daftar isi, atau identitas tugas.";
 
-        return $this->jsonPrompt($document, $prompt, 4000, 'summary');
+        return $this->jsonPrompt($document, $prompt, 4000, 'summary', $selectedDocIds);
     }
 
-    public function chat(Document|DocumentFolder $document, string $question, array $history = []): string
+    public function chat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null): string
     {
         $prompt = "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
 Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
@@ -43,15 +43,15 @@ Jika jawaban berisi data perbandingan, daftar item dengan banyak atribut, atau s
 
 Pertanyaan: {$question}";
 
-        return $this->textPrompt($document, $prompt, $question, 1100, null, 'chat', $history);
+        return $this->textPrompt($document, $prompt, $question, 1100, null, 'chat', $history, $selectedDocIds);
     }
 
-    public function streamChat(Document|DocumentFolder $document, string $question, array $history = []): \Generator
+    public function streamChat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null): \Generator
     {
         $prompt = "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
 Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
 Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
-Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka atau perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan benar-benar di luar topik materi (seperti resep makanan, menghitung jumlah huruf kata acak, atau di luar konteks belajar dokumen), tolak secara sopan dan jelaskan bahwa kamu fokus membantu memahami materi ini.
+Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka or perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan benar-benar di luar topik materi (seperti resep makanan, menghitung jumlah huruf kata acak, atau di luar konteks belajar dokumen), tolak secara sopan dan jelaskan bahwa kamu fokus membantu memahami materi ini.
 Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban.
 Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
 Jika pertanyaan menanyakan karakteristik (ciri-ciri), jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
@@ -64,7 +64,7 @@ Jika jawaban berisi data perbandingan, daftar item dengan banyak atribut, atau s
 
 Pertanyaan: {$question}";
 
-        $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history);
+        $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history, $selectedDocIds);
 
         if (config('services.ai.provider') === 'kimchi') {
             return $this->sendKimchiStream($builtPrompt, 1100, null, 'chat');
@@ -73,20 +73,20 @@ Pertanyaan: {$question}";
         return $this->sendGeminiStream($builtPrompt, 1100, null, 'chat');
     }
 
-    public function generateQuiz(Document|DocumentFolder $document, string $questionType = 'multiple_choice', int $questionCount = 10): array
+    public function generateQuiz(Document|DocumentFolder $document, string $questionType = 'multiple_choice', int $questionCount = 10, ?array $selectedDocIds = null): array
     {
         $questionCount = max(1, min(30, $questionCount));
 
         if ($questionType === 'essay') {
-            return $this->jsonPrompt($document, "Buat {$questionCount} soal esai dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[],\"correct_answer\":\"contoh jawaban ideal\",\"explanation\":\"pembahasan singkat\"}]}. Soal menguji pemahaman konsep dari materi. Hindari cover/judul/identitas dokumen. Pertanyaan ringkas, jawaban ideal maksimal 3 kalimat, pembahasan maksimal 1 kalimat.", min(2800, 900 + ($questionCount * 160)), 'quiz');
+            return $this->jsonPrompt($document, "Buat {$questionCount} soal esai dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[],\"correct_answer\":\"contoh jawaban ideal\",\"explanation\":\"pembahasan singkat\"}]}. Soal menguji pemahaman konsep dari materi. Hindari cover/judul/identitas dokumen. Pertanyaan ringkas, jawaban ideal maksimal 3 kalimat, pembahasan maksimal 1 kalimat.", min(2800, 900 + ($questionCount * 160)), 'quiz', $selectedDocIds);
         }
 
-        return $this->jsonPrompt($document, "Buat {$questionCount} soal pilihan ganda dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[\"A. ...\",\"B. ...\",\"C. ...\",\"D. ...\"],\"correct_answer\":\"A\",\"explanation\":\"\"}]}. Soal menguji pemahaman, bukan menyalin kalimat panjang. Pilihan pendek dan masuk akal. Hindari cover/judul/identitas dokumen. Pembahasan maksimal 1 kalimat. PENTING: Acak posisi jawaban yang benar secara merata di antara pilihan A, B, C, dan D pada setiap soal. Jangan menumpuk jawaban benar pada satu huruf pilihan saja (misalnya B terus-menerus atau A terus-menerus).", min(2800, 800 + ($questionCount * 130)), 'quiz');
+        return $this->jsonPrompt($document, "Buat {$questionCount} soal pilihan ganda dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[\"A. ...\",\"B. ...\",\"C. ...\",\"D. ...\"],\"correct_answer\":\"A\",\"explanation\":\"\"}]}. Soal menguji pemahaman, bukan menyalin kalimat panjang. Pilihan pendek dan masuk akal. Hindari cover/judul/identitas dokumen. Pembahasan maksimal 1 kalimat. PENTING: Acak posisi jawaban yang benar secara merata di antara pilihan A, B, C, dan D pada setiap soal. Jangan menumpuk jawaban benar pada satu huruf pilihan saja (misalnya B terus-menerus atau A terus-menerus).", min(2800, 800 + ($questionCount * 130)), 'quiz', $selectedDocIds);
     }
 
-    public function generateFlashcards(Document|DocumentFolder $document): array
+    public function generateFlashcards(Document|DocumentFolder $document, ?array $selectedDocIds = null): array
     {
-        return $this->jsonPrompt($document, 'Buat 10 kartu belajar dalam JSON: {"flashcards":[{"front":"","back":""}]}. Depan berupa pertanyaan singkat. Belakang berupa jawaban jelas maksimal 2 poin pendek. Prioritaskan definisi, manfaat, karakteristik, langkah, rumus, dan contoh penting. Hindari cover dan identitas tugas.', 1300, 'flashcard');
+        return $this->jsonPrompt($document, 'Buat 10 kartu belajar dalam JSON: {"flashcards":[{"front":"","back":""}]}. Depan berupa pertanyaan singkat. Belakang berupa jawaban jelas maksimal 2 poin pendek. Prioritaskan definisi, manfaat, karakteristik, langkah, rumus, dan contoh penting. Hindari cover dan identitas tugas.', 1300, 'flashcard', $selectedDocIds);
     }
 
     public function gradeEssayQuiz(Quiz $quiz, array $answers): array
@@ -124,14 +124,14 @@ Balas hanya JSON valid:
         return json_last_error() === JSON_ERROR_NONE ? $json : [];
     }
 
-    private function textPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default', array $history = []): string
+    private function textPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default', array $history = [], ?array $selectedDocIds = null): string
     {
-        return $this->sendText($this->buildPrompt($document, $instruction, $question, $task, $history), $maxOutputTokens, $responseMimeType, $task);
+        return $this->sendText($this->buildPrompt($document, $instruction, $question, $task, $history, $selectedDocIds), $maxOutputTokens, $responseMimeType, $task);
     }
 
-    private function jsonPrompt(Document|DocumentFolder $document, string $instruction, int $maxOutputTokens = 4096, string $task = 'default'): array
+    private function jsonPrompt(Document|DocumentFolder $document, string $instruction, int $maxOutputTokens = 4096, string $task = 'default', ?array $selectedDocIds = null): array
     {
-        $text = $this->textPrompt($document, $instruction."\nBalas hanya JSON valid tanpa markdown.", null, $maxOutputTokens, 'application/json', $task);
+        $text = $this->textPrompt($document, $instruction."\nBalas hanya JSON valid tanpa markdown.", null, $maxOutputTokens, 'application/json', $task, [], $selectedDocIds);
         $json = json_decode($this->extractJson($text), true);
 
         if (json_last_error() === JSON_ERROR_NONE) {
@@ -573,16 +573,16 @@ Balas hanya JSON valid:
         @ini_set('max_execution_time', '300');
     }
 
-    private function buildPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, string $task = 'default', array $history = []): string
+    private function buildPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, string $task = 'default', array $history = [], ?array $selectedDocIds = null): string
     {
         $sourceType = $document instanceof DocumentFolder ? 'FOLDER MATERI' : 'DOKUMEN';
         
         $contextPart = "";
         if ($question) {
-            $relevantContext = $this->chatContext($document, $question);
+            $relevantContext = $this->chatContext($document, $question, $selectedDocIds);
             $contextPart = "KONTEKS RELEVAN:\n{$relevantContext}";
         } else {
-            $contextPart = "KONTEKS DOKUMEN:\n" . $this->generationContext($document, $task);
+            $contextPart = "KONTEKS DOKUMEN:\n" . $this->generationContext($document, $task, $selectedDocIds);
         }
 
         $historyPart = "";
@@ -698,7 +698,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         }
     }
 
-    private function chatContext(Document|DocumentFolder $document, string $question): string
+    private function chatContext(Document|DocumentFolder $document, string $question, ?array $selectedDocIds = null): string
     {
         if ($document instanceof Document) {
             $text = $document->extracted_text ?: '';
@@ -708,12 +708,12 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
             return $this->relevantContext($text, $question, 150000);
         }
 
-        $combinedText = $document->combinedExtractedText();
+        $combinedText = $document->combinedExtractedText($selectedDocIds);
         if (mb_strlen($combinedText) < 500000) {
             return $combinedText !== '' ? $combinedText : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
         }
 
-        $sections = $document->documentsForPrompt()
+        $sections = $document->documentsForPrompt($selectedDocIds)
             ->filter(fn (Document $item) => filled($item->extracted_text))
             ->map(function (Document $item) use ($question) {
                 $context = $this->relevantContext($item->extracted_text ?: '', $question, 50000);
@@ -727,7 +727,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
             : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
     }
 
-    private function generationContext(Document|DocumentFolder $document, string $task = 'default'): string
+    private function generationContext(Document|DocumentFolder $document, string $task = 'default', ?array $selectedDocIds = null): string
     {
         $limit = match ($task) {
             'summary' => 500000,
@@ -747,7 +747,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
             default => 100000,
         };
 
-        $sections = $document->documentsForPrompt()
+        $sections = $document->documentsForPrompt($selectedDocIds)
             ->filter(fn (Document $item) => filled($item->extracted_text))
             ->map(fn (Document $item) => "### {$item->title}\n".$this->compactContext($item->extracted_text ?: '', $perDocumentLimit))
             ->implode("\n\n");

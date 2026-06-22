@@ -54,13 +54,16 @@ class ChatController extends Controller
         return redirect()->route('chat.show', $session);
     }
 
-    public function createFolder(DocumentFolder $folder)
+    public function createFolder(Request $request, DocumentFolder $folder)
     {
         abort_if($folder->user_id !== auth()->id(), 403);
+
+        $selectedDocIds = $request->input('document_ids');
 
         $session = $folder->chatSessions()->create([
             'user_id' => auth()->id(),
             'title' => 'Tanya Folder '.$folder->name,
+            'selected_document_ids' => $selectedDocIds,
         ]);
 
         return redirect()->route('chat.show', $session);
@@ -123,7 +126,7 @@ class ChatController extends Controller
                 $sourceSnippets = [];
 
                 try {
-                    $stream = $gemini->streamChat($source, $data['question'], $history);
+                    $stream = $gemini->streamChat($source, $data['question'], $history, $session->selected_document_ids);
                     foreach ($stream as $chunk) {
                         $fullAnswer .= $chunk;
                         echo "data: " . json_encode(['chunk' => $chunk]) . "\n\n";
@@ -176,7 +179,7 @@ class ChatController extends Controller
 
         // Fallback for non-AJAX / non-streaming requests
         try {
-            $answer = $gemini->chat($source, $data['question'], $history);
+            $answer = $gemini->chat($source, $data['question'], $history, $session->selected_document_ids);
             $sourceSnippets = $sources->snippetsFor($source, $data['question'].' '.$answer);
         } catch (Throwable $exception) {
             report($exception);

@@ -43,11 +43,11 @@ class FlashcardController extends Controller
         return redirect($redirectUrl)->with('status', 'Kartu belajar selesai diproses.');
     }
 
-    public function storeFolder(DocumentFolder $folder, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
+    public function storeFolder(Request $request, DocumentFolder $folder, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
     {
         $room = null;
-        if (request()->has('room')) {
-            $room = \App\Models\StudyRoom::where('uuid', request('room'))->first();
+        if ($request->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', $request->input('room'))->first();
         }
 
         $isAuthorized = false;
@@ -59,7 +59,9 @@ class FlashcardController extends Controller
 
         abort_if(! $isAuthorized, 403);
 
-        GenerateFlashcardsJob::dispatch('folder', $folder->id, auth()->id());
+        $selectedDocIds = $request->input('document_ids');
+
+        GenerateFlashcardsJob::dispatch('folder', $folder->id, auth()->id(), $selectedDocIds);
         $logger->log('queue_folder_flashcards', $folder);
 
         $redirectUrl = route('folders.flashcards.index', $folder);

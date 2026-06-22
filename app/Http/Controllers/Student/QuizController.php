@@ -50,18 +50,20 @@ class QuizController extends Controller
         return redirect($redirectUrl)->with('status', 'Soal selesai diproses.');
     }
 
-    public function storeFolder(DocumentFolder $folder, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
+    public function storeFolder(Request $request, DocumentFolder $folder, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
     {
         abort_if($folder->user_id !== auth()->id(), 403);
-        [$questionType, $questionCount] = $this->quizOptions(request());
+        [$questionType, $questionCount] = $this->quizOptions($request);
 
         $studyRoomId = null;
-        if (request()->has('room')) {
-            $room = \App\Models\StudyRoom::where('uuid', request('room'))->first();
+        if ($request->has('room')) {
+            $room = \App\Models\StudyRoom::where('uuid', $request->input('room'))->first();
             if ($room) {
                 $studyRoomId = $room->id;
             }
         }
+
+        $selectedDocIds = $request->input('document_ids');
 
         $quiz = Quiz::create([
             'folder_id' => $folder->id,
@@ -71,6 +73,7 @@ class QuizController extends Controller
             'question_type' => $questionType,
             'question_count' => $questionCount,
             'status' => 'processing',
+            'selected_document_ids' => $selectedDocIds,
         ]);
 
         GenerateQuizJob::dispatch($quiz->id);

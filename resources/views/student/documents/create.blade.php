@@ -139,6 +139,8 @@
                         <span class="rounded-full bg-white px-3 py-1.5 text-slate-600 shadow-sm">PDF</span>
                         <span class="rounded-full bg-white px-3 py-1.5 text-slate-600 shadow-sm">DOCX</span>
                         <span class="rounded-full bg-white px-3 py-1.5 text-slate-600 shadow-sm">PPTX</span>
+                        <span class="rounded-full bg-white px-3 py-1.5 text-slate-600 shadow-sm">PNG</span>
+                        <span class="rounded-full bg-white px-3 py-1.5 text-slate-600 shadow-sm">JPG</span>
                         <span class="rounded-full bg-campus-50 px-3 py-1.5 text-campus-700">20 MB / file</span>
                     </div>
                 </div>
