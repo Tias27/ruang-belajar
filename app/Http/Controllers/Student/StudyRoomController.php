@@ -391,11 +391,10 @@ class StudyRoomController extends Controller
             report($e);
         }
 
-        // Dispatch memory consolidation AFTER response is sent — avoids blocking the user with a 2nd AI call
-        \App\Jobs\ConsolidateAiMemoryJob::dispatch($target, auth()->user(), [
+        \App\Jobs\ConsolidateAiMemoryJob::dispatchSync($target, auth()->user(), [
             ['is_ai' => false, 'message' => $userMessage->message],
             ['is_ai' => true, 'message' => $aiMessage->message],
-        ])->afterResponse();
+        ]);
 
         return response()->json([
             'status' => 'success',

@@ -32,7 +32,7 @@ class FlashcardController extends Controller
 
         abort_if(! $isAuthorized, 403);
 
-        GenerateFlashcardsJob::dispatch('document', $document->id, auth()->id());
+        GenerateFlashcardsJob::dispatchSync('document', $document->id, auth()->id());
         $logger->log('queue_flashcards', $document);
 
         $redirectUrl = route('flashcards.index', $document);
@@ -61,7 +61,7 @@ class FlashcardController extends Controller
 
         $selectedDocIds = $request->input('document_ids');
 
-        GenerateFlashcardsJob::dispatch('folder', $folder->id, auth()->id(), $selectedDocIds);
+        GenerateFlashcardsJob::dispatchSync('folder', $folder->id, auth()->id(), $selectedDocIds);
         $logger->log('queue_folder_flashcards', $folder);
 
         $redirectUrl = route('folders.flashcards.index', $folder);

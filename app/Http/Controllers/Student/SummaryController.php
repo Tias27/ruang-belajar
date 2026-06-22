@@ -25,7 +25,7 @@ class SummaryController extends Controller
             'status' => 'processing',
         ]);
 
-        GenerateSummaryJob::dispatch($summary->id);
+        GenerateSummaryJob::dispatchSync($summary->id);
 
         return redirect()->route('summaries.show', $summary)->with('status', 'Ringkasan selesai diproses.');
     }
@@ -48,7 +48,7 @@ class SummaryController extends Controller
             'selected_document_ids' => $selectedDocIds,
         ]);
 
-        GenerateSummaryJob::dispatch($summary->id, $selectedDocIds);
+        GenerateSummaryJob::dispatchSync($summary->id, $selectedDocIds);
 
         return redirect()->route('summaries.show', $summary)->with('status', 'Ringkasan folder selesai diproses.');
     }

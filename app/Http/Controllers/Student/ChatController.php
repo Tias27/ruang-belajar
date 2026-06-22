@@ -152,11 +152,10 @@ class ChatController extends Controller
                     ],
                 ]);
 
-                // Dispatch job to consolidate long-term memory in the background
-                \App\Jobs\ConsolidateAiMemoryJob::dispatch($source, auth()->user(), [
+                \App\Jobs\ConsolidateAiMemoryJob::dispatchSync($source, auth()->user(), [
                     ['is_ai' => false, 'message' => $data['question']],
                     ['is_ai' => true, 'message' => $fullAnswer],
-                ])->afterResponse();
+                ]);
 
                 echo "data: " . json_encode([
                     'done' => true,
@@ -196,11 +195,10 @@ class ChatController extends Controller
         $session->update(['title' => Str::limit($data['question'], 70)]);
         $logger->log('chat_document', $session, ['document_id' => $session->document_id, 'folder_id' => $session->folder_id]);
 
-        // Dispatch job to consolidate long-term memory in the background
-        \App\Jobs\ConsolidateAiMemoryJob::dispatch($source, auth()->user(), [
+        \App\Jobs\ConsolidateAiMemoryJob::dispatchSync($source, auth()->user(), [
             ['is_ai' => false, 'message' => $data['question']],
             ['is_ai' => true, 'message' => $answer],
-        ])->afterResponse();
+        ]);
 
         return redirect()->route('chat.show', $session);
     }

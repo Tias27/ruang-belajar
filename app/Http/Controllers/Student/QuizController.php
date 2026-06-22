@@ -39,7 +39,7 @@ class QuizController extends Controller
             'status' => 'processing',
         ]);
 
-        GenerateQuizJob::dispatch($quiz->id);
+        GenerateQuizJob::dispatchSync($quiz->id);
         $logger->log('queue_quiz', $quiz, ['document_id' => $document->id]);
 
         $redirectUrl = route('quizzes.show', $quiz);
@@ -76,7 +76,7 @@ class QuizController extends Controller
             'selected_document_ids' => $selectedDocIds,
         ]);
 
-        GenerateQuizJob::dispatch($quiz->id);
+        GenerateQuizJob::dispatchSync($quiz->id);
         $logger->log('queue_folder_quiz', $quiz, ['folder_id' => $folder->id]);
 
         $redirectUrl = route('quizzes.show', $quiz);
