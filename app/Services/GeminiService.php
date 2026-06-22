@@ -14,15 +14,23 @@ class GeminiService
 {
     public function summarize(Document|DocumentFolder $document, ?array $selectedDocIds = null): array
     {
-        $typeLabel = $document instanceof DocumentFolder ? 'seluruh materi dari kumpulan file dalam folder ini' : 'materi ini';
-        $prompt = "Buat ringkasan belajar yang sangat komprehensif, mendalam, dan rapi dari {$typeLabel} dalam format JSON dengan kunci:
-- full_summary: penjelasan materi secara detail, menyeluruh, dan terstruktur. Bahas semua topik, bab, atau sub-materi secara proporsional. **Gunakan format Markdown (heading, bold, list bullet/numbering) di dalam nilai string ini agar rapi saat ditampilkan.** Semakin banyak materi, ringkasan ini harus semakin panjang dan detail.
-- key_points: array of string, berisi poin-poin utama yang sangat penting (buat minimal 7-15 poin tergantung banyaknya materi).
-- conclusion: kesimpulan akhir yang merangkum keseluruhan pembelajaran.
+        $isFolder = $document instanceof DocumentFolder;
+        $typeLabel = $isFolder ? 'seluruh materi dari kumpulan file dalam folder ini' : 'materi ini';
+        
+        $prompt = "Buat ringkasan belajar yang sangat komprehensif, mendalam, sangat panjang, dan rapi dari {$typeLabel} dalam format JSON dengan kunci:
+- full_summary: penjelasan materi secara sangat detail, menyeluruh, terstruktur, dan mendalam. 
+  " . ($isFolder ? "PENTING: Karena ini adalah kumpulan dokumen dalam satu folder, Anda WAJIB membuat bagian ringkasan terpisah untuk SETIAP file/dokumen yang ada di dalam folder tersebut. Berikan subjudul (menggunakan markdown heading seperti ### atau ####) untuk setiap nama dokumen/file, lalu jelaskan materi dari dokumen tersebut secara mendalam. Jangan menggabungkan atau meringkas secara singkat materi antar dokumen yang berbeda. Bahas setiap topik, konsep, rumus, diagram, atau poin penting dari masing-masing dokumen secara proporsional dan sangat detail (minimal 200-500 kata per dokumen/topik utama). Total panjang ringkasan harus berkisar antara 1500 sampai 3500 kata untuk mencakup seluruh isi materi secara utuh." : "Bahas semua topik, bab, atau sub-materi secara detail dan proporsional. Berikan penjelasan mendalam untuk setiap konsep penting.") . "
+  **Gunakan format Markdown yang kaya (seperti heading, bold, list bullet/numbering, tabel, blockquote, atau kode jika relevan) di dalam nilai string ini agar rapi saat ditampilkan.** 
+- key_points: array of string, berisi poin-poin utama yang sangat penting (buat minimal " . ($isFolder ? "15-25" : "8-15") . " poin penting yang mencakup seluruh materi secara menyeluruh).
+- conclusion: kesimpulan akhir yang merangkum keseluruhan pembelajaran secara holistik.
 
-Fokus ke penjabaran inti materi, penjelasan konsep, alasan, langkah-langkah, dan insight penting. Jangan membuat ringkasan yang terlalu singkat jika materinya panjang. Abaikan bagian tidak penting seperti cover, daftar isi, atau identitas tugas.";
+Aturan Penting:
+1. Jangan membuat ringkasan yang terlalu singkat atau hanya garis besar saja. Pengguna membutuhkan penjelasan detail dari setiap konsep agar bisa dipelajari dengan baik.
+2. Fokus ke penjabaran inti materi, penjelasan konsep, alasan, langkah-langkah, rumus (jika ada), dan insight penting.
+3. Abaikan bagian tidak penting seperti cover, daftar isi, lampiran kosong, atau identitas tugas.
+4. Pastikan response dalam format JSON valid.";
 
-        return $this->jsonPrompt($document, $prompt, 4000, 'summary', $selectedDocIds);
+        return $this->jsonPrompt($document, $prompt, 7000, 'summary', $selectedDocIds);
     }
 
     public function chat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null): string
@@ -177,10 +185,11 @@ Balas hanya JSON valid:
     private function sendText(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
     {
         $this->extendExecutionTime();
+        $isJson = ($responseMimeType === 'application/json');
 
         if (config('services.ai.provider') === 'kimchi') {
             try {
-                return $this->cleanModelText($this->sendKimchi($prompt, $maxOutputTokens, $responseMimeType, $task));
+                return $this->cleanModelText($this->sendKimchi($prompt, $maxOutputTokens, $responseMimeType, $task), $isJson);
             } catch (RuntimeException $exception) {
                 if (config('services.ai.fallback_provider') !== 'gemini' || ! $this->geminiConfigured()) {
                     throw $exception;
@@ -189,14 +198,14 @@ Balas hanya JSON valid:
                 report($exception);
                 $response = $this->sendGemini($prompt, $maxOutputTokens, $responseMimeType);
 
-                return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'));
+                return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'), $isJson);
             }
         }
 
         try {
             $response = $this->sendGemini($prompt, $maxOutputTokens, $responseMimeType);
 
-            return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'));
+            return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'), $isJson);
         } catch (RuntimeException $exception) {
             if (! $this->kimchiConfigured()) {
                 throw $exception;
@@ -204,7 +213,7 @@ Balas hanya JSON valid:
 
             report($exception);
 
-            return $this->cleanModelText($this->sendKimchi($prompt, $maxOutputTokens, $responseMimeType, $task));
+            return $this->cleanModelText($this->sendKimchi($prompt, $maxOutputTokens, $responseMimeType, $task), $isJson);
         }
     }
 
@@ -713,17 +722,28 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
             return $combinedText !== '' ? $combinedText : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
         }
 
-        $sections = $document->documentsForPrompt($selectedDocIds)
-            ->filter(fn (Document $item) => filled($item->extracted_text))
-            ->map(function (Document $item) use ($question) {
-                $context = $this->relevantContext($item->extracted_text ?: '', $question, 50000);
+        $documents = $document->documentsForPrompt($selectedDocIds)
+            ->filter(fn (Document $item) => filled($item->extracted_text));
+
+        $documentCount = $documents->count();
+        if ($documentCount === 0) {
+            return 'Materi folder belum memiliki teks yang berhasil diekstrak.';
+        }
+
+        $totalLimit = 200000;
+        $perDocumentLimit = (int) floor(($totalLimit - ($documentCount * 100)) / $documentCount);
+        $perDocumentLimit = max(1000, $perDocumentLimit);
+
+        $sections = $documents
+            ->map(function (Document $item) use ($question, $perDocumentLimit) {
+                $context = $this->relevantContext($item->extracted_text ?: '', $question, $perDocumentLimit);
 
                 return "### {$item->title}\n{$context}";
             })
             ->implode("\n\n");
 
         return $sections !== ''
-            ? Str::limit($sections, 200000)
+            ? Str::limit($sections, $totalLimit)
             : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
     }
 
@@ -740,15 +760,18 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
             return $this->compactContext($document->extracted_text ?: 'Materi belum memiliki teks yang berhasil diekstrak.', $limit);
         }
 
-        $perDocumentLimit = match ($task) {
-            'summary' => 100000,
-            'quiz' => 80000,
-            'flashcard' => 60000,
-            default => 100000,
-        };
+        $documents = $document->documentsForPrompt($selectedDocIds)
+            ->filter(fn (Document $item) => filled($item->extracted_text));
 
-        $sections = $document->documentsForPrompt($selectedDocIds)
-            ->filter(fn (Document $item) => filled($item->extracted_text))
+        $documentCount = $documents->count();
+        if ($documentCount === 0) {
+            return 'Materi folder belum memiliki teks yang berhasil diekstrak.';
+        }
+
+        $perDocumentLimit = (int) floor(($limit - ($documentCount * 100)) / $documentCount);
+        $perDocumentLimit = max(1000, $perDocumentLimit);
+
+        $sections = $documents
             ->map(fn (Document $item) => "### {$item->title}\n".$this->compactContext($item->extracted_text ?: '', $perDocumentLimit))
             ->implode("\n\n");
 
@@ -865,17 +888,21 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         return Str::limit(implode("\n", $selected), $limit);
     }
 
-    private function cleanModelText(string $text): string
+    private function cleanModelText(string $text, bool $isJson = false): string
     {
         $text = preg_replace('/<think>.*?<\/think>/is', '', $text) ?: $text;
         $text = preg_replace('/^\s*(?:reasoning|pemikiran|proses berpikir)\s*:.*?(?=\n#{1,6}\s|\n[A-Z]|\z)/isu', '', $text) ?: $text;
         $text = $this->repairMojibake($text);
-        $text = preg_replace('/^#{1,6}\s*/m', '', $text) ?: $text;
-        $text = preg_replace('/^\s*-{3,}\s*$/m', '', $text) ?: $text;
-        $text = preg_replace('/```+/', '', $text) ?: $text;
-        $text = preg_replace('/^\|[-:\s|]+\|\s*$/m', '', $text) ?: $text;
-        $text = preg_replace('/^\|\s*(.*?)\s*\|\s*$/m', '$1', $text) ?: $text;
-        $text = preg_replace('/\s*\|\s*/', ' | ', $text) ?: $text;
+        
+        if (!$isJson) {
+            $text = preg_replace('/^#{1,6}\s*/m', '', $text) ?: $text;
+            $text = preg_replace('/^\s*-{3,}\s*$/m', '', $text) ?: $text;
+            $text = preg_replace('/```+/', '', $text) ?: $text;
+            $text = preg_replace('/^\|[-:\s|]+\|\s*$/m', '', $text) ?: $text;
+            $text = preg_replace('/^\|\s*(.*?)\s*\|\s*$/m', '$1', $text) ?: $text;
+            $text = preg_replace('/\s*\|\s*/', ' | ', $text) ?: $text;
+        }
+        
         $text = preg_replace('/\n{3,}/', "\n\n", $text) ?: $text;
 
         return trim($text);
