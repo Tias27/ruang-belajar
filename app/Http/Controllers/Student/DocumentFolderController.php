@@ -75,6 +75,7 @@ class DocumentFolderController extends Controller
         foreach ($files as $file) {
             $extension = strtolower($file->getClientOriginalExtension());
             $originalName = $file->getClientOriginalName();
+            $fileSize = $file->getSize();
             $fileName = (string) Str::uuid().'.'.$extension;
             $path = 'documents/'.$fileName;
             $absolutePath = $storageDirectory.DIRECTORY_SEPARATOR.$fileName;
@@ -89,7 +90,7 @@ class DocumentFolderController extends Controller
                 'file_name' => $fileName,
                 'file_path' => $path,
                 'mime_type' => $this->mimeTypeFor($extension),
-                'size' => $file->getSize(),
+                'size' => $fileSize,
                 'extension' => $extension,
                 'status' => 'processing',
             ]);
