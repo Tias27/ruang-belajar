@@ -70,7 +70,7 @@
                 </form>
             </div>
 
-            <div class="mt-6 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div class="mt-6 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5 items-start">
                 <form method="POST" action="{{ route('folders.summaries.store', $folder) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
                     @csrf
                     <template x-for="id in selected" :key="id">

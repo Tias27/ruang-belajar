@@ -57,7 +57,7 @@
                 </div>
             </div>
 
-            <div class="mt-6 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div class="mt-6 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5 items-start">
                 <form method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
                     @csrf
                     <button x-bind:disabled="aiBusy || loading" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">

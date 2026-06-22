@@ -21,6 +21,9 @@
                         if (this.$refs.messages) {
                             this.$refs.messages.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: 'smooth' });
                         }
+                        if (window.lucide) {
+                            window.lucide.createIcons();
+                        }
                     });
                 },
                 formatMessage(content) {
