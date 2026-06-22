@@ -702,38 +702,38 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
     {
         if ($document instanceof Document) {
             $text = $document->extracted_text ?: '';
-            if (mb_strlen($text) < 120000) {
+            if (mb_strlen($text) < 500000) {
                 return $text !== '' ? $text : 'Materi dokumen belum memiliki teks yang berhasil diekstrak.';
             }
-            return $this->relevantContext($text, $question, 40000);
+            return $this->relevantContext($text, $question, 150000);
         }
 
         $combinedText = $document->combinedExtractedText();
-        if (mb_strlen($combinedText) < 120000) {
+        if (mb_strlen($combinedText) < 500000) {
             return $combinedText !== '' ? $combinedText : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
         }
 
         $sections = $document->documentsForPrompt()
             ->filter(fn (Document $item) => filled($item->extracted_text))
             ->map(function (Document $item) use ($question) {
-                $context = $this->relevantContext($item->extracted_text ?: '', $question, 10000);
+                $context = $this->relevantContext($item->extracted_text ?: '', $question, 50000);
 
                 return "### {$item->title}\n{$context}";
             })
             ->implode("\n\n");
 
         return $sections !== ''
-            ? Str::limit($sections, 45000)
+            ? Str::limit($sections, 200000)
             : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
     }
 
     private function generationContext(Document|DocumentFolder $document, string $task = 'default'): string
     {
         $limit = match ($task) {
-            'summary' => 5600,
-            'quiz' => 4600,
-            'flashcard' => 3600,
-            default => 6500,
+            'summary' => 500000,
+            'quiz' => 400000,
+            'flashcard' => 300000,
+            default => 600000,
         };
 
         if ($document instanceof Document) {
@@ -741,10 +741,10 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         }
 
         $perDocumentLimit = match ($task) {
-            'summary' => 800,
-            'quiz' => 650,
-            'flashcard' => 500,
-            default => 800,
+            'summary' => 100000,
+            'quiz' => 80000,
+            'flashcard' => 60000,
+            default => 100000,
         };
 
         $sections = $document->documentsForPrompt()
@@ -783,7 +783,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
             return 'Materi belum memiliki teks yang berhasil diekstrak.';
         }
 
-        $context = Str::limit($context, 90000, '');
+        $context = Str::limit($context, 400000, '');
 
         $terms = collect(preg_split('/[^\pL\pN]+/u', mb_strtolower($question)) ?: [])
             ->filter(fn (string $term) => mb_strlen($term) >= 3)
