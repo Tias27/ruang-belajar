@@ -19,9 +19,9 @@ class GeminiService
         
         $prompt = "Buat ringkasan belajar yang sangat komprehensif, mendalam, sangat panjang, dan rapi dari {$typeLabel} dalam format JSON dengan kunci:
 - full_summary: penjelasan materi secara sangat detail, menyeluruh, terstruktur, dan mendalam. 
-  " . ($isFolder ? "PENTING: Karena ini adalah kumpulan dokumen dalam satu folder, Anda WAJIB membuat bagian ringkasan terpisah untuk SETIAP file/dokumen yang ada di dalam folder tersebut. Berikan subjudul (menggunakan markdown heading seperti ### atau ####) untuk setiap nama dokumen/file, lalu jelaskan materi dari dokumen tersebut secara mendalam. Jangan menggabungkan atau meringkas secara singkat materi antar dokumen yang berbeda. Bahas setiap topik, konsep, rumus, diagram, atau poin penting dari masing-masing dokumen secara proporsional dan sangat detail (minimal 200-500 kata per dokumen/topik utama). Total panjang ringkasan harus berkisar antara 1500 sampai 3500 kata untuk mencakup seluruh isi materi secara utuh." : "Bahas semua topik, bab, atau sub-materi secara detail dan proporsional. Berikan penjelasan mendalam untuk setiap konsep penting.") . "
+  " . ($isFolder ? "PENTING: Karena ini adalah kumpulan dokumen dalam satu folder, Anda WAJIB membuat bagian ringkasan terpisah untuk SETIAP file/dokumen yang ada di dalam folder tersebut secara lengkap. Berikan subjudul nama dokumen/file menggunakan markdown heading (seperti ### [Nama File/Dokumen]). Untuk setiap dokumen, buatlah penjelasan yang sangat terperinci (minimal 3 paragraf panjang, sekitar 300-600 kata per dokumen). Kupas tuntas konsep utama, istilah penting, rumus, bagan, langkah-langkah, dan hasil analisis materi di dalam dokumen tersebut secara proporsional. Jangan menggabungkan, memotong, atau meringkas secara singkat materi antar dokumen yang berbeda. Total panjang ringkasan harus berkisar antara 2000 sampai 4500 kata untuk mencakup seluruh isi materi secara utuh." : "PENTING: Bedah seluruh bab, sub-materi, konsep, rumus, istilah teknis, dan langkah-langkah dari file ini secara sangat detail. Buat penjelasan yang sangat mendalam dan panjang (minimal 5-8 paragraf panjang, sekitar 1500-3000 kata secara keseluruhan) untuk menjelaskan seluruh materi ini secara komprehensif. Jangan menyingkat atau memadatkan penjelasan.") . "
   **Gunakan format Markdown yang kaya (seperti heading, bold, list bullet/numbering, tabel, blockquote, atau kode jika relevan) di dalam nilai string ini agar rapi saat ditampilkan.** 
-- key_points: array of string, berisi poin-poin utama yang sangat penting (buat minimal " . ($isFolder ? "15-25" : "8-15") . " poin penting yang mencakup seluruh materi secara menyeluruh).
+- key_points: array of string, berisi poin-poin utama yang sangat penting (buat minimal " . ($isFolder ? "20-30" : "12-20") . " poin penting yang mencakup seluruh materi secara menyeluruh).
 - conclusion: kesimpulan akhir yang merangkum keseluruhan pembelajaran secara holistik.
 
 Aturan Penting:
@@ -30,7 +30,7 @@ Aturan Penting:
 3. Abaikan bagian tidak penting seperti cover, daftar isi, lampiran kosong, atau identitas tugas.
 4. Pastikan response dalam format JSON valid.";
 
-        return $this->jsonPrompt($document, $prompt, 7000, 'summary', $selectedDocIds);
+        return $this->jsonPrompt($document, $prompt, 7500, 'summary', $selectedDocIds);
     }
 
     public function chat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null): string
@@ -196,14 +196,14 @@ Balas hanya JSON valid:
                 }
 
                 report($exception);
-                $response = $this->sendGemini($prompt, $maxOutputTokens, $responseMimeType);
+                $response = $this->sendGemini($prompt, $maxOutputTokens, $responseMimeType, $task);
 
                 return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'), $isJson);
             }
         }
 
         try {
-            $response = $this->sendGemini($prompt, $maxOutputTokens, $responseMimeType);
+            $response = $this->sendGemini($prompt, $maxOutputTokens, $responseMimeType, $task);
 
             return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'), $isJson);
         } catch (RuntimeException $exception) {
@@ -217,7 +217,7 @@ Balas hanya JSON valid:
         }
     }
 
-    private function sendGemini(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null): array
+    private function sendGemini(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): array
     {
         $this->extendExecutionTime();
 
@@ -232,7 +232,7 @@ Balas hanya JSON valid:
         $connectTimeout = max(3, min((int) config('services.gemini.connect_timeout', 15), $timeout));
 
         $generationConfig = [
-            'temperature' => 0.4,
+            'temperature' => $task === 'summary' ? 0.7 : 0.4,
             'topP' => 0.9,
             'maxOutputTokens' => max(512, min($maxOutputTokens, 8192)),
         ];
@@ -387,7 +387,7 @@ Balas hanya JSON valid:
         $payload = [
             'model' => $model,
             'messages' => $messages,
-            'temperature' => 0.2,
+            'temperature' => $task === 'summary' ? 0.7 : 0.2,
             'max_tokens' => max(512, min($maxOutputTokens, 8192)),
         ];
 
