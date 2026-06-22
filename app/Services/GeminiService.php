@@ -24,6 +24,13 @@ class GeminiService
 - key_points: array of string, berisi poin-poin utama yang sangat penting (buat minimal " . ($isFolder ? "20-30" : "12-20") . " poin penting yang mencakup seluruh materi secara menyeluruh).
 - conclusion: kesimpulan akhir yang merangkum keseluruhan pembelajaran secara holistik.
 
+Contoh struktur JSON yang diharapkan (isi dengan konten nyata, bukan placeholder):
+{
+  \"full_summary\": \"Penjelasan materi lengkap dalam Markdown...\",
+  \"key_points\": [\"Poin penting pertama\", \"Poin penting kedua\"],
+  \"conclusion\": \"Kesimpulan akhir pembelajaran.\"
+}
+
 Aturan Penting:
 1. Jangan membuat ringkasan yang terlalu singkat atau hanya garis besar saja. Pengguna membutuhkan penjelasan detail dari setiap konsep agar bisa dipelajari dengan baik.
 2. Fokus ke penjabaran inti materi, penjelasan konsep, alasan, langkah-langkah, rumus (jika ada), dan insight penting.
@@ -35,7 +42,27 @@ Aturan Penting:
 
     public function chat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null): string
     {
-        $prompt = "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
+        $prompt = $this->chatPrompt($question);
+        
+        return $this->textPrompt($document, $prompt, $question, 1100, null, 'chat', $history, $selectedDocIds);
+    }
+
+    public function streamChat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null): \Generator
+    {
+        $prompt = $this->chatPrompt($question);
+
+        $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history, $selectedDocIds);
+
+        if (config('services.ai.provider') === 'kimchi') {
+            return $this->sendKimchiStream($builtPrompt, 1100, null, 'chat');
+        }
+
+        return $this->sendGeminiStream($builtPrompt, 1100, null, 'chat');
+    }
+
+    private function chatPrompt(string $question): string
+    {
+        return "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
 Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
 Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
 Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka atau perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan benar-benar di luar topik materi (seperti resep makanan, menghitung jumlah huruf kata acak, atau di luar konteks belajar dokumen), tolak secara sopan dan jelaskan bahwa kamu fokus membantu memahami materi ini.
@@ -50,35 +77,6 @@ Kalau pertanyaan pendek atau typo, tafsirkan maksud terdekat dari materi.
 Jika jawaban berisi data perbandingan, daftar item dengan banyak atribut, atau struktur yang lebih mudah dibaca dalam bentuk tabel, gunakan format tabel Markdown.
 
 Pertanyaan: {$question}";
-
-        return $this->textPrompt($document, $prompt, $question, 1100, null, 'chat', $history, $selectedDocIds);
-    }
-
-    public function streamChat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null): \Generator
-    {
-        $prompt = "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
-Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
-Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
-Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka or perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan benar-benar di luar topik materi (seperti resep makanan, menghitung jumlah huruf kata acak, atau di luar konteks belajar dokumen), tolak secara sopan dan jelaskan bahwa kamu fokus membantu memahami materi ini.
-Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban.
-Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
-Jika pertanyaan menanyakan karakteristik (ciri-ciri), jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
-Jika jawaban ada dalam bentuk daftar di materi, rangkum seluruh daftar tersebut dengan bahasa rapi.
-Jika materi punya istilah teknis, jelaskan arti istilahnya dulu lalu hubungkan dengan konteks dokumen.
-Berikan jawaban yang terasa seperti tutor pintar: jelas, lengkap, tidak kaku, dan tetap tidak bertele-tele.
-Jangan cuma menjawab satu poin jika materi memuat banyak poin. Gabungkan semua poin relevan menjadi jawaban utuh.
-Kalau pertanyaan pendek atau typo, tafsirkan maksud terdekat dari materi.
-Jika jawaban berisi data perbandingan, daftar item dengan banyak atribut, atau struktur yang lebih mudah dibaca dalam bentuk tabel, gunakan format tabel Markdown.
-
-Pertanyaan: {$question}";
-
-        $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history, $selectedDocIds);
-
-        if (config('services.ai.provider') === 'kimchi') {
-            return $this->sendKimchiStream($builtPrompt, 1100, null, 'chat');
-        }
-
-        return $this->sendGeminiStream($builtPrompt, 1100, null, 'chat');
     }
 
     public function generateQuiz(Document|DocumentFolder $document, string $questionType = 'multiple_choice', int $questionCount = 10, ?array $selectedDocIds = null): array
@@ -89,7 +87,7 @@ Pertanyaan: {$question}";
             return $this->jsonPrompt($document, "Buat {$questionCount} soal esai dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[],\"correct_answer\":\"contoh jawaban ideal\",\"explanation\":\"pembahasan singkat\"}]}. Soal menguji pemahaman konsep dari materi. Hindari cover/judul/identitas dokumen. Pertanyaan ringkas, jawaban ideal maksimal 3 kalimat, pembahasan maksimal 1 kalimat.", min(2800, 900 + ($questionCount * 160)), 'quiz', $selectedDocIds);
         }
 
-        return $this->jsonPrompt($document, "Buat {$questionCount} soal pilihan ganda dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[\"A. ...\",\"B. ...\",\"C. ...\",\"D. ...\"],\"correct_answer\":\"A\",\"explanation\":\"\"}]}. Soal menguji pemahaman, bukan menyalin kalimat panjang. Pilihan pendek dan masuk akal. Hindari cover/judul/identitas dokumen. Pembahasan maksimal 1 kalimat. PENTING: Acak posisi jawaban yang benar secara merata di antara pilihan A, B, C, dan D pada setiap soal. Jangan menumpuk jawaban benar pada satu huruf pilihan saja (misalnya B terus-menerus atau A terus-menerus).", min(2800, 800 + ($questionCount * 130)), 'quiz', $selectedDocIds);
+        return $this->jsonPrompt($document, "Buat {$questionCount} soal pilihan ganda dalam JSON: {\"questions\":[{\"question\":\"\",\"options\":[\"A. ...\",\"B. ...\",\"C. ...\",\"D. ...\"],\"correct_answer\":\"A\",\"explanation\":\"\"}]}. Soal menguji pemahaman, bukan menyalin kalimat panjang. Pilihan pendek dan masuk akal. Hindari cover/judul/identitas dokumen. Pembahasan maksimal 1 kalimat. PENTING: Acak posisi jawaban yang benar secara merata di antara pilihan A, B, C, dan D pada setiap soal. Jangan menumpuk jawaban benar pada satu huruf pilihan saja. PENTING TAMBAHAN: Buat semua pilihan jawaban (A, B, C, D) memiliki panjang yang relatif seimbang agar jawaban benar tidak bisa ditebak hanya dari panjang teksnya. Hindari distractor yang terlalu obvious seperti menggunakan kata 'tidak pernah' or 'selalu' kecuali memang relevan dengan materi.", min(2800, 800 + ($questionCount * 130)), 'quiz', $selectedDocIds);
     }
 
     public function generateFlashcards(Document|DocumentFolder $document, ?array $selectedDocIds = null): array
@@ -189,7 +187,7 @@ Balas hanya JSON valid:
 
         if (config('services.ai.provider') === 'kimchi') {
             try {
-                return $this->cleanModelText($this->sendKimchi($prompt, $maxOutputTokens, $responseMimeType, $task), $isJson);
+                return $this->cleanModelText($this->sendKimchi($prompt, $maxOutputTokens, $responseMimeType, $task), $isJson, $task);
             } catch (RuntimeException $exception) {
                 if (config('services.ai.fallback_provider') !== 'gemini' || ! $this->geminiConfigured()) {
                     throw $exception;
@@ -198,14 +196,14 @@ Balas hanya JSON valid:
                 report($exception);
                 $response = $this->sendGemini($prompt, $maxOutputTokens, $responseMimeType, $task);
 
-                return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'), $isJson);
+                return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'), $isJson, $task);
             }
         }
 
         try {
             $response = $this->sendGemini($prompt, $maxOutputTokens, $responseMimeType, $task);
 
-            return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'), $isJson);
+            return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'), $isJson, $task);
         } catch (RuntimeException $exception) {
             if (! $this->kimchiConfigured()) {
                 throw $exception;
@@ -213,7 +211,7 @@ Balas hanya JSON valid:
 
             report($exception);
 
-            return $this->cleanModelText($this->sendKimchi($prompt, $maxOutputTokens, $responseMimeType, $task), $isJson);
+            return $this->cleanModelText($this->sendKimchi($prompt, $maxOutputTokens, $responseMimeType, $task), $isJson, $task);
         }
     }
 
@@ -678,6 +676,8 @@ Aturan Konsolidasi Memori:
 3. Gabungkan poin baru dengan memori lama agar tetap rapi, ringkas, dan tidak duplikat.
 4. JANGAN catat hal-hal administratif yang tidak penting seperti sapaan, ucapan terima kasih, atau percakapan di luar materi.
 5. Maksimal hasilkan 6-8 bullet points terpenting agar hemat ruang.
+6. Jika ada memori lama yang sudah tidak relevan dengan topik percakapan terbaru atau bertentangan dengan pemahaman baru siswa, HAPUS atau GANTI dengan yang lebih akurat.
+7. Prioritaskan memori yang paling berguna untuk sesi belajar berikutnya.
 
 MEMORI LAMA:
 {$currentMemory}
@@ -888,14 +888,18 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         return Str::limit(implode("\n", $selected), $limit);
     }
 
-    private function cleanModelText(string $text, bool $isJson = false): string
+    private function cleanModelText(string $text, bool $isJson = false, string $task = 'default'): string
     {
         $text = preg_replace('/<think>.*?<\/think>/is', '', $text) ?: $text;
         $text = preg_replace('/^\s*(?:reasoning|pemikiran|proses berpikir)\s*:.*?(?=\n#{1,6}\s|\n[A-Z]|\z)/isu', '', $text) ?: $text;
         $text = $this->repairMojibake($text);
         
         if (!$isJson) {
-            $text = preg_replace('/^#{1,6}\s*/m', '', $text) ?: $text;
+            // Hanya strip heading untuk task yang tidak butuh struktur
+            $stripHeadings = in_array($task, ['flashcard'], true);
+            if ($stripHeadings) {
+                $text = preg_replace('/^#{1,6}\s*/m', '', $text) ?: $text;
+            }
             $text = preg_replace('/^\s*-{3,}\s*$/m', '', $text) ?: $text;
             $text = preg_replace('/```+/', '', $text) ?: $text;
             $text = preg_replace('/^\|[-:\s|]+\|\s*$/m', '', $text) ?: $text;
