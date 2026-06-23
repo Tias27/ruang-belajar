@@ -17,6 +17,7 @@
                     'user_name' => $m->is_ai ? 'RuangBelajar AI' : ($m->user ? $m->user->name : 'Siswa'),
                     'message' => $m->message,
                     'is_ai' => (bool)$m->is_ai,
+                    'metadata' => $m->metadata,
                     'created_at' => $m->created_at->toIso8601String(),
                 ])->values()),
                 onlineUsers: [],
@@ -57,6 +58,7 @@
                                     user_name: e.message.is_ai ? 'RuangBelajar AI' : (e.message.user ? e.message.user.name : 'Siswa'),
                                     message: e.message.message,
                                     is_ai: !!e.message.is_ai,
+                                    metadata: e.message.metadata,
                                     created_at: this.formatTime(e.message.created_at),
                                 });
                                 if (!e.message.is_ai) {
@@ -98,6 +100,7 @@
                                             user_name: 'Saya',
                                             message: msg.message,
                                             is_ai: false,
+                                            metadata: msg.metadata,
                                             created_at: this.formatTime(msg.created_at),
                                         };
                                         if (msg.id > this.lastMessageId) {
@@ -114,6 +117,7 @@
                                         user_name: msg.is_ai ? 'RuangBelajar AI' : (msg.user_name || (msg.user ? msg.user.name : 'Siswa')),
                                         message: msg.message,
                                         is_ai: !!msg.is_ai,
+                                        metadata: msg.metadata,
                                         created_at: this.formatTime(msg.created_at),
                                     });
                                     added = true;
@@ -212,6 +216,7 @@
                                 user_name: 'Saya',
                                 message: data.user_message.message,
                                 is_ai: false,
+                                metadata: data.user_message.metadata,
                                 created_at: this.formatTime(data.user_message.created_at),
                             } : m);
   
@@ -223,6 +228,7 @@
                                     user_name: 'RuangBelajar AI',
                                     message: data.ai_message.message,
                                     is_ai: true,
+                                    metadata: data.ai_message.metadata,
                                     created_at: this.formatTime(data.ai_message.created_at),
                                 });
                             }
@@ -437,7 +443,7 @@
 
                                     <!-- AI Bubble -->
                                     <template x-if="message.is_ai">
-                                        <div class="flex w-full gap-3">
+                                        <div class="flex w-full gap-3" x-data="{ showSources: false }">
                                             <div class="shrink-0 mt-1">
                                                 <div class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 text-amber-600 shadow-sm ring-1 ring-amber-100">
                                                     <i data-lucide="bot" class="h-5 w-5"></i>
@@ -445,6 +451,47 @@
                                             </div>
                                             <div class="min-w-0 flex-1 text-[14px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[13px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
                                                 <div x-html="formatMessage(message.message)"></div>
+
+                                                <!-- Source Snippets Toggle -->
+                                                <template x-if="message.metadata?.source_snippets?.length">
+                                                    <div class="mt-4 border-t border-slate-100 pt-3">
+                                                        <button @click="showSources = !showSources"
+                                                            class="group flex items-center gap-1.5 text-xs font-semibold text-campus-600 transition hover:text-campus-800">
+                                                            <i data-lucide="book-open" class="h-3.5 w-3.5 text-campus-500"></i>
+                                                            <span
+                                                                x-text="showSources ? 'Sembunyikan Referensi' : 'Lihat Referensi Materi'"></span>
+                                                            <i data-lucide="chevron-down"
+                                                                class="h-3.5 w-3.5 text-campus-400 transition-transform duration-300"
+                                                                :class="showSources ? 'rotate-180' : ''"></i>
+                                                        </button>
+
+                                                        <!-- Sources Content -->
+                                                        <div x-show="showSources"
+                                                            x-transition:enter="transition ease-out duration-200"
+                                                            x-transition:enter-start="opacity-0 -translate-y-2"
+                                                            x-transition:enter-end="opacity-100 translate-y-0"
+                                                            x-transition:leave="transition ease-in duration-150"
+                                                            x-transition:leave-start="opacity-100 translate-y-0"
+                                                            x-transition:leave-end="opacity-0 -translate-y-2">
+                                                            <div class="mt-3 space-y-2">
+                                                                <template x-for="snippet in message.metadata.source_snippets"
+                                                                    :key="snippet.document_id + snippet.snippet">
+                                                                    <div
+                                                                        class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[13px] leading-5 text-slate-600 shadow-sm">
+                                                                        <div
+                                                                            class="mb-1.5 flex items-center gap-1.5 font-semibold text-campus-800">
+                                                                            <i data-lucide="file-text"
+                                                                                class="h-3.5 w-3.5 text-campus-600"></i>
+                                                                            <span x-text="snippet.title"></span>
+                                                                        </div>
+                                                                        <p class="italic text-slate-500">"...<span
+                                                                                x-text="snippet.snippet"></span>..."</p>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
                                             </div>
                                         </div>
                                     </template>

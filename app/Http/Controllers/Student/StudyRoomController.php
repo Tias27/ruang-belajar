@@ -374,15 +374,20 @@ class StudyRoomController extends Controller
         $aiResponse = '';
         try {
             $aiResponse = $gemini->chat($target, $request->message, $history, $room->selected_document_ids);
+            $sourceSnippets = $sources->snippetsFor($target, $request->message.' '.$aiResponse);
         } catch (\Throwable $exception) {
             report($exception);
             $aiResponse = $sources->fallbackAnswer($target, $request->message, $exception->getMessage());
+            $sourceSnippets = $sources->snippetsFor($target, $request->message);
         }
         $aiMessage = StudyRoomMessage::create([
             'study_room_id' => $room->id,
             'user_id' => null,
             'message' => $aiResponse,
             'is_ai' => true,
+            'metadata' => [
+                'source_snippets' => $sourceSnippets,
+            ],
         ]);
 
         try {
@@ -430,6 +435,7 @@ class StudyRoomController extends Controller
                 'user_name'  => $m->is_ai ? 'RuangBelajar AI' : ($m->user ? $m->user->name : 'Siswa'),
                 'message'    => $m->message,
                 'is_ai'      => (bool) $m->is_ai,
+                'metadata'   => $m->metadata,
                 'created_at' => $m->created_at->toIso8601String(),
             ])
             ->values();
