@@ -65,7 +65,7 @@ Aturan Penting:
         return "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
 Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
 Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
-Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka atau perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan benar-benar di luar topik materi (seperti resep makanan, menghitung jumlah huruf kata acak, atau di luar konteks belajar dokumen), tolak secara sopan dan jelaskan bahwa kamu fokus membantu memahami materi ini.
+Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka atau perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan benar-benar di luar topik materi (seperti resep makanan, menghitung jumlah huruf/karakter kata acak, kalkulator, trivia umum, atau hal lain yang tidak ada hubungannya dengan konteks belajar dokumen ini), TOLAK dengan tegas dan sopan — cukup katakan bahwa kamu hanya bisa membantu soal materi ini. JANGAN pernah menjawab pertanyaan di luar topik tersebut, bahkan sebagian, bahkan sebagai catatan tambahan, bahkan sambil bilang 'tapi di luar materi ya'. Jika kamu menyebut atau menjawab pertanyaan di luar topik dengan cara apapun, itu dianggap pelanggaran instruksi.
 Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban.
 Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
 Jika pertanyaan menanyakan karakteristik (ciri-ciri), jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
@@ -709,16 +709,21 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
 
     private function chatContext(Document|DocumentFolder $document, string $question, ?array $selectedDocIds = null): string
     {
+        $isKimchi = config('services.ai.provider') === 'kimchi';
+
         if ($document instanceof Document) {
             $text = $document->extracted_text ?: '';
-            if (mb_strlen($text) < 500000) {
+            $singleDocThreshold = $isKimchi ? 20000 : 500000;
+            if (mb_strlen($text) < $singleDocThreshold) {
                 return $text !== '' ? $text : 'Materi dokumen belum memiliki teks yang berhasil diekstrak.';
             }
-            return $this->relevantContext($text, $question, 150000);
+            $relevantLimit = $isKimchi ? 15000 : 150000;
+            return $this->relevantContext($text, $question, $relevantLimit);
         }
 
         $combinedText = $document->combinedExtractedText($selectedDocIds);
-        if (mb_strlen($combinedText) < 500000) {
+        $combinedThreshold = $isKimchi ? 20000 : 500000;
+        if (mb_strlen($combinedText) < $combinedThreshold) {
             return $combinedText !== '' ? $combinedText : 'Materi folder belum memiliki teks yang berhasil diekstrak.';
         }
 
@@ -730,7 +735,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
             return 'Materi folder belum memiliki teks yang berhasil diekstrak.';
         }
 
-        $totalLimit = 200000;
+        $totalLimit = $isKimchi ? 15000 : 200000;
         $perDocumentLimit = (int) floor(($totalLimit - ($documentCount * 100)) / $documentCount);
         $perDocumentLimit = max(1000, $perDocumentLimit);
 
@@ -749,11 +754,13 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
 
     private function generationContext(Document|DocumentFolder $document, string $task = 'default', ?array $selectedDocIds = null): string
     {
+        $isKimchi = config('services.ai.provider') === 'kimchi';
+
         $limit = match ($task) {
-            'summary' => 500000,
-            'quiz' => 400000,
-            'flashcard' => 300000,
-            default => 600000,
+            'summary' => $isKimchi ? 25000 : 500000,
+            'quiz' => $isKimchi ? 20000 : 400000,
+            'flashcard' => $isKimchi ? 15000 : 300000,
+            default => $isKimchi ? 25000 : 600000,
         };
 
         if ($document instanceof Document) {
