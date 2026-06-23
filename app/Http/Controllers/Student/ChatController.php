@@ -30,9 +30,9 @@ class ChatController extends Controller
             $sessions->where(function ($query) use ($search) {
                 $query
                     ->where('title', 'like', "%{$search}%")
-                    ->orWhereHas('document', fn ($document) => $document->where('title', 'like', "%{$search}%"))
-                    ->orWhereHas('folder', fn ($folder) => $folder->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('messages', fn ($message) => $message->where('content', 'like', "%{$search}%"));
+                    ->orWhereHas('document', fn($document) => $document->where('title', 'like', "%{$search}%"))
+                    ->orWhereHas('folder', fn($folder) => $folder->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('messages', fn($message) => $message->where('content', 'like', "%{$search}%"));
             });
         }
 
@@ -48,7 +48,7 @@ class ChatController extends Controller
 
         $session = $document->chatSessions()->create([
             'user_id' => auth()->id(),
-            'title' => 'Tanya Materi '.$document->title,
+            'title' => 'Tanya Materi ' . $document->title,
         ]);
 
         return redirect()->route('chat.show', $session);
@@ -62,7 +62,7 @@ class ChatController extends Controller
 
         $session = $folder->chatSessions()->create([
             'user_id' => auth()->id(),
-            'title' => 'Tanya Folder '.$folder->name,
+            'title' => 'Tanya Folder ' . $folder->name,
             'selected_document_ids' => $selectedDocIds,
         ]);
 
@@ -92,7 +92,7 @@ class ChatController extends Controller
 
         return redirect()
             ->route('chat.index')
-            ->with('status', $deleted.' riwayat dihapus.');
+            ->with('status', $deleted . ' riwayat dihapus.');
     }
 
     public function store(Request $request, ChatSession $session, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
@@ -150,17 +150,19 @@ class ChatController extends Controller
                     foreach ($stream as $chunk) {
                         $fullAnswer .= $chunk;
                         echo "data: " . json_encode(['chunk' => $chunk]) . "\n\n";
-                        if (ob_get_level() > 0) ob_flush();
+                        if (ob_get_level() > 0)
+                            ob_flush();
                         flush();
                     }
 
-                    $sourceSnippets = $sources->snippetsFor($source, $data['question'].' '.$fullAnswer);
+                    $sourceSnippets = $sources->snippetsFor($source, $data['question'] . ' ' . $fullAnswer);
                 } catch (Throwable $exception) {
                     report($exception);
                     $fullAnswer = $sources->fallbackAnswer($source, $data['question'], $exception->getMessage());
                     $sourceSnippets = $sources->snippetsFor($source, $data['question']);
                     echo "data: " . json_encode(['chunk' => $fullAnswer]) . "\n\n";
-                    if (ob_get_level() > 0) ob_flush();
+                    if (ob_get_level() > 0)
+                        ob_flush();
                     flush();
                 }
 
@@ -187,7 +189,8 @@ class ChatController extends Controller
                         'metadata' => $assistantMessage->metadata,
                     ],
                 ]) . "\n\n";
-                if (ob_get_level() > 0) ob_flush();
+                if (ob_get_level() > 0)
+                    ob_flush();
                 flush();
             }, 200, [
                 'Cache-Control' => 'no-cache',
@@ -199,7 +202,7 @@ class ChatController extends Controller
         // Fallback for non-AJAX / non-streaming requests
         try {
             $answer = $gemini->chat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath);
-            $sourceSnippets = $sources->snippetsFor($source, $data['question'].' '.$answer);
+            $sourceSnippets = $sources->snippetsFor($source, $data['question'] . ' ' . $answer);
         } catch (Throwable $exception) {
             report($exception);
             $answer = $sources->fallbackAnswer($source, $data['question'], $exception->getMessage());

@@ -196,7 +196,7 @@
                     });
 
                     const formData = new FormData();
-                    formData.append('question', text);
+                    formData.append('question', text || 'Jelaskan gambar ini');
                     if (this.imageFile) {
                         formData.append('image', this.imageFile);
                     }

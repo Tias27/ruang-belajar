@@ -16,7 +16,7 @@ class GeminiService
     {
         $isFolder = $document instanceof DocumentFolder;
         $typeLabel = $isFolder ? 'seluruh materi dari kumpulan file dalam folder ini' : 'materi ini';
-        
+
         $prompt = "Buat ringkasan belajar yang sangat komprehensif, mendalam, sangat panjang, dan rapi dari {$typeLabel} dalam format JSON dengan kunci:
 - full_summary: penjelasan materi secara sangat detail, menyeluruh, terstruktur, dan mendalam. 
   " . ($isFolder ? "PENTING: Gabungkan materi dari seluruh dokumen secara logis, terstruktur, dan runtut di bawah sub-topik pembahasan yang relevan (gunakan subjudul topik menggunakan markdown heading seperti ### atau ####). JANGAN membagi ringkasan secara terpisah menggunakan nama file/dokumen asal. Integrasikan seluruh penjelasan materi tersebut menjadi satu alur pembahasan belajar yang utuh, komprehensif, dan sangat terperinci (total panjang ringkasan harus berkisar antara 2000 sampai 4500 kata secara keseluruhan)." : "PENTING: Bedah seluruh bab, sub-materi, konsep, rumus, istilah teknis, dan langkah-langkah dari file ini secara sangat detail. Buat penjelasan yang sangat mendalam dan panjang (minimal 5-8 paragraf panjang, sekitar 1500-3000 kata secara keseluruhan) untuk menjelaskan seluruh materi ini secara komprehensif. Jangan menyingkat atau memadatkan penjelasan.") . "
@@ -44,7 +44,7 @@ Aturan Penting:
     {
         $prompt = $this->chatPrompt($question);
         $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history, $selectedDocIds);
-        
+
         $payload = [['text' => $builtPrompt]];
         if ($imagePath && file_exists($imagePath)) {
             $mimeType = $this->mimeTypeForPath($imagePath);
@@ -87,7 +87,7 @@ Aturan Penting:
         return "Jawab pertanyaan pengguna berdasarkan materi yang diberikan.
 Gunakan cuplikan relevan sebagai prioritas utama, lalu gunakan konteks tambahan jika perlu.
 Jika istilah pertanyaan berbeda tetapi maknanya masih sama dengan materi, jelaskan berdasarkan konsep yang paling dekat.
-Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka atau perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan benar-benar di luar topik materi (seperti resep makanan, menghitung jumlah huruf/karakter kata acak, kalkulator, trivia umum, atau hal lain yang tidak ada hubungannya dengan konteks belajar dokumen ini), TOLAK dengan tegas dan sopan — cukup katakan bahwa kamu hanya bisa membantu soal materi ini. JANGAN pernah menjawab pertanyaan di luar topik tersebut, bahkan sebagian, bahkan sebagai catatan tambahan, bahkan sambil bilang 'tapi di luar materi ya'. Jika kamu menyebut atau menjawab pertanyaan di luar topik dengan cara apapun, itu dianggap pelanggaran instruksi.
+Jika pengguna secara eksplisit menyapa (seperti 'halo', 'hai', 'selamat pagi/sore', dll.) di awal percakapan, sapa mereka kembali dengan ramah, perkenalkan dirimu sebagai asisten belajar, dan tanyakan materi apa yang ingin didiskusikan. Jika percakapan sudah berjalan (ada riwayat chat) ATAU pesan terakhir pengguna langsung bertanya tanpa sapaan, JANGAN berikan salam pembuka atau perkenalan diri lagi, langsung jawab pertanyaannya secara to-the-point. Namun, jika pertanyaan sama sekali tidak ada hubungannya dengan konteks belajar atau bidang keilmuan materi ini (seperti resep makanan, resep masakan, instruksi coding yang tidak berhubungan dengan materi, gosip selebriti, atau hal lain yang benar-benar di luar topik belajar dokumen ini secara ekstrem), TOLAK dengan tegas dan sopan — cukup katakan bahwa kamu hanya bisa membantu soal materi ini. PENTING: Jika pengguna memberikan soal baru, tugas baru, latihan soal, atau gambar soal matematika/keilmuan lainnya yang tidak tertulis langsung di dokumen materi tetapi masih berada dalam ranah/bidang keilmuan yang sama dengan materi tersebut (misalnya mengirim soal turunan fungsi saat folder bermateri Kalkulus, atau mengirim soal limit), Anda WAJIB menjawab, menyelesaikan, dan menjelaskan langkah penyelesaiannya secara lengkap. Jangan pernah menolaknya hanya karena soal tersebut tidak ada secara tertulis di dokumen.
 Jangan cepat menyimpulkan tidak ada. Katakan informasi tidak ditemukan hanya jika setelah membaca cuplikan relevan dan konteks tambahan memang tidak ada dasar jawaban. Jika pengguna menanyakan metode cepat, rumus cepat, atau cara praktis menyelesaikan soal secara umum namun cakupan materinya luas, JANGAN langsung menjawab 'tidak ada cara cepat'. Sebaliknya, ambil inisiatif (proaktif) untuk memberikan satu contoh soal konkret dari materi tersebut, lalu tunjukkan cara/metode perhitungan yang paling efisien, cepat, dan terstruktur untuk menyelesaikannya agar langsung terlihat contoh nyatanya.
 Jelaskan bertahap, gunakan bahasa Indonesia yang mudah dipahami, dan sertakan contoh sederhana jika membantu.
 Jika pertanyaan menanyakan karakteristik (ciri-ciri), jenis, manfaat, langkah, atau daftar poin, jawab semua poin yang terlihat di materi, bukan hanya satu contoh.
@@ -122,7 +122,7 @@ Pertanyaan: {$question}";
         $quiz->loadMissing('questions');
 
         $payload = $quiz->questions
-            ->map(fn ($question) => [
+            ->map(fn($question) => [
                 'id' => $question->id,
                 'question' => $question->question,
                 'ideal_answer' => $question->correct_answer,
@@ -141,7 +141,7 @@ Aturan penilaian:
 5. Beri feedback singkat dan saran perbaikan.
 
 Data soal:
-".json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."
+" . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "
 
 Balas hanya JSON valid:
 {\"items\":[{\"id\":1,\"score\":0,\"feedback\":\"\",\"suggested_answer\":\"\"}],\"summary\":\"\"}";
@@ -159,7 +159,7 @@ Balas hanya JSON valid:
 
     private function jsonPrompt(Document|DocumentFolder $document, string $instruction, int $maxOutputTokens = 4096, string $task = 'default', ?array $selectedDocIds = null): array
     {
-        $text = $this->textPrompt($document, $instruction."\nBalas hanya JSON valid tanpa markdown.", null, $maxOutputTokens, 'application/json', $task, [], $selectedDocIds);
+        $text = $this->textPrompt($document, $instruction . "\nBalas hanya JSON valid tanpa markdown.", null, $maxOutputTokens, 'application/json', $task, [], $selectedDocIds);
         $json = json_decode($this->extractJson($text), true);
 
         if (json_last_error() === JSON_ERROR_NONE) {
@@ -174,10 +174,10 @@ Balas hanya JSON valid:
         $text = trim($text);
         $text = preg_replace('/^```(?:json)?|```$/im', '', $text) ?: $text;
         $text = trim($text);
-        
+
         $startObj = strpos($text, '{');
         $startArr = strpos($text, '[');
-        
+
         $start = false;
         if ($startObj !== false && $startArr !== false) {
             $start = min($startObj, $startArr);
@@ -187,7 +187,7 @@ Balas hanya JSON valid:
 
         $endObj = strrpos($text, '}');
         $endArr = strrpos($text, ']');
-        
+
         $end = false;
         if ($endObj !== false && $endArr !== false) {
             $end = max($endObj, $endArr);
@@ -211,7 +211,7 @@ Balas hanya JSON valid:
             try {
                 return $this->cleanModelText($this->sendKimchi($prompt, $maxOutputTokens, $responseMimeType, $task), $isJson, $task);
             } catch (RuntimeException $exception) {
-                if (config('services.ai.fallback_provider') !== 'gemini' || ! $this->geminiConfigured()) {
+                if (config('services.ai.fallback_provider') !== 'gemini' || !$this->geminiConfigured()) {
                     throw $exception;
                 }
 
@@ -227,7 +227,7 @@ Balas hanya JSON valid:
 
             return $this->cleanModelText(data_get($response, 'candidates.0.content.parts.0.text', 'AI belum memberikan jawaban.'), $isJson, $task);
         } catch (RuntimeException $exception) {
-            if (! $this->kimchiConfigured()) {
+            if (!$this->kimchiConfigured()) {
                 throw $exception;
             }
 
@@ -271,9 +271,11 @@ Balas hanya JSON valid:
                         ->connectTimeout($connectTimeout)
                         ->withOptions(['verify' => config('services.gemini.verify_ssl')])
                         ->post("{$baseUrl}/models/{$model}:generateContent?key={$apiKey}", [
-                            'contents' => [[
-                                'parts' => $parts,
-                            ]],
+                            'contents' => [
+                                [
+                                    'parts' => $parts,
+                                ]
+                            ],
                             'generationConfig' => $generationConfig,
                         ]);
                 } catch (ConnectionException $exception) {
@@ -285,15 +287,15 @@ Balas hanya JSON valid:
                 }
 
                 $body = $response->body();
-                $lastError = 'Gemini model '.$model.' / API key #'.($keyIndex + 1).' gagal: '.$body;
+                $lastError = 'Gemini model ' . $model . ' / API key #' . ($keyIndex + 1) . ' gagal: ' . $body;
 
-                if (! $this->shouldTryNextGeminiTarget($response->status(), $body)) {
-                    throw new RuntimeException('Gemini API gagal pada model '.$model.': '.$body);
+                if (!$this->shouldTryNextGeminiTarget($response->status(), $body)) {
+                    throw new RuntimeException('Gemini API gagal pada model ' . $model . ': ' . $body);
                 }
             }
         }
 
-        throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. '.$lastError);
+        throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. ' . $lastError);
     }
 
     private function sendGeminiStream(string|array $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): \Generator
@@ -333,9 +335,11 @@ Balas hanya JSON valid:
                             'stream' => true,
                         ])
                         ->post("{$baseUrl}/models/{$model}:streamGenerateContent?alt=sse&key={$apiKey}", [
-                            'contents' => [[
-                                'parts' => $parts,
-                            ]],
+                            'contents' => [
+                                [
+                                    'parts' => $parts,
+                                ]
+                            ],
                             'generationConfig' => $generationConfig,
                         ]);
                 } catch (ConnectionException $exception) {
@@ -346,7 +350,7 @@ Balas hanya JSON valid:
                     $body = $response->toPsrResponse()->getBody();
                     $buffer = '';
 
-                    while (! $body->eof()) {
+                    while (!$body->eof()) {
                         $chunk = $body->read(1024);
                         $buffer .= $chunk;
 
@@ -372,15 +376,15 @@ Balas hanya JSON valid:
                 }
 
                 $bodyStr = $response->body();
-                $lastError = 'Gemini model '.$model.' / API key #'.($keyIndex + 1).' gagal: '.$bodyStr;
+                $lastError = 'Gemini model ' . $model . ' / API key #' . ($keyIndex + 1) . ' gagal: ' . $bodyStr;
 
-                if (! $this->shouldTryNextGeminiTarget($response->status(), $bodyStr)) {
-                    throw new RuntimeException('Gemini API gagal pada model '.$model.': '.$bodyStr);
+                if (!$this->shouldTryNextGeminiTarget($response->status(), $bodyStr)) {
+                    throw new RuntimeException('Gemini API gagal pada model ' . $model . ': ' . $bodyStr);
                 }
             }
         }
 
-        throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. '.$lastError);
+        throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. ' . $lastError);
     }
 
     private function sendKimchi(string|array $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
@@ -445,8 +449,8 @@ Balas hanya JSON valid:
             throw new RuntimeException('Koneksi ke Kimchi gagal. Periksa endpoint, DNS, firewall, atau koneksi hosting.', previous: $exception);
         }
 
-        if (! $response->successful()) {
-            throw new RuntimeException('Kimchi API gagal: '.$response->body());
+        if (!$response->successful()) {
+            throw new RuntimeException('Kimchi API gagal: ' . $response->body());
         }
 
         return (string) data_get($response->json(), 'choices.0.message.content', 'AI belum memberikan jawaban.');
@@ -520,14 +524,14 @@ Balas hanya JSON valid:
             throw new RuntimeException('Koneksi streaming gagal.', previous: $exception);
         }
 
-        if (! $response->successful()) {
-            throw new RuntimeException('API gagal (Streaming): '.$response->body());
+        if (!$response->successful()) {
+            throw new RuntimeException('API gagal (Streaming): ' . $response->body());
         }
 
         $body = $response->toPsrResponse()->getBody();
         $buffer = '';
 
-        while (! $body->eof()) {
+        while (!$body->eof()) {
             $chunk = $body->read(1024);
             $buffer .= $chunk;
 
@@ -565,7 +569,7 @@ Balas hanya JSON valid:
         }
 
         return collect($keys)
-            ->map(fn ($key) => trim((string) $key))
+            ->map(fn($key) => trim((string) $key))
             ->filter()
             ->unique()
             ->values()
@@ -586,7 +590,7 @@ Balas hanya JSON valid:
         }
 
         return collect($models)
-            ->map(fn ($model) => trim((string) $model))
+            ->map(fn($model) => trim((string) $model))
             ->filter()
             ->unique()
             ->values()
@@ -641,7 +645,7 @@ Balas hanya JSON valid:
     private function buildPrompt(Document|DocumentFolder $document, string $instruction, ?string $question = null, string $task = 'default', array $history = [], ?array $selectedDocIds = null): string
     {
         $sourceType = $document instanceof DocumentFolder ? 'FOLDER MATERI' : 'DOKUMEN';
-        
+
         $contextPart = "";
         if ($question) {
             $relevantContext = $this->chatContext($document, $question, $selectedDocIds);
@@ -667,8 +671,8 @@ Balas hanya JSON valid:
             $folderId = $document instanceof DocumentFolder ? $document->id : null;
 
             $memoryRecord = \App\Models\AiMemory::where('user_id', $userId)
-                ->when($documentId, fn ($q) => $q->where('document_id', $documentId))
-                ->when($folderId, fn ($q) => $q->where('folder_id', $folderId))
+                ->when($documentId, fn($q) => $q->where('document_id', $documentId))
+                ->when($folderId, fn($q) => $q->where('folder_id', $folderId))
                 ->first();
 
             if ($memoryRecord && filled($memoryRecord->content)) {
@@ -713,8 +717,8 @@ Aturan:
         $folderId = $document instanceof DocumentFolder ? $document->id : null;
 
         $memoryRecord = \App\Models\AiMemory::where('user_id', $user->id)
-            ->when($documentId, fn ($q) => $q->where('document_id', $documentId))
-            ->when($folderId, fn ($q) => $q->where('folder_id', $folderId))
+            ->when($documentId, fn($q) => $q->where('document_id', $documentId))
+            ->when($folderId, fn($q) => $q->where('folder_id', $folderId))
             ->first();
 
         $currentMemory = $memoryRecord ? $memoryRecord->content : "Belum ada memori tercatat.";
@@ -786,7 +790,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         }
 
         $documents = $document->documentsForPrompt($selectedDocIds)
-            ->filter(fn (Document $item) => filled($item->extracted_text));
+            ->filter(fn(Document $item) => filled($item->extracted_text));
 
         $documentCount = $documents->count();
         if ($documentCount === 0) {
@@ -826,7 +830,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         }
 
         $documents = $document->documentsForPrompt($selectedDocIds)
-            ->filter(fn (Document $item) => filled($item->extracted_text));
+            ->filter(fn(Document $item) => filled($item->extracted_text));
 
         $documentCount = $documents->count();
         if ($documentCount === 0) {
@@ -837,7 +841,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         $perDocumentLimit = max(1000, $perDocumentLimit);
 
         $sections = $documents
-            ->map(fn (Document $item) => "### {$item->title}\n".$this->compactContext($item->extracted_text ?: '', $perDocumentLimit))
+            ->map(fn(Document $item) => "### {$item->title}\n" . $this->compactContext($item->extracted_text ?: '', $perDocumentLimit))
             ->implode("\n\n");
 
         return $sections !== ''
@@ -860,8 +864,8 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         $tailLimit = max(400, $limit - $headLimit - 80);
 
         return Str::limit($context, $headLimit, '')
-            ."\n\n[bagian akhir materi]\n"
-            .Str::limit(Str::substr($context, -$tailLimit), $tailLimit, '');
+            . "\n\n[bagian akhir materi]\n"
+            . Str::limit(Str::substr($context, -$tailLimit), $tailLimit, '');
     }
 
     private function relevantContext(string $context, string $question, int $limit = 5000): string
@@ -874,9 +878,21 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         $context = Str::limit($context, 400000, '');
 
         $terms = collect(preg_split('/[^\pL\pN]+/u', mb_strtolower($question)) ?: [])
-            ->filter(fn (string $term) => mb_strlen($term) >= 3)
-            ->reject(fn (string $term) => in_array($term, [
-                'apa', 'dan', 'yang', 'ini', 'itu', 'pada', 'dari', 'atau', 'berikan', 'jelaskan', 'contoh', 'materi', 'dokumen',
+            ->filter(fn(string $term) => mb_strlen($term) >= 3)
+            ->reject(fn(string $term) => in_array($term, [
+                'apa',
+                'dan',
+                'yang',
+                'ini',
+                'itu',
+                'pada',
+                'dari',
+                'atau',
+                'berikan',
+                'jelaskan',
+                'contoh',
+                'materi',
+                'dokumen',
             ], true))
             ->unique()
             ->values();
@@ -892,15 +908,15 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
 
         $sentences = preg_split('/(?<=[.!?])\s+|\n+/u', $context) ?: [];
         $ranked = collect($sentences)
-            ->map(fn (string $sentence) => trim($sentence))
-            ->filter(fn (string $sentence) => mb_strlen($sentence) >= 20)
+            ->map(fn(string $sentence) => trim($sentence))
+            ->filter(fn(string $sentence) => mb_strlen($sentence) >= 20)
             ->map(function (string $sentence) use ($terms) {
                 $lower = mb_strtolower($sentence);
-                $score = $terms->sum(fn (string $term) => str_contains($lower, $term) ? 1 : 0);
+                $score = $terms->sum(fn(string $term) => str_contains($lower, $term) ? 1 : 0);
 
                 return ['sentence' => $sentence, 'score' => $score];
             })
-            ->filter(fn (array $item) => $item['score'] > 0)
+            ->filter(fn(array $item) => $item['score'] > 0)
             ->sortByDesc('score')
             ->take(12)
             ->pluck('sentence')
@@ -912,7 +928,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
     private function relevantLineBlocks(string $context, array $terms, int $limit): string
     {
         $lines = collect(preg_split('/\R+/u', $context) ?: [])
-            ->map(fn (string $line) => trim($line))
+            ->map(fn(string $line) => trim($line))
             ->filter()
             ->values();
 
@@ -929,7 +945,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
 
                 return ['index' => $index, 'score' => $score];
             })
-            ->filter(fn (array $item) => $item['score'] > 0)
+            ->filter(fn(array $item) => $item['score'] > 0)
             ->sortByDesc('score')
             ->take(5)
             ->values();
@@ -958,7 +974,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         $text = preg_replace('/<think>.*?<\/think>/is', '', $text) ?: $text;
         $text = preg_replace('/^\s*(?:reasoning|pemikiran|proses berpikir)\s*:.*?(?=\n#{1,6}\s|\n[A-Z]|\z)/isu', '', $text) ?: $text;
         $text = $this->repairMojibake($text);
-        
+
         if (!$isJson) {
             // Hanya strip heading untuk task yang tidak butuh struktur
             $stripHeadings = in_array($task, ['flashcard'], true);
@@ -971,7 +987,7 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
             $text = preg_replace('/^\|\s*(.*?)\s*\|\s*$/m', '$1', $text) ?: $text;
             $text = preg_replace('/\s*\|\s*/', ' | ', $text) ?: $text;
         }
-        
+
         $text = preg_replace('/\n{3,}/', "\n\n", $text) ?: $text;
 
         return trim($text);

@@ -1,7 +1,7 @@
 <?php
- 
+
 namespace App\Http\Controllers\Student;
- 
+
 use App\Http\Controllers\Controller;
 use App\Models\StudyRoom;
 use App\Models\StudyRoomMessage;
@@ -16,13 +16,13 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Throwable;
- 
+
 class StudyRoomController extends Controller
 {
     public function index()
     {
         $userId = Auth::id();
-        
+
         // Cleanup: Close any duplicate active rooms hosted by the user, keeping only the latest one active
         $allActiveRooms = StudyRoom::with(['target', 'host', 'users'])
             ->where('host_id', $userId)
@@ -36,7 +36,7 @@ class StudyRoomController extends Controller
                 ->where('status', 'active')
                 ->where('id', '!=', $latestRoom->id)
                 ->update(['status' => 'closed']);
-            
+
             $myActiveRooms = collect([$latestRoom]);
         } else {
             $myActiveRooms = $allActiveRooms;
@@ -71,8 +71,8 @@ class StudyRoomController extends Controller
             'source_type' => ['required', 'string', 'in:document,folder,upload'],
             'document_id' => ['required_if:source_type,document', 'nullable', 'integer', 'exists:documents,id'],
             'folder_id' => [
-                'required_if:source_type,folder', 
-                'nullable', 
+                'required_if:source_type,folder',
+                'nullable',
                 function ($attribute, $value, $fail) use ($request) {
                     if ($request->source_type === 'folder') {
                         if (!is_numeric($value) || !DocumentFolder::where('id', $value)->exists()) {
@@ -134,7 +134,7 @@ class StudyRoomController extends Controller
             }
 
             $storageDirectory = storage_path('app/private/documents');
-            if (! is_dir($storageDirectory)) {
+            if (!is_dir($storageDirectory)) {
                 mkdir($storageDirectory, 0755, true);
             }
 
@@ -144,11 +144,11 @@ class StudyRoomController extends Controller
                 $extension = strtolower($file->getClientOriginalExtension());
                 $originalName = $file->getClientOriginalName();
                 $fileSize = $file->getSize();
-                $fileName = (string) Str::uuid().'.'.$extension;
-                $path = 'documents/'.$fileName;
-                
+                $fileName = (string) Str::uuid() . '.' . $extension;
+                $path = 'documents/' . $fileName;
+
                 $file->move($storageDirectory, $fileName);
-                $absolutePath = $storageDirectory.DIRECTORY_SEPARATOR.$fileName;
+                $absolutePath = $storageDirectory . DIRECTORY_SEPARATOR . $fileName;
 
                 // Generate title
                 $fileTitle = pathinfo($originalName, PATHINFO_FILENAME) ?: $originalName;
@@ -184,7 +184,7 @@ class StudyRoomController extends Controller
                 ]);
 
                 $logger->log('upload_document', $document, ['title' => $document->title]);
-                
+
                 if (!$firstDoc) {
                     $firstDoc = $document;
                 }
@@ -206,12 +206,12 @@ class StudyRoomController extends Controller
     private function mimeTypeFor(string $extension): string
     {
         return match (strtolower($extension)) {
-            'pdf'  => 'application/pdf',
+            'pdf' => 'application/pdf',
             'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
             'jpg', 'jpeg' => 'image/jpeg',
-            'png'  => 'image/png',
-            'gif'  => 'image/gif',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
             'webp' => 'image/webp',
             default => 'application/octet-stream',
         };
@@ -312,12 +312,12 @@ class StudyRoomController extends Controller
                 $morphTo->morphWith([
                     \App\Models\Document::class => [
                         'summaries',
-                        'quizzes' => fn ($query) => $query->where('study_room_id', $room->id),
+                        'quizzes' => fn($query) => $query->where('study_room_id', $room->id),
                         'flashcards'
                     ],
                     \App\Models\DocumentFolder::class => [
                         'summaries',
-                        'quizzes' => fn ($query) => $query->where('study_room_id', $room->id),
+                        'quizzes' => fn($query) => $query->where('study_room_id', $room->id),
                         'flashcards'
                     ],
                 ]);
@@ -341,7 +341,7 @@ class StudyRoomController extends Controller
         }
 
         $request->validate([
-            'message' => ['required', 'string', 'max:2000'],
+            'message' => ['required_without:image', 'nullable', 'string', 'max:2000'],
             'image' => ['nullable', 'image', 'max:5120', 'mimes:jpeg,png,jpg,webp,gif'],
         ]);
 
@@ -370,11 +370,13 @@ class StudyRoomController extends Controller
             ])
             ->all();
 
+        $messageText = $request->input('message') ?? 'Jelaskan gambar ini';
+
         // 1. Save user message
         $userMessage = StudyRoomMessage::create([
             'study_room_id' => $room->id,
             'user_id' => $userId,
-            'message' => $request->message,
+            'message' => $messageText,
             'is_ai' => false,
             'metadata' => $dbMetadata,
         ]);
@@ -388,12 +390,12 @@ class StudyRoomController extends Controller
         $target = $room->target;
         $aiResponse = '';
         try {
-            $aiResponse = $gemini->chat($target, $request->message, $history, $room->selected_document_ids, $absoluteImagePath);
-            $sourceSnippets = $sources->snippetsFor($target, $request->message.' '.$aiResponse);
+            $aiResponse = $gemini->chat($target, $messageText, $history, $room->selected_document_ids, $absoluteImagePath);
+            $sourceSnippets = $sources->snippetsFor($target, $messageText . ' ' . $aiResponse);
         } catch (\Throwable $exception) {
             report($exception);
-            $aiResponse = $sources->fallbackAnswer($target, $request->message, $exception->getMessage());
-            $sourceSnippets = $sources->snippetsFor($target, $request->message);
+            $aiResponse = $sources->fallbackAnswer($target, $messageText, $exception->getMessage());
+            $sourceSnippets = $sources->snippetsFor($target, $messageText);
         }
         $aiMessage = StudyRoomMessage::create([
             'study_room_id' => $room->id,
@@ -445,12 +447,12 @@ class StudyRoomController extends Controller
             ->oldest()
             ->get()
             ->map(fn($m) => [
-                'id'         => $m->id,
-                'user_id'    => $m->user_id,
-                'user_name'  => $m->is_ai ? 'RuangBelajar AI' : ($m->user ? $m->user->name : 'Siswa'),
-                'message'    => $m->message,
-                'is_ai'      => (bool) $m->is_ai,
-                'metadata'   => $m->metadata,
+                'id' => $m->id,
+                'user_id' => $m->user_id,
+                'user_name' => $m->is_ai ? 'RuangBelajar AI' : ($m->user ? $m->user->name : 'Siswa'),
+                'message' => $m->message,
+                'is_ai' => (bool) $m->is_ai,
+                'metadata' => $m->metadata,
                 'created_at' => $m->created_at->toIso8601String(),
             ])
             ->values();
