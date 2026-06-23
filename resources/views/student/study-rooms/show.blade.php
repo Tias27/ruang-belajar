@@ -59,7 +59,13 @@
                                     is_ai: !!e.message.is_ai,
                                     created_at: this.formatTime(e.message.created_at),
                                 });
-                                this.scrollToBottom();
+                                if (!e.message.is_ai) {
+                                    this.scrollToBottom();
+                                } else {
+                                    this.$nextTick(() => {
+                                        if (window.lucide) window.lucide.createIcons();
+                                    });
+                                }
                             }
 
                             // If AI message arrives via WebSocket, clear sending indicator
@@ -118,6 +124,10 @@
                             });
                             if (added) {
                                 this.scrollToBottom();
+                            } else {
+                                this.$nextTick(() => {
+                                    if (window.lucide) window.lucide.createIcons();
+                                });
                             }
                             // Clear sending indicator if AI message arrived
                             if (data.messages.some(m => m.is_ai)) {
@@ -133,6 +143,9 @@
                     this.$nextTick(() => {
                         if (this.$refs.messages) {
                             this.$refs.messages.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: 'smooth' });
+                        }
+                        if (window.lucide) {
+                            window.lucide.createIcons();
                         }
                     });
                 },
@@ -221,7 +234,9 @@
                                 this.lastMessageId = data.user_message.id;
                             }
                             this.sending = false;
-                            this.scrollToBottom();
+                            this.$nextTick(() => {
+                                if (window.lucide) window.lucide.createIcons();
+                            });
                         }
                     } catch (error) {
                         console.error(error);
@@ -316,10 +331,10 @@
                             continue;
                         }
 
-                        if (/^[-•]\s+/.test(trimmed)) {
+                        if (/^[-•*]\s+/.test(trimmed)) {
                             const open = listOpen ? '' : '<ul class="my-2 ml-5 list-disc space-y-1.5">';
                             listOpen = true;
-                            result.push(open + '<li>' + inline(trimmed.replace(/^[-•]\s+/, '')) + '</li>');
+                            result.push(open + '<li>' + inline(trimmed.replace(/^[-•*]\s+/, '')) + '</li>');
                             continue;
                         }
 
@@ -349,7 +364,7 @@
         <div class="flex-1 flex flex-col min-w-0 min-h-0 border-r border-slate-200/60 bg-white">
             
             <!-- Chat Header -->
-            <section class="flex-none px-4 py-3 sm:px-6 flex items-center justify-between border-b border-slate-200/60 bg-white/80 backdrop-blur-md shadow-sm">
+            <section class="flex-none px-4 py-3 sm:px-6 flex items-center justify-between border-b border-slate-200/60 bg-white shadow-sm">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <a class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-campus-700 shadow-sm transition hover:bg-campus-50 border border-slate-200" href="{{ route('study-rooms.index') }}" title="Kembali ke Ruang Belajar">
                         <i data-lucide="arrow-left" class="h-4 w-4"></i>
