@@ -99,7 +99,23 @@ class ChatController extends Controller
     {
         abort_if($session->user_id !== auth()->id(), 403);
 
-        $data = $request->validate(['question' => ['required', 'string', 'max:2000']]);
+        $data = $request->validate([
+            'question' => ['required', 'string', 'max:2000'],
+            'image' => ['nullable', 'image', 'max:5120', 'mimes:jpeg,png,jpg,webp,gif'],
+        ]);
+
+        $imagePath = null;
+        $dbMetadata = null;
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $fileName = (string) Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $file->move(storage_path('app/public/chat_images'), $fileName);
+            $imagePath = 'chat_images/' . $fileName;
+            $dbMetadata = ['image_path' => 'storage/' . $imagePath];
+        }
+
+        $absoluteImagePath = $imagePath ? storage_path('app/public/' . $imagePath) : null;
 
         // Fetch recent messages before saving the new one as chat history context
         $history = $session->messages()
@@ -113,12 +129,16 @@ class ChatController extends Controller
             ])
             ->all();
 
-        $userMessage = $session->messages()->create(['role' => 'user', 'content' => $data['question']]);
+        $userMessage = $session->messages()->create([
+            'role' => 'user',
+            'content' => $data['question'],
+            'metadata' => $dbMetadata,
+        ]);
 
         $source = $session->folder ?: $session->document;
 
         if ($request->header('Accept') === 'text/event-stream' || $request->expectsJson()) {
-            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history) {
+            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history, $absoluteImagePath) {
                 $session->update(['title' => Str::limit($data['question'], 70)]);
                 $logger->log('chat_document', $session, ['document_id' => $session->document_id, 'folder_id' => $session->folder_id]);
 
@@ -126,7 +146,7 @@ class ChatController extends Controller
                 $sourceSnippets = [];
 
                 try {
-                    $stream = $gemini->streamChat($source, $data['question'], $history, $session->selected_document_ids);
+                    $stream = $gemini->streamChat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath);
                     foreach ($stream as $chunk) {
                         $fullAnswer .= $chunk;
                         echo "data: " . json_encode(['chunk' => $chunk]) . "\n\n";
@@ -178,7 +198,7 @@ class ChatController extends Controller
 
         // Fallback for non-AJAX / non-streaming requests
         try {
-            $answer = $gemini->chat($source, $data['question'], $history, $session->selected_document_ids);
+            $answer = $gemini->chat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath);
             $sourceSnippets = $sources->snippetsFor($source, $data['question'].' '.$answer);
         } catch (Throwable $exception) {
             report($exception);

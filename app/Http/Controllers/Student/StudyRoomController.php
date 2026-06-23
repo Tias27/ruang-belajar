@@ -342,7 +342,21 @@ class StudyRoomController extends Controller
 
         $request->validate([
             'message' => ['required', 'string', 'max:2000'],
+            'image' => ['nullable', 'image', 'max:5120', 'mimes:jpeg,png,jpg,webp,gif'],
         ]);
+
+        $imagePath = null;
+        $dbMetadata = null;
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $fileName = (string) Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $file->move(storage_path('app/public/chat_images'), $fileName);
+            $imagePath = 'chat_images/' . $fileName;
+            $dbMetadata = ['image_path' => 'storage/' . $imagePath];
+        }
+
+        $absoluteImagePath = $imagePath ? storage_path('app/public/' . $imagePath) : null;
 
         // Fetch recent messages before saving the new one as chat history context
         $history = $room->messages()
@@ -362,6 +376,7 @@ class StudyRoomController extends Controller
             'user_id' => $userId,
             'message' => $request->message,
             'is_ai' => false,
+            'metadata' => $dbMetadata,
         ]);
 
         try {
@@ -373,7 +388,7 @@ class StudyRoomController extends Controller
         $target = $room->target;
         $aiResponse = '';
         try {
-            $aiResponse = $gemini->chat($target, $request->message, $history, $room->selected_document_ids);
+            $aiResponse = $gemini->chat($target, $request->message, $history, $room->selected_document_ids, $absoluteImagePath);
             $sourceSnippets = $sources->snippetsFor($target, $request->message.' '.$aiResponse);
         } catch (\Throwable $exception) {
             report($exception);

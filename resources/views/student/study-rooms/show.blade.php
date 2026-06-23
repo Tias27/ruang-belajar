@@ -26,7 +26,35 @@
                 showSidebar: false,
                 showCloseConfirmationModal: false,
                 lastMessageId: @js($room->messages->last()?->id ?? 0),
+                imageFile: null,
+                imagePreview: null,
                 _pollInterval: null,
+
+                triggerSelectImage() {
+                    this.$refs.imageInput.click();
+                },
+                onImageSelected(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Ukuran gambar maksimal adalah 5MB.');
+                        this.clearImage();
+                        return;
+                    }
+                    this.imageFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        this.imagePreview = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                },
+                clearImage() {
+                    this.imageFile = null;
+                    this.imagePreview = null;
+                    if (this.$refs.imageInput) {
+                        this.$refs.imageInput.value = '';
+                    }
+                },
 
                 init() {
                     // Format initial messages' timestamps to local timezone
@@ -176,20 +204,33 @@
                 
                 async sendMessage() {
                     const text = this.messageText.trim();
-                    if (!text || this.sending) return;
-                                       // Append message locally immediately to feel super snappy
+                    if ((!text && !this.imageFile) || this.sending) return;
+
+                    // Append message locally immediately to feel super snappy
                     const tempId = 'temp-' + Date.now();
+                    const localMetadata = this.imagePreview ? { image_path: this.imagePreview } : null;
                     this.messages.push({
                         id: tempId,
                         user_id: this.userId,
                         user_name: 'Saya',
-                        message: text,
+                        message: text || 'Mengirim gambar...',
                         is_ai: false,
+                        metadata: localMetadata,
                         created_at: this.formatTime(new Date()),
                     });
                     
+                    const formData = new FormData();
+                    formData.append('message', text || 'Jelaskan gambar ini');
+                    if (this.imageFile) {
+                        formData.append('image', this.imageFile);
+                    }
+
                     this.messageText = '';
+                    this.clearImage();
                     this.sending = true;
+                    if (this.$refs.textarea) {
+                        this.$refs.textarea.style.height = 'auto'; // Reset textarea height
+                    }
                     this.scrollToBottom();
                     
                     try {
@@ -197,10 +238,9 @@
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                             },
-                            body: JSON.stringify({ message: text }),
+                            body: formData,
                         });
                         
                         if (!response.ok) {
@@ -253,7 +293,7 @@
                     }
                 },
                 
-                formatMessage(content) {
+                formatMessage(content, isAi = true) {
                     const normalizeMath = (value) => String(value || '')
                         .replace(/\$\$([\s\S]*?)\$\$/g, '$1')
                         .replace(/\$([^$]+)\$/g, '$1')
@@ -349,7 +389,7 @@
                             continue;
                         }
 
-                        const looksLikeFormula = /=|\b(?:CR|CI|RI|Sigma|Bobot|Eigen|Normalisasi)\b/i.test(trimmed) && trimmed.length <= 160;
+                        const looksLikeFormula = isAi && /=|\b(?:CR|CI|RI|Sigma|Bobot|Eigen|Normalisasi)\b/i.test(trimmed) && trimmed.length <= 160;
                         result.push(closeList() + (looksLikeFormula
                             ? '<div class="my-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm text-slate-800 shadow-sm">' + inline(trimmed) + '</div>'
                             : '<p class="mb-2 leading-relaxed">' + inline(trimmed) + '</p>'));
@@ -435,9 +475,14 @@
                                 <div class="w-full flex" :class="message.user_id === userId ? 'justify-end pl-12' : 'justify-start pr-4 sm:pr-12'">
                                     <!-- User Bubble -->
                                     <template x-if="!message.is_ai">
-                                        <div class="max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-sm"
+                                        <div class="max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-sm flex flex-col gap-2"
                                              :class="message.user_id === userId ? 'bg-campus-600 text-white' : 'bg-slate-100 text-slate-800'">
-                                            <div x-html="formatMessage(message.message)" class="[&_p]:mb-0"></div>
+                                            <template x-if="message.metadata?.image_path">
+                                                <div class="my-1 max-w-sm overflow-hidden rounded-2xl border border-slate-200 shadow-sm bg-white p-1">
+                                                    <img :src="message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path" class="max-h-60 w-full object-contain rounded-xl hover:scale-[1.02] transition cursor-pointer" @click="window.open(message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path, '_blank')">
+                                                </div>
+                                            </template>
+                                            <div x-html="formatMessage(message.message, false)" class="[&_p]:mb-0"></div>
                                         </div>
                                     </template>
 
@@ -522,18 +567,36 @@
                 <!-- Input Area — floating at bottom like ChatGPT -->
                 <div class="absolute bottom-0 left-0 right-0 px-3 pt-6 sm:px-4 pointer-events-none" style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem)); background: linear-gradient(to top, white 60%, transparent);">
                     <form @submit.prevent="sendMessage()" class="flex w-full flex-col mx-auto max-w-3xl pointer-events-auto">
+                        <!-- Image Preview -->
+                        <template x-if="imagePreview">
+                            <div class="relative ml-5 mb-3 inline-flex self-start">
+                                <img :src="imagePreview" class="h-20 w-20 object-cover rounded-2xl border-2 border-white shadow-md">
+                                <button type="button" @click="clearImage()" class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-md transition-all active:scale-90">
+                                    <i data-lucide="x" class="h-3.5 w-3.5"></i>
+                                </button>
+                            </div>
+                        </template>
+
                         <div class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-xl shadow-black/8 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
+                            <input type="file" x-ref="imageInput" @change="onImageSelected" accept="image/*" class="hidden">
+                            
+                            <button type="button" @click="triggerSelectImage()" 
+                                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 hover:text-slate-600 transition active:scale-95">
+                                <i data-lucide="image" class="h-5 w-5"></i>
+                            </button>
+
                             <textarea 
+                                x-ref="textarea"
                                 x-model="messageText" 
                                 rows="1"
-                                class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-5 pr-2 text-[14px] focus:ring-0 focus:outline-none" 
+                                class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[14px] focus:ring-0 focus:outline-none" 
                                 placeholder="Ketik pesan untuk didiskusikan..." 
                                 @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"
                                 @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
                                 style="border: none !important; background: transparent !important; box-shadow: none !important; outline: none !important; resize: none !important; overflow-y: hidden;"
                             ></textarea>
                             
-                            <button type="submit" :disabled="!messageText.trim() || sending" class="group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
+                            <button type="submit" :disabled="(!messageText.trim() && !imageFile) || sending" class="group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                                 <i data-lucide="send" class="h-4 w-4"></i>
                                 <span class="sr-only">Kirim</span>
                             </button>

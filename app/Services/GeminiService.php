@@ -40,24 +40,46 @@ Aturan Penting:
         return $this->jsonPrompt($document, $prompt, 7500, 'summary', $selectedDocIds);
     }
 
-    public function chat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null): string
+    public function chat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null, ?string $imagePath = null): string
     {
         $prompt = $this->chatPrompt($question);
-        
-        return $this->textPrompt($document, $prompt, $question, 1100, null, 'chat', $history, $selectedDocIds);
-    }
-
-    public function streamChat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null): \Generator
-    {
-        $prompt = $this->chatPrompt($question);
-
         $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history, $selectedDocIds);
-
-        if (config('services.ai.provider') === 'kimchi') {
-            return $this->sendKimchiStream($builtPrompt, 1100, null, 'chat');
+        
+        $payload = [['text' => $builtPrompt]];
+        if ($imagePath && file_exists($imagePath)) {
+            $mimeType = $this->mimeTypeForPath($imagePath);
+            $payload[] = [
+                'inlineData' => [
+                    'mimeType' => $mimeType,
+                    'data' => base64_encode(file_get_contents($imagePath))
+                ]
+            ];
         }
 
-        return $this->sendGeminiStream($builtPrompt, 1100, null, 'chat');
+        return $this->sendText($payload, 1100, null, 'chat');
+    }
+
+    public function streamChat(Document|DocumentFolder $document, string $question, array $history = [], ?array $selectedDocIds = null, ?string $imagePath = null): \Generator
+    {
+        $prompt = $this->chatPrompt($question);
+        $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history, $selectedDocIds);
+
+        $payload = [['text' => $builtPrompt]];
+        if ($imagePath && file_exists($imagePath)) {
+            $mimeType = $this->mimeTypeForPath($imagePath);
+            $payload[] = [
+                'inlineData' => [
+                    'mimeType' => $mimeType,
+                    'data' => base64_encode(file_get_contents($imagePath))
+                ]
+            ];
+        }
+
+        if (config('services.ai.provider') === 'kimchi') {
+            return $this->sendKimchiStream($payload, 1100, null, 'chat');
+        }
+
+        return $this->sendGeminiStream($payload, 1100, null, 'chat');
     }
 
     private function chatPrompt(string $question): string
@@ -180,7 +202,7 @@ Balas hanya JSON valid:
         return substr($text, $start, $end - $start + 1);
     }
 
-    private function sendText(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
+    private function sendText(string|array $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
     {
         $this->extendExecutionTime();
         $isJson = ($responseMimeType === 'application/json');
@@ -215,7 +237,7 @@ Balas hanya JSON valid:
         }
     }
 
-    private function sendGemini(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): array
+    private function sendGemini(string|array $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): array
     {
         $this->extendExecutionTime();
 
@@ -240,6 +262,7 @@ Balas hanya JSON valid:
         }
 
         $lastError = null;
+        $parts = is_array($prompt) ? $prompt : [['text' => $prompt]];
 
         foreach ($models as $modelIndex => $model) {
             foreach ($apiKeys as $keyIndex => $apiKey) {
@@ -249,7 +272,7 @@ Balas hanya JSON valid:
                         ->withOptions(['verify' => config('services.gemini.verify_ssl')])
                         ->post("{$baseUrl}/models/{$model}:generateContent?key={$apiKey}", [
                             'contents' => [[
-                                'parts' => [['text' => $prompt]],
+                                'parts' => $parts,
                             ]],
                             'generationConfig' => $generationConfig,
                         ]);
@@ -273,7 +296,7 @@ Balas hanya JSON valid:
         throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. '.$lastError);
     }
 
-    private function sendGeminiStream(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): \Generator
+    private function sendGeminiStream(string|array $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): \Generator
     {
         $this->extendExecutionTime();
 
@@ -298,6 +321,7 @@ Balas hanya JSON valid:
         }
 
         $lastError = null;
+        $parts = is_array($prompt) ? $prompt : [['text' => $prompt]];
 
         foreach ($models as $modelIndex => $model) {
             foreach ($apiKeys as $keyIndex => $apiKey) {
@@ -310,7 +334,7 @@ Balas hanya JSON valid:
                         ])
                         ->post("{$baseUrl}/models/{$model}:streamGenerateContent?alt=sse&key={$apiKey}", [
                             'contents' => [[
-                                'parts' => [['text' => $prompt]],
+                                'parts' => $parts,
                             ]],
                             'generationConfig' => $generationConfig,
                         ]);
@@ -359,7 +383,7 @@ Balas hanya JSON valid:
         throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. '.$lastError);
     }
 
-    private function sendKimchi(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
+    private function sendKimchi(string|array $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
     {
         $apiKey = trim((string) config('services.kimchi.api_key', ''));
         if ($apiKey === '') {
@@ -371,6 +395,23 @@ Balas hanya JSON valid:
         $timeout = max(5, min((int) config('services.kimchi.timeout', 300), 300));
         $connectTimeout = max(3, min((int) config('services.kimchi.connect_timeout', 15), $timeout));
 
+        $content = $prompt;
+        if (is_array($prompt)) {
+            $content = [];
+            foreach ($prompt as $part) {
+                if (isset($part['text'])) {
+                    $content[] = ['type' => 'text', 'text' => $part['text']];
+                } elseif (isset($part['inlineData'])) {
+                    $content[] = [
+                        'type' => 'image_url',
+                        'image_url' => [
+                            'url' => "data:{$part['inlineData']['mimeType']};base64,{$part['inlineData']['data']}"
+                        ]
+                    ];
+                }
+            }
+        }
+
         $messages = [
             [
                 'role' => 'system',
@@ -378,7 +419,7 @@ Balas hanya JSON valid:
             ],
             [
                 'role' => 'user',
-                'content' => $prompt,
+                'content' => $content,
             ],
         ];
 
@@ -411,7 +452,7 @@ Balas hanya JSON valid:
         return (string) data_get($response->json(), 'choices.0.message.content', 'AI belum memberikan jawaban.');
     }
 
-    private function sendKimchiStream(string $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): \Generator
+    private function sendKimchiStream(string|array $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): \Generator
     {
         $this->extendExecutionTime();
 
@@ -425,6 +466,23 @@ Balas hanya JSON valid:
         $timeout = max(5, min((int) config('services.kimchi.timeout', 300), 300));
         $connectTimeout = max(3, min((int) config('services.kimchi.connect_timeout', 15), $timeout));
 
+        $content = $prompt;
+        if (is_array($prompt)) {
+            $content = [];
+            foreach ($prompt as $part) {
+                if (isset($part['text'])) {
+                    $content[] = ['type' => 'text', 'text' => $part['text']];
+                } elseif (isset($part['inlineData'])) {
+                    $content[] = [
+                        'type' => 'image_url',
+                        'image_url' => [
+                            'url' => "data:{$part['inlineData']['mimeType']};base64,{$part['inlineData']['data']}"
+                        ]
+                    ];
+                }
+            }
+        }
+
         $messages = [
             [
                 'role' => 'system',
@@ -432,7 +490,7 @@ Balas hanya JSON valid:
             ],
             [
                 'role' => 'user',
-                'content' => $prompt,
+                'content' => $content,
             ],
         ];
 
@@ -940,5 +998,16 @@ Balas hanya dengan daftar bullet points memori terupdate dalam bahasa Indonesia.
         ];
 
         return str_replace(array_keys($replacements), array_values($replacements), $text);
+    }
+
+    private function mimeTypeForPath(string $path): string
+    {
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        return match ($extension) {
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => 'image/jpeg',
+        };
     }
 }

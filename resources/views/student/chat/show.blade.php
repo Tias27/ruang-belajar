@@ -16,6 +16,33 @@
                 question: '',
                 sending: false,
                 messages: @js($initialMessages),
+                imageFile: null,
+                imagePreview: null,
+                triggerSelectImage() {
+                    this.$refs.imageInput.click();
+                },
+                onImageSelected(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Ukuran gambar maksimal adalah 5MB.');
+                        this.clearImage();
+                        return;
+                    }
+                    this.imageFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        this.imagePreview = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                },
+                clearImage() {
+                    this.imageFile = null;
+                    this.imagePreview = null;
+                    if (this.$refs.imageInput) {
+                        this.$refs.imageInput.value = '';
+                    }
+                },
                 scrollToBottom() {
                     this.$nextTick(() => {
                         if (this.$refs.messages) {
@@ -26,7 +53,7 @@
                         }
                     });
                 },
-                formatMessage(content) {
+                formatMessage(content, isAi = true) {
                     const normalizeMath = (value) => String(value || '')
                         .replace(/\$\$([\s\S]*?)\$\$/g, '$1')
                         .replace(/\$([^$]+)\$/g, '$1')
@@ -124,7 +151,7 @@
                             continue;
                         }
 
-                        const looksLikeFormula = /=|\b(?:CR|CI|RI|Sigma|Bobot|Eigen|Normalisasi)\b/i.test(trimmed) && trimmed.length <= 160;
+                        const looksLikeFormula = isAi && /=|\b(?:CR|CI|RI|Sigma|Bobot|Eigen|Normalisasi)\b/i.test(trimmed) && trimmed.length <= 160;
                         result.push(closeList() + (looksLikeFormula
                             ? '<div class="my-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm text-slate-800 shadow-sm">' + inline(trimmed) + '</div>'
                             : '<p class="mb-2 leading-relaxed">' + inline(trimmed) + '</p>'));
@@ -138,10 +165,26 @@
                 },
                 async sendQuestion() {
                     const text = this.question.trim();
-                    if (!text || this.sending) return;
+                    if ((!text && !this.imageFile) || this.sending) return;
 
-                    this.messages.push({ id: 'local-' + Date.now(), role: 'user', content: text });
+                    const localId = 'local-' + Date.now();
+                    const localMetadata = this.imagePreview ? { image_path: this.imagePreview } : null;
+
+                    this.messages.push({
+                        id: localId,
+                        role: 'user',
+                        content: text || 'Mengirim gambar...',
+                        metadata: localMetadata
+                    });
+
+                    const formData = new FormData();
+                    formData.append('question', text);
+                    if (this.imageFile) {
+                        formData.append('image', this.imageFile);
+                    }
+
                     this.question = '';
+                    this.clearImage();
                     this.sending = true;
                     this.$refs.textarea.style.height = 'auto'; // Reset textarea height
                     this.scrollToBottom();
@@ -155,10 +198,9 @@
                             method: 'POST',
                             headers: {
                                 'Accept': 'text/event-stream',
-                                'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': @js(csrf_token()),
                             },
-                            body: JSON.stringify({ question: text }),
+                            body: formData,
                         });
 
                         if (!response.ok) {
@@ -314,8 +356,13 @@
                             <!-- User Message -->
                             <template x-if="message.role === 'user'">
                                 <div
-                                    class="max-w-[85%] rounded-3xl bg-slate-100 px-5 py-3.5 text-[15px] leading-relaxed text-slate-800">
-                                    <div x-html="formatMessage(message.content)" class="[&_p]:mb-0"></div>
+                                    class="max-w-[85%] rounded-3xl bg-slate-100 px-5 py-3.5 text-[15px] leading-relaxed text-slate-800 flex flex-col gap-2">
+                                    <template x-if="message.metadata?.image_path">
+                                        <div class="my-1 max-w-sm overflow-hidden rounded-2xl border border-slate-200 shadow-sm bg-white p-1">
+                                            <img :src="message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path" class="max-h-60 w-full object-contain rounded-xl hover:scale-[1.02] transition cursor-pointer" @click="window.open(message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path, '_blank')">
+                                        </div>
+                                    </template>
+                                    <div x-html="formatMessage(message.content, false)" class="[&_p]:mb-0"></div>
                                 </div>
                             </template>
 
@@ -398,16 +445,35 @@
                 <form method="POST" action="{{ route('chat.store', $session) }}" @submit.prevent="sendQuestion()"
                     class="flex w-full flex-col mx-auto max-w-3xl pointer-events-auto">
                     @csrf
+
+                    <!-- Image Preview -->
+                    <template x-if="imagePreview">
+                        <div class="relative ml-5 mb-3 inline-flex self-start">
+                            <img :src="imagePreview" class="h-20 w-20 object-cover rounded-2xl border-2 border-white shadow-md">
+                            <button type="button" @click="clearImage()" class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-md transition-all active:scale-90">
+                                <i data-lucide="x" class="h-3.5 w-3.5"></i>
+                            </button>
+                        </div>
+                    </template>
+
                     <div
                         class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-xl shadow-black/8 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
+                        
+                        <input type="file" x-ref="imageInput" @change="onImageSelected" accept="image/*" class="hidden">
+                        
+                        <button type="button" @click="triggerSelectImage()" 
+                            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 hover:text-slate-600 transition active:scale-95">
+                            <i data-lucide="image" class="h-5 w-5"></i>
+                        </button>
+
                         <textarea x-ref="textarea" x-model="question" name="question" rows="1"
-                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-5 pr-2 text-[15px] focus:ring-0 focus:outline-none"
+                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[15px] focus:ring-0 focus:outline-none"
                             placeholder="Tanya AI tentang materi ini..."
                             @keydown.enter.prevent="if(!$event.shiftKey) sendQuestion()"
                             @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
                             style="border: none !important; background: transparent !important; box-shadow: none !important; outline: none !important; resize: none !important; overflow-y: hidden;"></textarea>
 
-                        <button type="submit" :disabled="!question.trim() || sending"
+                        <button type="submit" :disabled="(!question.trim() && !imageFile) || sending"
                             class="group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                             <i data-lucide="arrow-up" class="h-5 w-5"></i>
                             <span class="sr-only">Kirim</span>
