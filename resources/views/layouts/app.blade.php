@@ -139,7 +139,7 @@
                 </a>
             @endunless
         </aside>
-        <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur lg:ml-64">
+        <header class="sticky top-0 z-30 border-b border-slate-200 bg-white lg:ml-64">
             <div class="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center gap-3 lg:hidden">
                     <button type="button" x-on:click="mobileNav = ! mobileNav" class="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm">
