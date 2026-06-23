@@ -33,9 +33,12 @@
                 triggerSelectImage() {
                     this.$refs.imageInput.click();
                 },
-                onImageSelected(e) {
-                    const file = e.target.files[0];
+                handleFile(file) {
                     if (!file) return;
+                    if (!file.type.startsWith('image/')) {
+                        alert('Hanya file gambar yang diperbolehkan.');
+                        return;
+                    }
                     if (file.size > 5 * 1024 * 1024) {
                         alert('Ukuran gambar maksimal adalah 5MB.');
                         this.clearImage();
@@ -47,6 +50,21 @@
                         this.imagePreview = event.target.result;
                     };
                     reader.readAsDataURL(file);
+                },
+                onImageSelected(e) {
+                    this.handleFile(e.target.files[0]);
+                },
+                onPaste(e) {
+                    const file = e.clipboardData?.files?.[0];
+                    if (file) {
+                        this.handleFile(file);
+                    }
+                },
+                onDrop(e) {
+                    const file = e.dataTransfer?.files?.[0];
+                    if (file) {
+                        this.handleFile(file);
+                    }
                 },
                 clearImage() {
                     this.imageFile = null;
@@ -566,7 +584,10 @@
 
                 <!-- Input Area — floating at bottom like ChatGPT -->
                 <div class="absolute bottom-0 left-0 right-0 px-3 pt-6 sm:px-4 pointer-events-none" style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem)); background: linear-gradient(to top, white 60%, transparent);">
-                    <form @submit.prevent="sendMessage()" class="flex w-full flex-col mx-auto max-w-3xl pointer-events-auto">
+                    <form @submit.prevent="sendMessage()" 
+                        @dragover.prevent
+                        @drop.prevent="onDrop($event)"
+                        class="flex w-full flex-col mx-auto max-w-3xl pointer-events-auto">
                         <!-- Image Preview -->
                         <template x-if="imagePreview">
                             <div class="relative ml-5 mb-3 inline-flex self-start">
@@ -589,6 +610,7 @@
                                 x-ref="textarea"
                                 x-model="messageText" 
                                 rows="1"
+                                @paste="onPaste($event)"
                                 class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[14px] focus:ring-0 focus:outline-none" 
                                 placeholder="Ketik pesan untuk didiskusikan..." 
                                 @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"
