@@ -234,18 +234,18 @@ class FlashcardController extends Controller
                 || str_contains($lower, 'resolving timed out')
                 || str_contains($lower, 'curl error 6')
                 || str_contains($lower, 'curl error 28')
-                    => 'Koneksi ke Gemini dari server sedang gagal.',
+                    => 'Koneksi ke asisten belajar AI terputus.',
             str_contains($lower, 'resource_exhausted')
                 || str_contains($lower, 'prepayment credits are depleted')
                 || str_contains($lower, 'quota')
-                    => 'Kuota atau saldo API Gemini sedang habis.',
+                    => 'Asisten belajar AI sedang tidak dapat dihubungi.',
             str_contains($lower, 'unavailable') || str_contains($lower, 'high demand') || str_contains($lower, '503')
-                    => 'Gemini sedang padat.',
+                    => 'Asisten belajar AI sedang sibuk.',
             str_contains($lower, 'not_found') || str_contains($lower, 'not found') || str_contains($lower, '404')
-                    => 'Model Gemini yang dipakai belum cocok.',
+                    => 'Asisten belajar AI sedang mengalami kendala teknis.',
             str_contains($lower, 'api key not valid') || str_contains($lower, 'permission_denied')
-                    => 'API key Gemini belum valid atau belum punya akses.',
-            default => 'Gemini belum berhasil merespons.',
+                    => 'Asisten belajar AI sedang mengalami kendala teknis.',
+            default => 'Asisten belajar AI belum berhasil merespons.',
         };
     }
 }

@@ -541,25 +541,22 @@ class LearningSourceService
             str_contains($lower, 'quota')
                 || str_contains($lower, 'resource_exhausted')
                 || str_contains($lower, 'prepayment credits are depleted')
-                    => 'AI belum bisa dipakai saat ini karena kuota atau saldo API sedang bermasalah.',
+                    => 'Asisten belajar AI sedang tidak dapat dihubungi. Silakan coba beberapa saat lagi.',
             str_contains($lower, 'unavailable')
                 || str_contains($lower, 'high demand')
                 || str_contains($lower, '503')
-                    => 'AI sedang padat, jadi jawaban AI penuh belum bisa dibuat saat ini.',
+                    => 'Asisten belajar AI sedang sibuk. Silakan coba beberapa saat lagi.',
             str_contains($lower, 'api key')
                 || str_contains($lower, 'permission_denied')
                 || str_contains($lower, '401')
                 || str_contains($lower, '403')
-                    => 'AI belum bisa dipakai saat ini karena konfigurasi API belum valid.',
+                    => 'Asisten belajar AI sedang mengalami kendala teknis. Silakan coba beberapa saat lagi.',
             str_contains($lower, 'timeout')
                 || str_contains($lower, 'timed out')
                 || str_contains($lower, 'curl error')
                 || str_contains($lower, 'koneksi')
-                    => 'AI belum bisa dipakai saat ini karena koneksi server sedang gagal atau terlalu lama.',
-            str_contains($lower, 'kimchi')
-                || str_contains($lower, 'cast.ai')
-                    => 'Kimchi belum bisa dipakai saat ini. Periksa API key, model, dan base URL.',
-            default => 'AI belum bisa dipakai saat ini.',
+                    => 'Koneksi ke asisten belajar AI terputus. Silakan coba beberapa saat lagi.',
+            default => 'Asisten belajar AI belum berhasil merespons. Silakan coba beberapa saat lagi.',
         };
     }
 }
