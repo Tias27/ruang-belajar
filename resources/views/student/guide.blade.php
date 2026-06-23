@@ -41,11 +41,14 @@
             </div>
 
             <!-- Vertical Timeline -->
-            <div class="relative pl-6 sm:pl-8 border-l border-slate-200/80 ml-3.5 space-y-8">
+            <div class="space-y-0">
                 
                 <!-- Step 1 -->
-                <div class="relative">
-                    <span class="absolute -left-[37px] sm:-left-[45px] top-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600 border border-blue-100 font-bold text-xs sm:text-sm ring-4 ring-white shadow-sm">
+                <div class="relative pl-10 sm:pl-12 pb-8">
+                    <!-- Line connecting to next step -->
+                    <div class="absolute left-[13px] sm:left-[15px] top-[14px] sm:top-[16px] bottom-0 w-px bg-slate-200"></div>
+                    <!-- Circle -->
+                    <span class="absolute left-0 top-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600 border border-blue-100 font-bold text-xs sm:text-sm shadow-sm z-10">
                         1
                     </span>
                     <div class="min-w-0">
@@ -60,8 +63,11 @@
                 </div>
 
                 <!-- Step 2 -->
-                <div class="relative">
-                    <span class="absolute -left-[37px] sm:-left-[45px] top-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-bold text-xs sm:text-sm ring-4 ring-white shadow-sm">
+                <div class="relative pl-10 sm:pl-12 pb-8">
+                    <!-- Line connecting to next step -->
+                    <div class="absolute left-[13px] sm:left-[15px] top-[14px] sm:top-[16px] bottom-0 w-px bg-slate-200"></div>
+                    <!-- Circle -->
+                    <span class="absolute left-0 top-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-bold text-xs sm:text-sm shadow-sm z-10">
                         2
                     </span>
                     <div class="min-w-0">
@@ -73,8 +79,11 @@
                 </div>
 
                 <!-- Step 3 -->
-                <div class="relative">
-                    <span class="absolute -left-[37px] sm:-left-[45px] top-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-purple-50 text-purple-600 border border-purple-100 font-bold text-xs sm:text-sm ring-4 ring-white shadow-sm">
+                <div class="relative pl-10 sm:pl-12 pb-8">
+                    <!-- Line connecting to next step -->
+                    <div class="absolute left-[13px] sm:left-[15px] top-[14px] sm:top-[16px] bottom-0 w-px bg-slate-200"></div>
+                    <!-- Circle -->
+                    <span class="absolute left-0 top-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-purple-50 text-purple-600 border border-purple-100 font-bold text-xs sm:text-sm shadow-sm z-10">
                         3
                     </span>
                     <div class="min-w-0">
@@ -86,8 +95,9 @@
                 </div>
 
                 <!-- Step 4 -->
-                <div class="relative">
-                    <span class="absolute -left-[37px] sm:-left-[45px] top-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-violet-50 text-violet-600 border border-violet-100 font-bold text-xs sm:text-sm ring-4 ring-white shadow-sm">
+                <div class="relative pl-10 sm:pl-12">
+                    <!-- Circle -->
+                    <span class="absolute left-0 top-0 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-violet-50 text-violet-600 border border-violet-100 font-bold text-xs sm:text-sm shadow-sm z-10">
                         4
                     </span>
                     <div class="min-w-0">
