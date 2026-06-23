@@ -18,6 +18,11 @@ class DocumentFolderController extends Controller
     {
         $this->authorizeOwner($folder);
 
+        $allFolders = auth()->user()->documentFolders()
+            ->where('id', '!=', $folder->id)
+            ->latest()
+            ->get();
+
         return view('student.folders.show', [
             'folder' => $folder
                 ->loadCount([
@@ -34,6 +39,7 @@ class DocumentFolderController extends Controller
                     'chatSessions' => fn ($query) => $query->latest()->take(5),
                     'notes' => fn ($query) => $query->where('user_id', auth()->id())->latest()->take(1),
                 ]),
+            'allFolders' => $allFolders,
         ]);
     }
     public function storeDocuments(Request $request, DocumentFolder $folder, DocumentTextExtractor $extractor, ActivityLogger $logger)

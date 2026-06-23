@@ -213,6 +213,14 @@
         modalTitle: '',
         modalMessage: '',
         formToSubmit: null,
+        showMoveModal: false,
+        moveDocId: null,
+        moveDocTitle: '',
+        triggerMove(docId, docTitle) {
+            this.moveDocId = docId;
+            this.moveDocTitle = docTitle;
+            this.showMoveModal = true;
+        },
         confirmDelete(e, title, message) {
             e.preventDefault();
             this.formToSubmit = e.target;
@@ -372,8 +380,6 @@
 
                         <!-- Actions row -->
                         <div class="flex flex-wrap items-center gap-2 pt-4 xl:pt-0 border-t border-slate-50 xl:border-0 mt-2 xl:mt-0 xl:shrink-0">
-                        <!-- Actions row -->
-                        <div class="flex flex-wrap items-center gap-2 pt-4 xl:pt-0 border-t border-slate-50 xl:border-0 mt-2 xl:mt-0 xl:shrink-0">
                             <form method="POST" action="{{ route('chat.create', $document) }}" x-data="{ loading: false }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true">@csrf
                                 <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-2 rounded-xl bg-campus-50 px-4 text-[12px] font-bold text-campus-700 shadow-sm transition-colors hover:bg-campus-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
                                     <i data-lucide="messages-square" class="h-4 w-4" x-show="!loading"></i>
@@ -388,6 +394,10 @@
                                     <span>Belajar Bareng</span>
                                 </button>
                             </form>
+                            <button type="button" x-bind:disabled="aiBusy" @click="triggerMove('{{ $document->public_id }}', '{{ addslashes($document->title) }}')" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed" title="Pindahkan ke Folder">
+                                <i data-lucide="folder-input" class="h-4 w-4 text-slate-500"></i>
+                                <span>Pindahkan</span>
+                            </button>
                             <form method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true">@csrf
                                 <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-wait">
                                     <i data-lucide="notebook-tabs" class="h-4 w-4 text-slate-500" x-show="!loading"></i>
@@ -480,6 +490,58 @@
                         <div class="bg-slate-50 px-6 py-5 flex flex-col-reverse sm:flex-row sm:justify-end sm:px-8 gap-3">
                             <button type="button" @click="showModal = false" class="inline-flex w-full justify-center rounded-xl bg-white px-5 py-2.5 text-[14px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 sm:w-auto transition-all">Batal</button>
                             <button type="button" @click="submitForm()" class="inline-flex w-full justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-[14px] font-bold text-white shadow-sm hover:bg-rose-700 sm:w-auto transition-all">Ya, Hapus</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Move Document Modal -->
+        <div x-cloak x-show="showMoveModal" class="relative z-50" aria-labelledby="move-modal-title" role="dialog" aria-modal="true">
+            <div x-show="showMoveModal" x-transition.opacity class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" @click="showMoveModal = false"></div>
+            <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+                <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                    <div x-show="showMoveModal" x-transition.scale.origin.bottom class="relative transform overflow-hidden rounded-[2rem] bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-100">
+                        <div class="bg-white px-6 pb-4 pt-6 sm:p-8 sm:pb-4">
+                            <div class="flex items-start gap-4">
+                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-campus-50 text-campus-700">
+                                    <i data-lucide="folder-input" class="h-6 w-6"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="text-xl font-bold leading-6 text-slate-900" id="move-modal-title">Pindahkan ke Folder</h3>
+                                    <p class="mt-2 text-sm text-slate-500 leading-relaxed">
+                                        Pilih folder tujuan untuk memindahkan dokumen <strong class="text-slate-800" x-text="moveDocTitle"></strong>.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-5 max-h-60 overflow-y-auto space-y-2 pr-1">
+                                @if($allFolders->isEmpty())
+                                    <div class="text-center py-6 text-xs text-slate-400">
+                                        Anda belum memiliki folder. Silakan buat folder baru terlebih dahulu saat upload materi.
+                                    </div>
+                                @else
+                                    @foreach($allFolders as $f)
+                                        <form method="POST" :action="`/documents/${moveDocId}/move`" class="block">
+                                            @csrf
+                                            <input type="hidden" name="folder_id" value="{{ $f->id }}">
+                                            <button type="submit" class="w-full text-left flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 hover:bg-campus-50 hover:border-campus-200 p-3 transition group">
+                                                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-400 group-hover:text-campus-600 transition">
+                                                    <i data-lucide="folder" class="h-4 w-4"></i>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <span class="block text-sm font-bold text-slate-700 truncate group-hover:text-campus-900 transition">{{ $f->name }}</span>
+                                                    <span class="block text-[11px] text-slate-400">{{ $f->documents_count ?? $f->documents()->count() }} file</span>
+                                                </div>
+                                                <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 group-hover:text-campus-500 transition-transform group-hover:translate-x-0.5"></i>
+                                            </button>
+                                        </form>
+                                    @endforeach
+                                @endif
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 px-6 py-4 flex justify-end sm:px-8">
+                            <button type="button" @click="showMoveModal = false" class="rounded-xl bg-white px-5 py-2.5 text-[14px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition-all">Batal</button>
                         </div>
                     </div>
                 </div>

@@ -42,9 +42,12 @@ class DocumentController extends Controller
             });
         }
 
+        $allFolders = auth()->user()->documentFolders()->latest()->get();
+
         return view('student.documents.index', [
             'documents' => $documents->latest()->paginate(10)->withQueryString(),
             'folders' => $folders->latest()->paginate(9, ['*'], 'folders_page')->withQueryString(),
+            'allFolders' => $allFolders,
             'search' => $query,
         ]);
     }
@@ -239,6 +242,35 @@ class DocumentController extends Controller
         }
 
         return redirect()->route('documents.index')->with('status', 'File dihapus.');
+    }
+
+    public function moveToFolder(Request $request, Document $document, ActivityLogger $logger)
+    {
+        $this->authorizeOwner($document);
+
+        $data = $request->validate([
+            'folder_id' => ['nullable', 'integer', 'exists:document_folders,id'],
+        ]);
+
+        $folder = null;
+        if ($data['folder_id']) {
+            $folder = auth()->user()->documentFolders()->findOrFail($data['folder_id']);
+        }
+
+        $document->update([
+            'folder_id' => $data['folder_id'],
+        ]);
+
+        $logger->log('move_document', $document, [
+            'document_id' => $document->id,
+            'folder_id' => $data['folder_id'],
+        ]);
+
+        $statusMsg = $data['folder_id']
+            ? 'Dokumen "' . $document->title . '" berhasil dipindahkan ke folder "' . $folder->name . '".'
+            : 'Dokumen "' . $document->title . '" berhasil dipindahkan ke Dokumen Satuan.';
+
+        return redirect()->back()->with('status', $statusMsg);
     }
 
     private function authorizeOwner(Document $document): void
