@@ -2,29 +2,31 @@
 
 namespace App\Events;
 
-use App\Models\StudyRoomMessage;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class StudyRoomMessageSent implements ShouldBroadcastNow
+class StudyRoomMessageChunkGenerated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $message;
+    public $studyRoomId;
+    public $senderId;
+    public $chunk;
     public $tempMsgId;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(StudyRoomMessage $message, ?string $tempMsgId = null)
+    public function __construct($studyRoomId, $senderId, $chunk, $tempMsgId)
     {
-        $this->message = $message->load('user');
+        $this->studyRoomId = $studyRoomId;
+        $this->senderId = $senderId;
+        $this->chunk = $chunk;
         $this->tempMsgId = $tempMsgId;
     }
 
@@ -36,12 +38,12 @@ class StudyRoomMessageSent implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('study-room.' . $this->message->study_room_id),
+            new PresenceChannel('study-room.' . $this->studyRoomId),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'message.sent';
+        return 'message.chunk';
     }
 }

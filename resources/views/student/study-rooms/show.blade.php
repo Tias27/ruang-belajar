@@ -95,30 +95,71 @@
                         .leaving((user) => {
                             this.onlineUsers = this.onlineUsers.filter(u => u.id !== user.id);
                         })
-                        .listen('.message.sent', (e) => {
-                            // Only append if it's from another user or it's an AI message, and not already in the list
-                            if ((parseInt(e.message.user_id) !== parseInt(this.userId) || e.message.is_ai) && !this.messages.some(m => m.id === e.message.id)) {
-                                this.messages.push({
-                                    id: e.message.id,
-                                    user_id: e.message.user_id,
-                                    user_name: e.message.is_ai ? 'RuangBelajar AI' : (e.message.user ? e.message.user.name : 'Siswa'),
-                                    message: e.message.message,
-                                    is_ai: !!e.message.is_ai,
-                                    metadata: e.message.metadata,
-                                    created_at: this.formatTime(e.message.created_at),
-                                });
-                                if (!e.message.is_ai) {
-                                    this.scrollToBottom();
-                                } else {
-                                    this.$nextTick(() => {
-                                        if (window.lucide) window.lucide.createIcons();
-                                    });
-                                }
+                        .listen('.message.chunk', (e) => {
+                            // Skip if we are the sender, since we already read it from SSE
+                            if (parseInt(e.senderId) === parseInt(this.userId)) {
+                                return;
                             }
 
-                            // If AI message arrives via WebSocket, clear sending indicator
+                            const idx = this.messages.findIndex(m => m.id === e.tempMsgId);
+                            if (idx !== -1) {
+                                this.messages[idx].message += e.chunk;
+                            } else {
+                                this.messages.push({
+                                    id: e.tempMsgId,
+                                    user_id: null,
+                                    user_name: 'RuangBelajar AI',
+                                    message: e.chunk,
+                                    is_ai: true,
+                                    metadata: null,
+                                    created_at: this.formatTime(new Date()),
+                                });
+                            }
+                            this.scrollToBottom();
+                        })
+                        .listen('.message.sent', (e) => {
+                            // If it's an AI message, check if there's a temporary stream bubble
                             if (e.message.is_ai) {
+                                const idx = this.messages.findIndex(m => m.id === e.tempMsgId);
+                                if (idx !== -1) {
+                                    this.messages[idx] = {
+                                        id: e.message.id,
+                                        user_id: e.message.user_id,
+                                        user_name: 'RuangBelajar AI',
+                                        message: e.message.message,
+                                        is_ai: true,
+                                        metadata: e.message.metadata,
+                                        created_at: this.formatTime(e.message.created_at),
+                                    };
+                                } else {
+                                    if (!this.messages.some(m => m.id === e.message.id)) {
+                                        this.messages.push({
+                                            id: e.message.id,
+                                            user_id: e.message.user_id,
+                                            user_name: 'RuangBelajar AI',
+                                            message: e.message.message,
+                                            is_ai: true,
+                                            metadata: e.message.metadata,
+                                            created_at: this.formatTime(e.message.created_at),
+                                        });
+                                    }
+                                }
                                 this.sending = false;
+                                this.scrollToBottom();
+                            } else {
+                                // For user messages, only append if not already in the list
+                                if (parseInt(e.message.user_id) !== parseInt(this.userId) && !this.messages.some(m => m.id === e.message.id)) {
+                                    this.messages.push({
+                                        id: e.message.id,
+                                        user_id: e.message.user_id,
+                                        user_name: e.message.user ? e.message.user.name : 'Siswa',
+                                        message: e.message.message,
+                                        is_ai: false,
+                                        metadata: e.message.metadata,
+                                        created_at: this.formatTime(e.message.created_at),
+                                    });
+                                    this.scrollToBottom();
+                                }
                             }
                         });
 
@@ -219,8 +260,7 @@
                         return '';
                     }
                 },
-                
-                async sendMessage() {
+                               async sendMessage() {
                     const text = this.messageText.trim();
                     if ((!text && !this.imageFile) || this.sending) return;
 
@@ -255,7 +295,7 @@
                         const response = await fetch(`/study-rooms/${this.roomUuid}/messages`, {
                             method: 'POST',
                             headers: {
-                                'Accept': 'application/json',
+                                'Accept': 'text/event-stream',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                             },
                             body: formData,
@@ -264,43 +304,83 @@
                         if (!response.ok) {
                             throw new Error('Gagal mengirim pesan.');
                         }
- 
-                        const data = await response.json();
-                        if (data.status === 'success') {
-                            // Replace the temp message with the actual saved user message to get the real database ID
-                            this.messages = this.messages.map(m => m.id === tempId ? {
-                                id: data.user_message.id,
-                                user_id: data.user_message.user_id,
-                                user_name: 'Saya',
-                                message: data.user_message.message,
-                                is_ai: false,
-                                metadata: data.user_message.metadata,
-                                created_at: this.formatTime(data.user_message.created_at),
-                            } : m);
-  
-                            // Append the AI message if it is not already in the messages list
-                            if (data.ai_message && !this.messages.some(m => m.id === data.ai_message.id)) {
-                                this.messages.push({
-                                    id: data.ai_message.id,
-                                    user_id: null,
-                                    user_name: 'RuangBelajar AI',
-                                    message: data.ai_message.message,
-                                    is_ai: true,
-                                    metadata: data.ai_message.metadata,
-                                    created_at: this.formatTime(data.ai_message.created_at),
-                                });
+
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+                        let assistantMessageId = null;
+
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) break;
+
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop(); // keep partial lines
+
+                            for (const line of lines) {
+                                if (line.startsWith('data: ')) {
+                                    const dataStr = line.slice(6).trim();
+                                    if (!dataStr) continue;
+
+                                    try {
+                                        const parsed = JSON.parse(dataStr);
+                                        if (parsed.chunk) {
+                                            if (!assistantMessageId) {
+                                                assistantMessageId = parsed.tempMsgId;
+                                                this.messages.push({
+                                                    id: assistantMessageId,
+                                                    user_id: null,
+                                                    user_name: 'RuangBelajar AI',
+                                                    message: parsed.chunk,
+                                                    is_ai: true,
+                                                    metadata: null,
+                                                    created_at: this.formatTime(new Date()),
+                                                });
+                                            } else {
+                                                const idx = this.messages.findIndex(m => m.id === assistantMessageId);
+                                                if (idx !== -1) {
+                                                    this.messages[idx].message += parsed.chunk;
+                                                }
+                                            }
+                                            this.scrollToBottom();
+                                        } else if (parsed.done) {
+                                            // Replace the temp user message with actual saved user message
+                                            this.messages = this.messages.map(m => m.id === tempId ? {
+                                                id: parsed.user_message.id,
+                                                user_id: parsed.user_message.user_id,
+                                                user_name: 'Saya',
+                                                message: parsed.user_message.message,
+                                                is_ai: false,
+                                                metadata: parsed.user_message.metadata,
+                                                created_at: this.formatTime(parsed.user_message.created_at),
+                                            } : m);
+
+                                            // Replace the temp AI message with the final saved database record
+                                            this.messages = this.messages.map(m => m.id === assistantMessageId ? {
+                                                id: parsed.ai_message.id,
+                                                user_id: null,
+                                                user_name: 'RuangBelajar AI',
+                                                message: parsed.ai_message.message,
+                                                is_ai: true,
+                                                metadata: parsed.ai_message.metadata,
+                                                created_at: this.formatTime(parsed.ai_message.created_at),
+                                            } : m);
+
+                                            // Advance polling cursor
+                                            if (parsed.ai_message.id > this.lastMessageId) {
+                                                this.lastMessageId = parsed.ai_message.id;
+                                            } else if (parsed.user_message.id > this.lastMessageId) {
+                                                this.lastMessageId = parsed.user_message.id;
+                                            }
+                                            this.sending = false;
+                                            this.scrollToBottom();
+                                        }
+                                    } catch (e) {
+                                        console.error('SSE parse error:', e);
+                                    }
+                                }
                             }
-                            
-                            // Advance the polling cursor so next poll skips already-shown messages
-                            if (data.ai_message && data.ai_message.id > this.lastMessageId) {
-                                this.lastMessageId = data.ai_message.id;
-                            } else if (data.user_message && data.user_message.id > this.lastMessageId) {
-                                this.lastMessageId = data.user_message.id;
-                            }
-                            this.sending = false;
-                            this.$nextTick(() => {
-                                if (window.lucide) window.lucide.createIcons();
-                            });
                         }
                     } catch (error) {
                         console.error(error);
@@ -309,7 +389,7 @@
                         alert('Gagal mengirim pesan. Silakan coba lagi.');
                         this.sending = false;
                     }
-                },
+                },},
                 
                 formatMessage(content, isAi = true) {
                     const normalizeMath = (value) => String(value || '')

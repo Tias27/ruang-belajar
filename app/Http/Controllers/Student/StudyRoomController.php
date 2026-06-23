@@ -388,6 +388,83 @@ class StudyRoomController extends Controller
         }
 
         $target = $room->target;
+
+        if ($request->header('Accept') === 'text/event-stream') {
+            return response()->stream(function () use ($room, $gemini, $sources, $messageText, $history, $absoluteImagePath, $userMessage, $userId) {
+                $tempMsgId = 'ai-stream-' . time() . '-' . rand(1000, 9999);
+
+                $fullAnswer = '';
+                $sourceSnippets = [];
+
+                try {
+                    $stream = $gemini->streamChat($room->target, $messageText, $history, $room->selected_document_ids, $absoluteImagePath);
+                    foreach ($stream as $chunk) {
+                        $fullAnswer .= $chunk;
+                        
+                        echo "data: " . json_encode(['chunk' => $chunk, 'tempMsgId' => $tempMsgId]) . "\n\n";
+                        if (ob_get_level() > 0) ob_flush();
+                        flush();
+
+                        try {
+                            broadcast(new \App\Events\StudyRoomMessageChunkGenerated($room->id, $userId, $chunk, $tempMsgId));
+                        } catch (\Throwable $e) {
+                            report($e);
+                        }
+                    }
+
+                    $sourceSnippets = $sources->snippetsFor($room->target, $messageText . ' ' . $fullAnswer);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                    $fullAnswer = $sources->fallbackAnswer($room->target, $messageText, $exception->getMessage());
+                    $sourceSnippets = $sources->snippetsFor($room->target, $messageText);
+                    
+                    echo "data: " . json_encode(['chunk' => $fullAnswer, 'tempMsgId' => $tempMsgId]) . "\n\n";
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
+
+                    try {
+                        broadcast(new \App\Events\StudyRoomMessageChunkGenerated($room->id, $userId, $fullAnswer, $tempMsgId));
+                    } catch (\Throwable $e) {
+                        report($e);
+                    }
+                }
+
+                $aiMessage = StudyRoomMessage::create([
+                    'study_room_id' => $room->id,
+                    'user_id' => null,
+                    'message' => $fullAnswer,
+                    'is_ai' => true,
+                    'metadata' => [
+                        'source_snippets' => $sourceSnippets,
+                    ],
+                ]);
+
+                try {
+                    broadcast(new StudyRoomMessageSent($aiMessage, $tempMsgId));
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+
+                echo "data: " . json_encode([
+                    'done' => true,
+                    'tempMsgId' => $tempMsgId,
+                    'user_message' => $userMessage->load('user'),
+                    'ai_message' => $aiMessage->load('user')
+                ]) . "\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+
+                \App\Jobs\ConsolidateAiMemoryJob::dispatchSync($room->target, auth()->user(), [
+                    ['is_ai' => false, 'message' => $userMessage->message],
+                    ['is_ai' => true, 'message' => $aiMessage->message],
+                ]);
+            }, 200, [
+                'Content-Type' => 'text/event-stream',
+                'Cache-Control' => 'no-cache',
+                'X-Accel-Buffering' => 'no',
+            ]);
+        }
+
         $aiResponse = '';
         try {
             $aiResponse = $gemini->chat($target, $messageText, $history, $room->selected_document_ids, $absoluteImagePath);
