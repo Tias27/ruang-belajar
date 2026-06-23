@@ -112,10 +112,10 @@
                             continue;
                         }
 
-                        if (/^[-•]\s+/.test(trimmed)) {
+                        if (/^[-•*]\s+/.test(trimmed)) {
                             const open = listOpen ? '' : '<ul class="my-2 ml-5 list-disc space-y-1.5">';
                             listOpen = true;
-                            result.push(open + '<li>' + inline(trimmed.replace(/^[-•]\s+/, '')) + '</li>');
+                            result.push(open + '<li>' + inline(trimmed.replace(/^[-•*]\s+/, '')) + '</li>');
                             continue;
                         }
 
@@ -189,10 +189,16 @@
                                         const parsed = JSON.parse(dataStr);
                                         if (parsed.chunk) {
                                             this.messages[assistantIndex].content += parsed.chunk;
+                                            this.$nextTick(() => {
+                                                if (window.lucide) window.lucide.createIcons();
+                                            });
                                         } else if (parsed.done) {
                                             this.title = parsed.title || this.title;
                                             this.messages[assistantIndex].id = parsed.message.id;
                                             this.messages[assistantIndex].metadata = parsed.message.metadata;
+                                            this.$nextTick(() => {
+                                                if (window.lucide) window.lucide.createIcons();
+                                            });
                                         }
                                     } catch (e) {
                                         console.error('SSE parse error:', e);
@@ -208,6 +214,9 @@
                         });
                     } finally {
                         this.sending = false;
+                        this.$nextTick(() => {
+                            if (window.lucide) window.lucide.createIcons();
+                        });
                     }
                 },
             };
