@@ -53,7 +53,7 @@
                     if (percent < 100) {
                         this.statusText = `Mengunggah file... ${percent}%`;
                     } else {
-                        this.statusText = 'Upload selesai. Server sedang membaca isi materi...';
+                        this.statusText = 'Upload selesai. Sedang membaca isi materi...';
                     }
                 }
             });
