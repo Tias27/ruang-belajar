@@ -18,12 +18,12 @@
                     Ruang Belajar bekerja berdasarkan materi kuliah yang kamu unggah. Kamu bisa merangkum, melakukan tanya jawab interaktif, membuat soal kuis, kartu belajar, atau berdiskusi kelompok dengan temanmu secara real-time.
                 </p>
                 <div class="mt-6 flex flex-wrap gap-2.5">
-                    <a href="{{ route('documents.create') }}" class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white px-5 text-xs font-bold text-campus-950 hover:bg-campus-50 transition active:scale-95 shadow-sm">
+                    <a href="{{ route('documents.create') }}" class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white px-5 text-xs font-bold text-campus-700 hover:bg-campus-50 transition active:scale-95 shadow-sm">
                         <i data-lucide="upload-cloud" class="h-3.5 w-3.5 text-campus-600"></i>
                         Upload Materi
                     </a>
                     <a href="{{ route('documents.index') }}" class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white/10 border border-white/10 px-5 text-xs font-bold text-white hover:bg-white/20 transition active:scale-95">
-                        <i data-lucide="library" class="h-3.5 w-3.5 text-campus-200"></i>
+                        <i data-lucide="folder-open" class="h-3.5 w-3.5 text-campus-200"></i>
                         Materi Saya
                     </a>
                 </div>
