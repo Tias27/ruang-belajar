@@ -114,7 +114,6 @@
                                         created_at: this.formatTime(new Date()),
                                     });
                                 }
-                                this.scrollToBottom();
                             })
                             .listen('.message.sent', (e) => {
                                 if (e.message.is_ai) {
@@ -141,8 +140,8 @@
                                         });
                                     }
                                     this.sending = false;
-                                    this.scrollToBottom();
-                                } else if (parseInt(e.message.user_id) !== parseInt(this.userId) && !this.messages.some(m => m.id === e.message.id)) {
+                                    this.scrollToBottom(false, 'smooth');
+                                  } else if (parseInt(e.message.user_id) !== parseInt(this.userId) && !this.messages.some(m => m.id === e.message.id)) {
                                     this.messages.push({
                                         id: e.message.id,
                                         user_id: e.message.user_id,
@@ -152,7 +151,7 @@
                                         metadata: e.message.metadata,
                                         created_at: this.formatTime(e.message.created_at),
                                     });
-                                    this.scrollToBottom();
+                                    this.scrollToBottom(false, 'smooth');
                                 }
                             });
                     }
@@ -208,7 +207,7 @@
                                 }
                             });
                             if (added) {
-                                this.scrollToBottom();
+                                this.scrollToBottom(true, 'smooth');
                             } else {
                                 this.$nextTick(() => {
                                     if (window.lucide) window.lucide.createIcons();
@@ -230,11 +229,11 @@
                     return el.scrollHeight - el.scrollTop - el.clientHeight <= offset;
                 },
 
-                scrollToBottom(force = false) {
+                scrollToBottom(force = false, behavior = 'smooth') {
                     const shouldScroll = force || this.isNearBottom();
                     this.$nextTick(() => {
                         if (shouldScroll && this.$refs.messages) {
-                            this.$refs.messages.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: 'smooth' });
+                            this.$refs.messages.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: behavior });
                         }
                         if (window.lucide) {
                             window.lucide.createIcons();
@@ -344,7 +343,6 @@
                                                     this.messages[idx].message += parsed.chunk;
                                                 }
                                             }
-                                            this.scrollToBottom();
                                         } else if (parsed.done) {
                                             // Replace the temp user message with actual saved user message
                                             this.messages = this.messages.map(m => m.id === tempId ? {
@@ -375,7 +373,7 @@
                                                 this.lastMessageId = parsed.user_message.id;
                                             }
                                             this.sending = false;
-                                            this.scrollToBottom();
+                                            this.scrollToBottom(false, 'smooth');
                                         }
                                     } catch (e) {
                                         console.error('SSE parse error:', e);
@@ -543,7 +541,7 @@
             <!-- Chat Canvas -->
             <div class="flex-1 flex flex-col relative min-h-0 overflow-hidden">
                 <!-- Messages Area -->
-                <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-44 pt-6 px-4 sm:px-6" style="scroll-behavior: smooth;">
+                <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-44 pt-6 px-4 sm:px-6" style="scroll-behavior: smooth; overscroll-behavior-y: contain;">
                     
                     <!-- Welcome Room Banner -->
                     <div class="rounded-2xl border border-campus-100 bg-campus-50/50 p-6 max-w-2xl mx-auto text-center shadow-sm">

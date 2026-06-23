@@ -317,7 +317,7 @@
 
             <!-- Messages Area -->
             <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-44 pt-6 px-4 sm:px-6 lg:px-8"
-                style="scroll-behavior: smooth;">
+                style="scroll-behavior: smooth; overscroll-behavior-y: contain;">
 
                 <!-- Empty State / Welcome Message -->
                 <template x-if="messages.length === 0">
