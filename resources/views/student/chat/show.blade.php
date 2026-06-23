@@ -61,9 +61,15 @@
                         this.$refs.imageInput.value = '';
                     }
                 },
-                scrollToBottom() {
+                isNearBottom(offset = 180) {
+                    const el = this.$refs.messages;
+                    if (!el) return true;
+                    return el.scrollHeight - el.scrollTop - el.clientHeight <= offset;
+                },
+                scrollToBottom(force = false) {
+                    const shouldScroll = force || this.isNearBottom();
                     this.$nextTick(() => {
-                        if (this.$refs.messages) {
+                        if (shouldScroll && this.$refs.messages) {
                             this.$refs.messages.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: 'smooth' });
                         }
                         if (window.lucide) {
@@ -205,7 +211,7 @@
                     this.clearImage();
                     this.sending = true;
                     this.$refs.textarea.style.height = 'auto'; // Reset textarea height
-                    this.scrollToBottom();
+                    this.scrollToBottom(true);
 
                     try {
                         const assistantMessageId = 'assistant-' + Date.now();
@@ -283,7 +289,7 @@
         };
     </script>
 
-    <div class="h-full w-full flex flex-col bg-[#f8fbff]" x-data="chatSessionPage()" x-init="scrollToBottom()">
+    <div class="h-full w-full flex flex-col bg-[#f8fbff]" x-data="chatSessionPage()" x-init="scrollToBottom(true)">
         <!-- Header Page -->
         <section
             class="flex-none px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between border-b border-slate-200/60 bg-white shadow-sm">

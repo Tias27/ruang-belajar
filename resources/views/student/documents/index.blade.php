@@ -23,7 +23,7 @@
     :title="$title" 
     :subtitle="$subtitle"
 >
-    <div x-data="{ aiBusy: false, setBusy(val) { this.aiBusy = val; } }">
+    <div x-data="{ aiBusy: false, init() { window.addEventListener('pageshow', () => this.aiBusy = false); }, setBusy(val) { this.aiBusy = val; } }">
     <!-- Header Page -->
     <section class="overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-campus-50 to-white p-5 sm:p-8 shadow-sm border border-campus-100 relative">
         <div class="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-start">

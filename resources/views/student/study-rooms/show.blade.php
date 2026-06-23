@@ -80,59 +80,56 @@
                         m.created_at = this.formatTime(m.created_at);
                     });
 
-                    this.scrollToBottom();
+                    this.scrollToBottom(true);
                     
-                    // Listen to Reverb Presence Channel
-                    Echo.join('study-room.' + this.roomId)
-                        .here((users) => {
-                            this.onlineUsers = users;
-                        })
-                        .joining((user) => {
-                            if (!this.onlineUsers.some(u => u.id === user.id)) {
-                                this.onlineUsers.push(user);
-                            }
-                        })
-                        .leaving((user) => {
-                            this.onlineUsers = this.onlineUsers.filter(u => u.id !== user.id);
-                        })
-                        .listen('.message.chunk', (e) => {
-                            // Skip if we are the sender, since we already read it from SSE
-                            if (parseInt(e.senderId) === parseInt(this.userId)) {
-                                return;
-                            }
+                    if (window.Echo) {
+                        window.Echo.join('study-room.' + this.roomId)
+                            .here((users) => {
+                                this.onlineUsers = users;
+                            })
+                            .joining((user) => {
+                                if (!this.onlineUsers.some(u => u.id === user.id)) {
+                                    this.onlineUsers.push(user);
+                                }
+                            })
+                            .leaving((user) => {
+                                this.onlineUsers = this.onlineUsers.filter(u => u.id !== user.id);
+                            })
+                            .listen('.message.chunk', (e) => {
+                                if (parseInt(e.senderId) === parseInt(this.userId)) {
+                                    return;
+                                }
 
-                            const idx = this.messages.findIndex(m => m.id === e.tempMsgId);
-                            if (idx !== -1) {
-                                this.messages[idx].message += e.chunk;
-                            } else {
-                                this.messages.push({
-                                    id: e.tempMsgId,
-                                    user_id: null,
-                                    user_name: 'RuangBelajar AI',
-                                    message: e.chunk,
-                                    is_ai: true,
-                                    metadata: null,
-                                    created_at: this.formatTime(new Date()),
-                                });
-                            }
-                            this.scrollToBottom();
-                        })
-                        .listen('.message.sent', (e) => {
-                            // If it's an AI message, check if there's a temporary stream bubble
-                            if (e.message.is_ai) {
                                 const idx = this.messages.findIndex(m => m.id === e.tempMsgId);
                                 if (idx !== -1) {
-                                    this.messages[idx] = {
-                                        id: e.message.id,
-                                        user_id: e.message.user_id,
-                                        user_name: 'RuangBelajar AI',
-                                        message: e.message.message,
-                                        is_ai: true,
-                                        metadata: e.message.metadata,
-                                        created_at: this.formatTime(e.message.created_at),
-                                    };
+                                    this.messages[idx].message += e.chunk;
                                 } else {
-                                    if (!this.messages.some(m => m.id === e.message.id)) {
+                                    this.messages.push({
+                                        id: e.tempMsgId,
+                                        user_id: null,
+                                        user_name: 'RuangBelajar AI',
+                                        message: e.chunk,
+                                        is_ai: true,
+                                        metadata: null,
+                                        created_at: this.formatTime(new Date()),
+                                    });
+                                }
+                                this.scrollToBottom();
+                            })
+                            .listen('.message.sent', (e) => {
+                                if (e.message.is_ai) {
+                                    const idx = this.messages.findIndex(m => m.id === e.tempMsgId);
+                                    if (idx !== -1) {
+                                        this.messages[idx] = {
+                                            id: e.message.id,
+                                            user_id: e.message.user_id,
+                                            user_name: 'RuangBelajar AI',
+                                            message: e.message.message,
+                                            is_ai: true,
+                                            metadata: e.message.metadata,
+                                            created_at: this.formatTime(e.message.created_at),
+                                        };
+                                    } else if (!this.messages.some(m => m.id === e.message.id)) {
                                         this.messages.push({
                                             id: e.message.id,
                                             user_id: e.message.user_id,
@@ -143,12 +140,9 @@
                                             created_at: this.formatTime(e.message.created_at),
                                         });
                                     }
-                                }
-                                this.sending = false;
-                                this.scrollToBottom();
-                            } else {
-                                // For user messages, only append if not already in the list
-                                if (parseInt(e.message.user_id) !== parseInt(this.userId) && !this.messages.some(m => m.id === e.message.id)) {
+                                    this.sending = false;
+                                    this.scrollToBottom();
+                                } else if (parseInt(e.message.user_id) !== parseInt(this.userId) && !this.messages.some(m => m.id === e.message.id)) {
                                     this.messages.push({
                                         id: e.message.id,
                                         user_id: e.message.user_id,
@@ -160,8 +154,8 @@
                                     });
                                     this.scrollToBottom();
                                 }
-                            }
-                        });
+                            });
+                    }
 
                     // Start polling as reliable fallback for other participants
                     this._pollInterval = setInterval(() => this.pollMessages(), 3000);
@@ -230,9 +224,16 @@
                     }
                 },
 
-                scrollToBottom() {
+                isNearBottom(offset = 180) {
+                    const el = this.$refs.messages;
+                    if (!el) return true;
+                    return el.scrollHeight - el.scrollTop - el.clientHeight <= offset;
+                },
+
+                scrollToBottom(force = false) {
+                    const shouldScroll = force || this.isNearBottom();
                     this.$nextTick(() => {
-                        if (this.$refs.messages) {
+                        if (shouldScroll && this.$refs.messages) {
                             this.$refs.messages.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: 'smooth' });
                         }
                         if (window.lucide) {
@@ -289,7 +290,7 @@
                     if (this.$refs.textarea) {
                         this.$refs.textarea.style.height = 'auto'; // Reset textarea height
                     }
-                    this.scrollToBottom();
+                    this.scrollToBottom(true);
                     
                     try {
                         const response = await fetch(`/study-rooms/${this.roomUuid}/messages`, {
@@ -389,7 +390,7 @@
                         alert('Gagal mengirim pesan. Silakan coba lagi.');
                         this.sending = false;
                     }
-                },},
+                },
                 
                 formatMessage(content, isAi = true) {
                     const normalizeMath = (value) => String(value || '')
@@ -1219,7 +1220,7 @@
 
         <!-- Hidden close room form -->
         @if($room->host_id === auth()->id())
-            <form id="close-room-form" method="POST" action="{{ route('study-rooms.close', $room) }}" class="hidden">
+            <form id="close-room-form" x-ref="closeRoomForm" method="POST" action="{{ route('study-rooms.close', $room) }}" class="hidden">
                 @csrf
             </form>
         @endif
@@ -1275,7 +1276,7 @@
                     </button>
                     <button 
                         type="button" 
-                        @click="document.getElementById('close-room-form').submit()" 
+                        @click="$refs.closeRoomForm.submit()" 
                         class="w-full sm:w-auto min-w-[120px] inline-flex h-11 items-center justify-center rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-bold text-white shadow-lg shadow-rose-600/20 transition"
                     >
                         Ya, Tutup Sesi

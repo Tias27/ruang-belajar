@@ -46,17 +46,25 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pusher/8.3.0/pusher.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.0/dist/echo.iife.js"></script>
     <script>
-        window.Pusher = Pusher;
-        const isHttpsProtocol = window.location.protocol === 'https:';
-        window.Echo = new Echo({
-            broadcaster: 'reverb',
-            key: '{{ config('broadcasting.connections.reverb.key') }}',
-            wsHost: window.location.hostname,
-            wsPort: isHttpsProtocol ? 443 : {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
-            wssPort: isHttpsProtocol ? 443 : {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
-            forceTLS: isHttpsProtocol,
-            enabledTransports: ['ws', 'wss'],
-        });
+        try {
+            if (window.Pusher && window.Echo) {
+                const EchoClient = window.Echo;
+                const isHttpsProtocol = window.location.protocol === 'https:';
+
+                window.Echo = new EchoClient({
+                    broadcaster: 'reverb',
+                    key: '{{ config('broadcasting.connections.reverb.key') }}',
+                    wsHost: window.location.hostname,
+                    wsPort: isHttpsProtocol ? 443 : {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
+                    wssPort: isHttpsProtocol ? 443 : {{ config('broadcasting.connections.reverb.options.port') ?? 8080 }},
+                    forceTLS: isHttpsProtocol,
+                    enabledTransports: ['ws', 'wss'],
+                });
+            }
+        } catch (error) {
+            window.Echo = null;
+            console.warn('Realtime study room tidak aktif, memakai polling.', error);
+        }
     </script>
 
     <style>

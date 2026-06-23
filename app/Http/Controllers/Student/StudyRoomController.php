@@ -244,19 +244,33 @@ class StudyRoomController extends Controller
             ->where('status', 'active')
             ->update(['status' => 'closed']);
 
-        // Generate a unique 4-digit PIN for active rooms
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            try {
+                return StudyRoom::create([
+                    'host_id' => Auth::id(),
+                    'target_type' => get_class($target),
+                    'target_id' => $target->id,
+                    'pin' => $this->uniquePin(),
+                    'status' => 'active',
+                    'selected_document_ids' => $selectedDocIds,
+                ]);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $exception) {
+                if ($attempt === 4) {
+                    throw $exception;
+                }
+            }
+        }
+
+        abort(500, 'Room belajar belum bisa dibuat. Coba lagi sebentar.');
+    }
+
+    private function uniquePin(): string
+    {
         do {
             $pin = sprintf('%04d', random_int(0, 9999));
-        } while (StudyRoom::where('pin', $pin)->where('status', 'active')->exists());
+        } while (StudyRoom::where('pin', $pin)->exists());
 
-        return StudyRoom::create([
-            'host_id' => Auth::id(),
-            'target_type' => get_class($target),
-            'target_id' => $target->id,
-            'pin' => $pin,
-            'status' => 'active',
-            'selected_document_ids' => $selectedDocIds,
-        ]);
+        return $pin;
     }
 
     public function join(Request $request)
@@ -381,11 +395,7 @@ class StudyRoomController extends Controller
             'metadata' => $dbMetadata,
         ]);
 
-        try {
-            broadcast(new StudyRoomMessageSent($userMessage))->toOthers();
-        } catch (\Throwable $e) {
-            report($e);
-        }
+        $this->broadcastRoomEvent(new StudyRoomMessageSent($userMessage), true);
 
         $target = $room->target;
 
@@ -405,11 +415,7 @@ class StudyRoomController extends Controller
                         if (ob_get_level() > 0) ob_flush();
                         flush();
 
-                        try {
-                            broadcast(new \App\Events\StudyRoomMessageChunkGenerated($room->id, $userId, $chunk, $tempMsgId));
-                        } catch (\Throwable $e) {
-                            report($e);
-                        }
+                        $this->broadcastRoomEvent(new \App\Events\StudyRoomMessageChunkGenerated($room->id, $userId, $chunk, $tempMsgId));
                     }
 
                     $sourceSnippets = $sources->snippetsFor($room->target, $messageText . ' ' . $fullAnswer);
@@ -422,11 +428,7 @@ class StudyRoomController extends Controller
                     if (ob_get_level() > 0) ob_flush();
                     flush();
 
-                    try {
-                        broadcast(new \App\Events\StudyRoomMessageChunkGenerated($room->id, $userId, $fullAnswer, $tempMsgId));
-                    } catch (\Throwable $e) {
-                        report($e);
-                    }
+                    $this->broadcastRoomEvent(new \App\Events\StudyRoomMessageChunkGenerated($room->id, $userId, $fullAnswer, $tempMsgId));
                 }
 
                 $aiMessage = StudyRoomMessage::create([
@@ -439,11 +441,7 @@ class StudyRoomController extends Controller
                     ],
                 ]);
 
-                try {
-                    broadcast(new StudyRoomMessageSent($aiMessage, $tempMsgId));
-                } catch (\Throwable $e) {
-                    report($e);
-                }
+                $this->broadcastRoomEvent(new StudyRoomMessageSent($aiMessage, $tempMsgId));
 
                 echo "data: " . json_encode([
                     'done' => true,
@@ -484,11 +482,7 @@ class StudyRoomController extends Controller
             ],
         ]);
 
-        try {
-            broadcast(new StudyRoomMessageSent($aiMessage));
-        } catch (\Throwable $e) {
-            report($e);
-        }
+        $this->broadcastRoomEvent(new StudyRoomMessageSent($aiMessage));
 
         \App\Jobs\ConsolidateAiMemoryJob::dispatchSync($target, auth()->user(), [
             ['is_ai' => false, 'message' => $userMessage->message],
@@ -500,6 +494,23 @@ class StudyRoomController extends Controller
             'user_message' => $userMessage->load('user'),
             'ai_message' => $aiMessage->load('user'),
         ]);
+    }
+
+    private function broadcastRoomEvent(object $event, bool $toOthers = false): void
+    {
+        if (!filter_var(env('STUDY_ROOM_REALTIME', false), FILTER_VALIDATE_BOOLEAN)) {
+            return;
+        }
+
+        try {
+            $pending = broadcast($event);
+
+            if ($toOthers) {
+                $pending->toOthers();
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     public function getMessages(Request $request, StudyRoom $room)

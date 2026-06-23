@@ -7,6 +7,9 @@
 
     <div class="min-w-0 overflow-x-hidden" x-data="{ 
         aiBusy: false,
+        init() {
+            window.addEventListener('pageshow', () => this.aiBusy = false);
+        },
         setBusy(val) {
             this.aiBusy = val;
         },
