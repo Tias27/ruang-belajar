@@ -380,7 +380,7 @@
                                             <img :src="message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path" class="max-h-60 w-full object-contain rounded-xl hover:scale-[1.02] transition cursor-pointer" @click="window.open(message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path, '_blank')">
                                         </div>
                                     </template>
-                                    <div x-html="formatMessage(message.content, false)" class="[&_p]:mb-0"></div>
+                                    <div x-show="message.content !== 'Mengirim gambar...' && message.content !== 'Jelaskan gambar ini'" x-html="formatMessage(message.content, false)" class="[&_p]:mb-0"></div>
                                 </div>
                             </template>
 
