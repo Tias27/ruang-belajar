@@ -186,20 +186,42 @@
     <main class="@auth lg:ml-64 @endauth flex flex-col flex-1 {{ request()->routeIs('chat.show', 'chat.show.legacy', 'study-rooms.show') ? 'min-h-0 overflow-hidden' : '' }}">
         <div class="{{ request()->routeIs('chat.show', 'chat.show.legacy', 'study-rooms.show') ? 'flex flex-col flex-1 h-full min-h-0 overflow-hidden' : 'mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 w-full' }}">
             @if(session('status'))
-                <div class="mb-5 flex items-start gap-3 rounded-[1.25rem] border border-emerald-100 bg-emerald-50 px-4 py-4 text-sm text-emerald-900 shadow-sm sm:px-5">
+                <div x-data="{ show: true }"
+                     x-show="show"
+                     x-init="setTimeout(() => show = false, 5000)"
+                     x-transition:leave="transition ease-in duration-300"
+                     x-transition:leave-start="opacity-100 transform scale-100"
+                     x-transition:leave-end="opacity-0 transform scale-95"
+                     class="mb-5 flex items-start gap-3 rounded-[1.25rem] border border-emerald-100 bg-emerald-50 px-4 py-4 text-sm text-emerald-900 shadow-sm sm:px-5">
                     <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-emerald-700 shadow-sm">
                         <i data-lucide="check-circle-2" class="h-5 w-5"></i>
                     </span>
-                    <span class="min-w-0">
-                        <span class="block font-semibold">Berhasil</span>
-                        <span class="mt-0.5 block leading-6">{{ session('status') }}</span>
+                    <span class="min-w-0 flex-1">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <span class="block font-semibold">Berhasil</span>
+                                <span class="mt-0.5 block leading-6">{{ session('status') }}</span>
+                            </div>
+                            <button type="button" @click="show = false" class="text-emerald-700/60 hover:text-emerald-900 transition ml-2">
+                                <i data-lucide="x" class="h-4 w-4"></i>
+                            </button>
+                        </div>
                     </span>
                 </div>
             @endif
             @if($errors->any())
-                <div class="mb-5 flex items-start gap-3 rounded-lg border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
+                <div x-data="{ show: true }"
+                     x-show="show"
+                     x-init="setTimeout(() => show = false, 7000)"
+                     x-transition:leave="transition ease-in duration-300"
+                     x-transition:leave-start="opacity-100 transform scale-100"
+                     x-transition:leave-end="opacity-0 transform scale-95"
+                     class="mb-5 flex items-start gap-3 rounded-lg border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
                     <i data-lucide="alert-circle" class="mt-0.5 h-4 w-4 shrink-0"></i>
-                    <span>{{ $errors->first() }}</span>
+                    <span class="min-w-0 flex-1">{{ $errors->first() }}</span>
+                    <button type="button" @click="show = false" class="text-rose-700/60 hover:text-rose-900 transition ml-2">
+                        <i data-lucide="x" class="h-4 w-4"></i>
+                    </button>
                 </div>
             @endif
             {{ $slot }}
