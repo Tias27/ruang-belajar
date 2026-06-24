@@ -6,6 +6,39 @@
         progress: 0,
         statusText: '',
         errorMessage: '',
+        processingInterval: null,
+        statusMessages: [
+            'Membaca isi dokumen...',
+            'Mengekstrak teks kuliah...',
+            'Menganalisis materi dengan AI...',
+            'Mengoptimalkan bahan belajar...',
+            'Hampir selesai, sedang menyimpan...'
+        ],
+        statusIndex: 0,
+
+        startProcessingSimulation() {
+            if (this.processingInterval) return;
+            this.statusIndex = 0;
+            this.statusText = this.statusMessages[0];
+            
+            this.processingInterval = setInterval(() => {
+                this.statusIndex = (this.statusIndex + 1) % this.statusMessages.length;
+                this.statusText = this.statusMessages[this.statusIndex];
+
+                // Slowly creep progress up to 99%
+                if (this.progress < 99) {
+                    this.progress += 1;
+                }
+            }, 2000);
+        },
+
+        stopProcessingSimulation() {
+            if (this.processingInterval) {
+                clearInterval(this.processingInterval);
+                this.processingInterval = null;
+            }
+        },
+
         handleFileSelect(e) {
             if (this.mode === 'folder') {
                 const dt = new DataTransfer();
@@ -49,18 +82,22 @@
             xhr.upload.addEventListener('progress', (event) => {
                 if (event.lengthComputable) {
                     const percent = Math.round((event.loaded / event.total) * 100);
-                    this.progress = percent;
+                    // Map actual upload progress to 0 - 90%
+                    this.progress = Math.round(percent * 0.9);
                     if (percent < 100) {
                         this.statusText = `Mengunggah file... ${percent}%`;
                     } else {
                         this.statusText = 'Upload selesai. Sedang membaca isi materi...';
+                        this.startProcessingSimulation();
                     }
                 }
             });
 
             // Completion listener
             xhr.onload = () => {
+                this.stopProcessingSimulation();
                 if (xhr.status >= 200 && xhr.status < 300) {
+                    this.progress = 100;
                     this.statusText = 'Selesai! Mengalihkan halaman...';
                     window.location.href = xhr.responseURL || '{{ route('documents.index') }}';
                 } else {
@@ -80,6 +117,7 @@
             };
 
             xhr.onerror = () => {
+                this.stopProcessingSimulation();
                 this.uploading = false;
                 this.errorMessage = 'Koneksi ke server terputus. Harap periksa jaringan internet Anda.';
             };
@@ -226,7 +264,7 @@
                 
                 <!-- Progress Bar -->
                 <div class="mt-4 w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner border border-slate-200/50">
-                    <div class="bg-gradient-to-r from-campus-500 to-campus-700 h-full rounded-full transition-all duration-300 ease-out" :style="`width: ${progress}%`"></div>
+                    <div class="bg-gradient-to-r from-campus-500 to-campus-700 h-full rounded-full transition-all duration-300 ease-out" :class="progress >= 90 ? 'animate-pulse' : ''" :style="`width: ${progress}%`"></div>
                 </div>
 
                 <!-- Progress Percentage -->
