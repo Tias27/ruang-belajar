@@ -17,13 +17,13 @@
                 <p class="mt-2 text-xs sm:text-sm text-campus-50 leading-relaxed max-w-2xl font-medium opacity-90">
                     Ruang Belajar bekerja berdasarkan materi kuliah yang kamu unggah. Kamu bisa merangkum, melakukan tanya jawab interaktif, membuat soal kuis, kartu belajar, atau berdiskusi kelompok dengan temanmu secara real-time.
                 </p>
-                <div class="mt-6 flex flex-wrap gap-2.5">
-                    <a href="{{ route('documents.create') }}" class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white px-5 text-xs font-bold text-campus-700 hover:bg-campus-50 transition active:scale-95 shadow-sm">
-                        <i data-lucide="upload-cloud" class="h-3.5 w-3.5 text-campus-600"></i>
+                <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                    <a href="{{ route('documents.create') }}" class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white px-6 text-sm font-bold shadow-md transition hover:bg-slate-50 active:scale-[0.98] w-full sm:w-auto" style="color: #1456a3 !important;">
+                        <i data-lucide="upload-cloud" class="h-4 w-4" style="color: #1f73c7 !important;"></i>
                         Upload Materi
                     </a>
-                    <a href="{{ route('documents.index') }}" class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-white/10 border border-white/10 px-5 text-xs font-bold text-white hover:bg-white/20 transition active:scale-95">
-                        <i data-lucide="folder-open" class="h-3.5 w-3.5 text-campus-200"></i>
+                    <a href="{{ route('documents.index') }}" class="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white/15 border border-white/20 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-white/25 active:scale-[0.98] w-full sm:w-auto">
+                        <i data-lucide="folder-open" class="h-4 w-4 text-white"></i>
                         Materi Saya
                     </a>
                 </div>
