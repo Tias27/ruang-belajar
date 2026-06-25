@@ -40,20 +40,35 @@
         },
 
         handleFileSelect(e) {
+            let newFiles = [];
             if (this.mode === 'folder') {
-                const dt = new DataTransfer();
-                // Tambahkan file lama
-                this.files.forEach(f => dt.items.add(f));
-                // Tambahkan file baru jika belum ada
+                newFiles = [...this.files];
                 Array.from(e.target.files).forEach(f => {
-                    if (!this.files.find(existing => existing.name === f.name && existing.size === f.size)) {
-                        dt.items.add(f);
+                    if (!newFiles.find(existing => existing.name === f.name && existing.size === f.size)) {
+                        newFiles.push(f);
                     }
                 });
-                this.files = Array.from(dt.files);
-                e.target.files = dt.files;
             } else {
-                this.files = Array.from(e.target.files);
+                newFiles = Array.from(e.target.files);
+            }
+
+            // Enforce max 30 files limit
+            if (newFiles.length > 30) {
+                alert('Maksimal 30 file yang diperbolehkan dalam sekali upload. Hanya 30 file pertama yang akan dimasukkan.');
+                newFiles = newFiles.slice(0, 30);
+            }
+
+            this.files = newFiles;
+
+            // Sync back to file input
+            const dt = new DataTransfer();
+            this.files.forEach(f => dt.items.add(f));
+            
+            // Sync to the input element that triggered the event
+            e.target.files = dt.files;
+            // Also sync to $refs.fileInput just in case
+            if (this.$refs.fileInput) {
+                this.$refs.fileInput.files = dt.files;
             }
         },
         removeFile(index) {
