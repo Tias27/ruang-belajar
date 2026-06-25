@@ -148,7 +148,8 @@
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Pilih file satuan untuk materi terpisah, atau folder gabungan kalau beberapa file ingin dipelajari sebagai satu paket.</p>
                 </div>
                 <span class="inline-flex w-fit items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-semibold text-campus-700 shadow-sm">
-                    <i data-lucide="layers-3" class="h-4 w-4"></i> Maks. 30 file
+                    <i data-lucide="layers-3" class="h-4 w-4"></i> 
+                    <span x-text="mode === 'folder' ? 'Maks. 30 file' : 'Maks. 1 file'">Maks. 30 file</span>
                 </span>
             </div>
         </section>
