@@ -57,7 +57,7 @@
                             <span class="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500">Langkah Awal</span>
                         </h3>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500 max-w-2xl">
-                            Upload file PDF, Word (DOCX), PPTX, atau Gambar catatan pelajaran ke sistem. Kamu juga bisa mengelompokkan beberapa file ke dalam satu **Folder** agar AI memahami konteks materi secara menyeluruh.
+                            Upload file PDF, Word (DOCX), PPTX, atau Gambar catatan pelajaran ke sistem. Kamu juga bisa mengelompokkan beberapa file ke dalam satu <strong>Folder</strong> agar AI memahami konteks materi secara menyeluruh.
                         </p>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                     <div class="min-w-0">
                         <h3 class="font-bold text-slate-800 text-sm">Buka Halaman Detail File / Folder</h3>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500 max-w-2xl">
-                            Fitur-fitur AI tidak dijalankan dari dashboard utama, melainkan dari dalam halaman detail file atau folder materi yang ingin kamu pelajari. Klik file atau folder tersebut dari menu **Materi Saya**.
+                            Fitur-fitur AI tidak dijalankan dari dashboard utama, melainkan dari dalam halaman detail file atau folder materi yang ingin kamu pelajari. Klik file atau folder tersebut dari menu <strong>Materi Saya</strong>.
                         </p>
                     </div>
                 </div>
@@ -89,7 +89,7 @@
                     <div class="min-w-0">
                         <h3 class="font-bold text-slate-800 text-sm">Gunakan Asisten AI & Buat Latihan</h3>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500 max-w-2xl">
-                            Mulai dengan membaca **Ringkasan** materi untuk gambaran besar. Jika ada yang belum dipahami, gunakan **Tanya AI** untuk chat interaktif. Uji ingatanmu dengan membuat **Kartu Belajar** (flashcard) atau **Latihan Soal** kuis.
+                            Mulai dengan membaca <strong>Ringkasan</strong> materi untuk gambaran besar. Jika ada yang belum dipahami, gunakan <strong>Tanya AI</strong> untuk chat interaktif. Uji ingatanmu dengan membuat <strong>Kartu Belajar</strong> (flashcard) atau <strong>Latihan Soal</strong> kuis.
                         </p>
                     </div>
                 </div>
@@ -103,7 +103,7 @@
                     <div class="min-w-0">
                         <h3 class="font-bold text-slate-800 text-sm">Belajar Bersama Teman (Study Room)</h3>
                         <p class="mt-1 text-xs leading-relaxed text-slate-500 max-w-2xl">
-                            Buat **Belajar Bareng (Study Room)** dan bagikan PIN 4-digit kepada teman-teman sekelasmu. Kalian bisa berdiskusi bersama, berlatih kuis kelompok secara real-time, dan didampingi AI Co-Pilot untuk memecahkan pertanyaan di room.
+                            Buat <strong>Belajar Bareng (Study Room)</strong> dan bagikan PIN 4-digit kepada teman-teman sekelasmu. Kalian bisa berdiskusi bersama, berlatih kuis kelompok secara real-time, dan didampingi AI Co-Pilot untuk memecahkan pertanyaan di room.
                         </p>
                     </div>
                 </div>
