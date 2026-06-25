@@ -204,7 +204,7 @@
                 </li>
                 <li class="flex items-start gap-2 leading-relaxed">
                     <span class="h-1.5 w-1.5 rounded-full bg-campus-500 mt-1.5 shrink-0"></span>
-                    <span><strong>Riwayat Percakapan:</strong> Kamu bisa membuka riwayat obrolan AI lamamu kapan saja melalui menu **Riwayat AI** tanpa harus mengulangnya dari awal.</span>
+                    <span><strong>Riwayat Percakapan:</strong> Kamu bisa membuka riwayat obrolan AI lamamu kapan saja melalui menu <strong>Riwayat AI</strong> tanpa harus mengulangnya dari awal.</span>
                 </li>
                 <li class="flex items-start gap-2 leading-relaxed">
                     <span class="h-1.5 w-1.5 rounded-full bg-campus-500 mt-1.5 shrink-0"></span>
