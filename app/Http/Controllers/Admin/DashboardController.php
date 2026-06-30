@@ -39,6 +39,23 @@ class DashboardController extends Controller
         // Per AI conversation: $0.15
         $totalRevenue = 85 + ($studentsCount * 12) + ($conversationsCount * 0.15);
 
+        // Calculate daily revenue from activity logs
+        $dailyRevenue = $dailyUsage->map(function ($day) {
+            $day->revenue = 5.00 + ($day->summaries * 0.50) + ($day->quizzes * 0.40) + ($day->flashcards * 0.30) + ($day->chats * 0.10);
+            return $day;
+        });
+
+        // Generate 14 days of dummy member usage data
+        $memberUsage = [];
+        for ($i = 13; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $memberUsage[] = (object)[
+                'date' => $date->format('Y-m-d'),
+                'formatted_date' => $date->format('d/m'),
+                'total' => rand(12, 38), // Random active members
+            ];
+        }
+
         return view('admin.dashboard', [
             'stats' => [
                 'students' => $studentsCount,
@@ -47,7 +64,8 @@ class DashboardController extends Controller
             ],
             'users' => User::latest()->take(8)->get(),
             'documents' => Document::with('user')->latest()->take(8)->get(),
-            'dailyUsage' => $dailyUsage,
+            'dailyRevenue' => $dailyRevenue,
+            'memberUsage' => $memberUsage,
         ]);
     }
 }
