@@ -128,8 +128,23 @@
             <nav class="mt-6 space-y-1 text-sm font-medium">
                 @if($isAdmin)
                     <x-nav-link href="{{ route('admin.dashboard') }}" icon="layout-dashboard" label="Beranda Pengelola" :active="request()->routeIs('admin.dashboard')" />
-                    <x-nav-link href="{{ route('admin.users.index') }}" icon="users" label="Pengguna" :active="request()->routeIs('admin.users.*')" />
-                    <x-nav-link href="{{ route('admin.documents.index') }}" icon="files" label="Dokumen" :active="request()->routeIs('admin.documents.*')" />
+                    
+                    <!-- Dropdown Data Master -->
+                    <div x-data="{ open: {{ request()->routeIs('admin.users.*', 'admin.documents.*') ? 'true' : 'false' }} }" class="space-y-1">
+                        <button @click="open = !open" type="button" class="group flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="database" class="h-4 w-4 text-slate-400 group-hover:text-campus-700"></i>
+                                <span>Data Master</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="h-3.5 w-3.5 text-slate-400 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                        </button>
+                        <div x-show="open" x-cloak class="pl-4 space-y-1" x-transition>
+                            <x-nav-link href="{{ route('admin.users.index') }}" icon="users" label="Pengguna" :active="request()->routeIs('admin.users.*')" />
+                            <x-nav-link href="{{ route('admin.documents.index') }}" icon="files" label="Dokumen" :active="request()->routeIs('admin.documents.*')" />
+                        </div>
+                    </div>
+
+                    <x-nav-link href="{{ route('admin.revenue') }}" icon="wallet" label="Pendapatan" :active="request()->routeIs('admin.revenue')" />
                 @else
                     <x-nav-link href="{{ route('student.dashboard') }}" icon="home" label="Beranda" :active="request()->routeIs('student.dashboard')" />
                     <x-nav-link href="{{ route('student.guide') }}" icon="map" label="Panduan" :active="request()->routeIs('student.guide')" />
@@ -176,8 +191,23 @@
                 <nav class="space-y-1 text-sm font-medium">
                     @if($isAdmin)
                         <x-nav-link href="{{ route('admin.dashboard') }}" icon="layout-dashboard" label="Beranda Pengelola" :active="request()->routeIs('admin.dashboard')" />
-                        <x-nav-link href="{{ route('admin.users.index') }}" icon="users" label="Pengguna" :active="request()->routeIs('admin.users.*')" />
-                        <x-nav-link href="{{ route('admin.documents.index') }}" icon="files" label="Dokumen" :active="request()->routeIs('admin.documents.*')" />
+                        
+                        <!-- Dropdown Data Master -->
+                        <div x-data="{ open: {{ request()->routeIs('admin.users.*', 'admin.documents.*') ? 'true' : 'false' }} }" class="space-y-1">
+                            <button @click="open = !open" type="button" class="group flex w-full items-center justify-between rounded-lg px-3 py-2.5 transition text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="database" class="h-4 w-4 text-slate-400 group-hover:text-campus-700"></i>
+                                    <span>Data Master</span>
+                                </div>
+                                <i data-lucide="chevron-right" class="h-3.5 w-3.5 text-slate-400 transition-transform duration-200" :class="open ? 'rotate-90' : ''"></i>
+                            </button>
+                            <div x-show="open" x-cloak class="pl-4 space-y-1" x-transition>
+                                <x-nav-link href="{{ route('admin.users.index') }}" icon="users" label="Pengguna" :active="request()->routeIs('admin.users.*')" />
+                                <x-nav-link href="{{ route('admin.documents.index') }}" icon="files" label="Dokumen" :active="request()->routeIs('admin.documents.*')" />
+                            </div>
+                        </div>
+
+                        <x-nav-link href="{{ route('admin.revenue') }}" icon="wallet" label="Pendapatan" :active="request()->routeIs('admin.revenue')" />
                     @else
                         <x-nav-link href="{{ route('student.dashboard') }}" icon="home" label="Beranda" :active="request()->routeIs('student.dashboard')" />
                         <x-nav-link href="{{ route('student.guide') }}" icon="map" label="Panduan" :active="request()->routeIs('student.guide')" />
