@@ -15,7 +15,7 @@
     </div>
 
     <!-- Stats Cards Grid -->
-    <div class="mt-6 grid gap-5 sm:grid-cols-3">
+    <div class="mt-6 grid grid-cols-3 gap-4 lg:gap-5">
         <!-- Card 1: Total Revenue -->
         <div class="flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex items-center justify-between">
