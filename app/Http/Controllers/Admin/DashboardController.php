@@ -67,8 +67,7 @@ class DashboardController extends Controller
                 'conversations' => number_format(32800 + ($conversationsCount * 25)),
                 'total_revenue' => '$' . number_format($totalRevenue, 2, '.', ','),
             ],
-            'users' => User::latest()->take(8)->get(),
-            'documents' => Document::with('user')->latest()->take(8)->get(),
+            'activities' => ActivityLog::with('user')->latest()->take(5)->get(),
             'dailyRevenue' => $dailyRevenue,
             'memberUsage' => $memberUsage,
         ]);

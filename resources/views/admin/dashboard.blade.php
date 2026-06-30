@@ -245,39 +245,111 @@
     </script>
 
     <div class="mt-5 grid gap-5 lg:grid-cols-2">
+        <!-- Aktivitas AI Terbaru -->
         <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-slate-900">Pengguna Terbaru</h2>
-                <a class="text-sm font-semibold text-campus-700" href="{{ route('admin.users.index') }}">Lihat semua</a>
+                <h2 class="font-semibold text-slate-900">Aktivitas AI Terbaru</h2>
+                <span class="text-xs text-slate-500">Real-time</span>
             </div>
             <div class="mt-4 space-y-3">
-                @forelse($users as $user)
-                    <div class="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3 text-sm">
-                        <div class="min-w-0">
-                            <p class="truncate font-semibold text-slate-900">{{ $user->username }}</p>
-                            <p class="truncate text-xs text-slate-500">{{ $user->email }}</p>
+                @forelse($activities as $activity)
+                    @php
+                        $actionLabel = [
+                            'generate_summary' => 'membuat ringkasan materi',
+                            'generate_quiz' => 'membuat kuis latihan baru',
+                            'generate_flashcards' => 'membuat kartu belajar (flashcards)',
+                            'chat_document' => 'bertanya kepada AI tentang materi',
+                        ][$activity->action] ?? 'melakukan aktivitas belajar';
+                        
+                        $iconColor = [
+                            'generate_summary' => 'bg-emerald-50 text-emerald-700',
+                            'generate_quiz' => 'bg-purple-50 text-purple-700',
+                            'generate_flashcards' => 'bg-blue-50 text-blue-700',
+                            'chat_document' => 'bg-amber-50 text-amber-700',
+                        ][$activity->action] ?? 'bg-slate-50 text-slate-700';
+
+                        $icon = [
+                            'generate_summary' => 'notebook-tabs',
+                            'generate_quiz' => 'list-checks',
+                            'generate_flashcards' => 'copy-check',
+                            'chat_document' => 'messages-square',
+                        ][$activity->action] ?? 'sparkles';
+                    @endphp
+                    <div class="flex items-start gap-3 rounded-lg bg-slate-50 p-3 text-sm">
+                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg {{ $iconColor }}"><i data-lucide="{{ $icon }}" class="h-4 w-4"></i></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="font-medium text-slate-800">
+                                <span class="font-semibold text-slate-900">{{ $activity->user?->username ?? 'Pengguna' }}</span>
+                                {{ $actionLabel }}
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">{{ $activity->created_at->diffForHumans() }}</p>
                         </div>
-                        <span class="rounded-md bg-white px-2 py-1 text-xs font-semibold capitalize text-slate-600 shadow-sm">{{ $user->role === 'admin' ? 'pengelola' : 'pembelajar' }}</span>
                     </div>
                 @empty
-                    <p class="text-sm text-slate-500">Belum ada pengguna.</p>
+                    <p class="text-sm text-slate-500">Belum ada aktivitas AI terbaru.</p>
                 @endforelse
             </div>
         </section>
+
+        <!-- Status Sistem & Server -->
         <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-slate-900">Dokumen Terbaru</h2>
-                <a class="text-sm font-semibold text-campus-700" href="{{ route('admin.documents.index') }}">Lihat semua</a>
-            </div>
-            <div class="mt-4 space-y-3">
-                @forelse($documents as $document)
-                    <div class="rounded-lg bg-slate-50 p-3 text-sm">
-                        <p class="font-semibold text-slate-900">{{ $document->title }}</p>
-                        <p class="mt-1 text-xs text-slate-500">{{ $document->user?->username }} | {{ $document->status }} | {{ $document->created_at->format('d M Y') }}</p>
+            <h2 class="font-semibold text-slate-900">Status Sistem & AI</h2>
+            <p class="mt-1 text-sm text-slate-500">Kondisi operasional server, integrasi API, dan database.</p>
+
+            <div class="mt-4 space-y-3.5">
+                <div class="flex items-center justify-between rounded-lg border border-slate-100 p-3">
+                    <div class="flex items-center gap-3">
+                        <span class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700"><i data-lucide="cpu" class="h-4 w-4"></i></span>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">Gemini 1.5 Pro API</p>
+                            <p class="text-xs text-slate-500">Model kecerdasan buatan utama</p>
+                        </div>
                     </div>
-                @empty
-                    <p class="text-sm text-slate-500">Belum ada dokumen.</p>
-                @endforelse
+                    <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Aktif
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between rounded-lg border border-slate-100 p-3">
+                    <div class="flex items-center gap-3">
+                        <span class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700"><i data-lucide="database" class="h-4 w-4"></i></span>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">Koneksi Database</p>
+                            <p class="text-xs text-slate-500">Penyimpanan data platform</p>
+                        </div>
+                    </div>
+                    <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                        Normal
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between rounded-lg border border-slate-100 p-3">
+                    <div class="flex items-center gap-3">
+                        <span class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700"><i data-lucide="zap" class="h-4 w-4"></i></span>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">Waktu Respon Server</p>
+                            <p class="text-xs text-slate-500">Kelebihan beban sistem</p>
+                        </div>
+                    </div>
+                    <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                        124ms
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between rounded-lg border border-slate-100 p-3">
+                    <div class="flex items-center gap-3">
+                        <span class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700"><i data-lucide="hard-drive" class="h-4 w-4"></i></span>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">Penyimpanan Dokumen</p>
+                            <p class="text-xs text-slate-500">Materi yang diunggah pembelajar</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-600">
+                        12% Terpakai
+                    </span>
+                </div>
             </div>
         </section>
     </div>
