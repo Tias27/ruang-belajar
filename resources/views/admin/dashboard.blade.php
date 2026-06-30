@@ -37,8 +37,38 @@
         </div>
         <div class="mt-5 flex h-52 items-end gap-2 rounded-lg bg-slate-50 p-4">
             @forelse($dailyUsage as $day)
-                <div class="flex h-full flex-1 flex-col justify-end gap-2">
-                    <div class="w-full rounded-t bg-campus-500" style="height: {{ min(100, max(8, $day->total * 14)) }}%"></div>
+                <div class="group relative flex h-full flex-1 flex-col justify-end gap-2">
+                    <!-- Tooltip Analysis -->
+                    <div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 rounded-lg bg-slate-900 p-3 text-[11px] text-white shadow-xl opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        <p class="font-semibold text-slate-300 border-b border-slate-800 pb-1.5 mb-1.5">{{ \Illuminate\Support\Carbon::parse($day->date)->format('d M Y') }}</p>
+                        <div class="space-y-1">
+                            <div class="flex justify-between gap-2">
+                                <span class="text-slate-400">Ringkasan:</span>
+                                <span class="font-bold text-emerald-400">{{ $day->summaries }}</span>
+                            </div>
+                            <div class="flex justify-between gap-2">
+                                <span class="text-slate-400">Kartu Belajar:</span>
+                                <span class="font-bold text-blue-400">{{ $day->flashcards }}</span>
+                            </div>
+                            <div class="flex justify-between gap-2">
+                                <span class="text-slate-400">Soal/Kuis:</span>
+                                <span class="font-bold text-purple-400">{{ $day->quizzes }}</span>
+                            </div>
+                            <div class="flex justify-between gap-2">
+                                <span class="text-slate-400">Tanya AI:</span>
+                                <span class="font-bold text-amber-400">{{ $day->chats }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-2 border-t border-slate-800 pt-1.5 flex justify-between font-semibold text-white">
+                            <span>Total:</span>
+                            <span>{{ $day->total }}</span>
+                        </div>
+                        <!-- Tooltip arrow -->
+                        <div class="absolute top-full left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-slate-900"></div>
+                    </div>
+
+                    <!-- Bar -->
+                    <div class="w-full rounded-t bg-gradient-to-t from-campus-600 to-campus-400 transition-all group-hover:from-campus-700 group-hover:to-campus-500 cursor-pointer" style="height: {{ min(100, max(8, $day->total * 14)) }}%"></div>
                     <span class="text-center text-xs text-slate-500">{{ \Illuminate\Support\Carbon::parse($day->date)->format('d/m') }}</span>
                 </div>
             @empty

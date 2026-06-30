@@ -99,5 +99,4 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     Route::get('documents', [AdminDocumentController::class, 'index'])->name('documents.index');
     Route::delete('documents/{document}', [AdminDocumentController::class, 'destroy'])->name('documents.destroy');
-    Route::get('analysis', [\App\Http\Controllers\Admin\AnalysisController::class, 'index'])->name('analysis');
 });

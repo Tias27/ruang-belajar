@@ -16,7 +16,14 @@ class DashboardController extends Controller
 {
     public function __invoke()
     {
-        $dailyUsage = ActivityLog::select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as total'))
+        $dailyUsage = ActivityLog::select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN action = 'generate_summary' THEN 1 ELSE 0 END) as summaries"),
+                DB::raw("SUM(CASE WHEN action = 'generate_quiz' THEN 1 ELSE 0 END) as quizzes"),
+                DB::raw("SUM(CASE WHEN action = 'generate_flashcards' THEN 1 ELSE 0 END) as flashcards"),
+                DB::raw("SUM(CASE WHEN action = 'chat_document' THEN 1 ELSE 0 END) as chats")
+            )
             ->whereIn('action', ['generate_summary', 'generate_quiz', 'generate_flashcards', 'chat_document'])
             ->groupBy('date')
             ->orderBy('date')
