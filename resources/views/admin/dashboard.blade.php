@@ -33,7 +33,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-slate-200 rounded-lg p-3.5 shadow-sm">
+    <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
         <h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
             <i data-lucide="line-chart" class="h-4 w-4 text-campus-700"></i>
             Analisis Kinerja Sistem
