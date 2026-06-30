@@ -34,10 +34,10 @@ class DashboardController extends Controller
         $conversationsCount = ChatMessage::where('role', 'assistant')->count();
 
         // Realistic dummy revenue in USD:
-        // Base: $35
-        // Per student: $0.15
-        // Per AI conversation: $0.02
-        $totalRevenue = 35 + ($studentsCount * 0.15) + ($conversationsCount * 0.02);
+        // Base: $120
+        // Per student: $0.25
+        // Per AI conversation: $0.10
+        $totalRevenue = 120 + ($studentsCount * 0.25) + ($conversationsCount * 0.10);
 
         // Generate 14 days of dummy revenue and member usage data
         $dailyRevenue = [];
