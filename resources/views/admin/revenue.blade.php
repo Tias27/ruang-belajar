@@ -103,9 +103,9 @@
                         <span class="text-xs text-emerald-600 flex items-center gap-1"><i data-lucide="arrow-up" class="h-3 w-3"></i> +2.1% bulan ini</span>
                     </div>
                     <div class="space-y-1">
-                        <span class="text-xs text-slate-500 uppercase font-semibold">Biaya Infrastruktur AI</span>
+                        <span class="text-xs text-slate-500 uppercase font-semibold">Biaya Komputasi GPU</span>
                         <span class="block text-lg font-bold text-slate-950">{{ $ai_operational_cost }}</span>
-                        <span class="text-xs text-slate-400">Estimasi biaya API Gemini & Hosting</span>
+                        <span class="text-xs text-slate-400">Estimasi sewa GPU & pemeliharaan server</span>
                     </div>
                 </div>
             </div>
