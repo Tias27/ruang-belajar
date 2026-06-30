@@ -12,21 +12,22 @@
         </div>
     </section>
 
-    <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+    <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         @foreach([
             ['label' => 'Pembelajar', 'key' => 'students', 'icon' => 'graduation-cap'],
+            ['label' => 'Total Pendapatan dari Website dan Iklan', 'key' => 'total_revenue', 'icon' => 'wallet'],
             ['label' => 'Dokumen', 'key' => 'documents', 'icon' => 'files'],
             ['label' => 'Ringkasan', 'key' => 'summaries', 'icon' => 'notebook-tabs'],
             ['label' => 'Kartu Belajar', 'key' => 'flashcards', 'icon' => 'copy-check'],
             ['label' => 'Soal', 'key' => 'questions', 'icon' => 'list-checks'],
             ['label' => 'Percakapan AI', 'key' => 'conversations', 'icon' => 'messages-square'],
         ] as $item)
-            <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                <div class="flex items-center justify-between">
+            <div class="flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-2">
                     <p class="text-sm font-medium text-slate-500">{{ $item['label'] }}</p>
-                    <span class="grid h-9 w-9 place-items-center rounded-lg bg-campus-50 text-campus-700"><i data-lucide="{{ $item['icon'] }}" class="h-4 w-4"></i></span>
+                    <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-campus-50 text-campus-700"><i data-lucide="{{ $item['icon'] }}" class="h-4 w-4"></i></span>
                 </div>
-                <p class="mt-3 text-3xl font-semibold tracking-tight text-campus-900">{{ $stats[$item['key']] }}</p>
+                <p class="mt-3 text-2xl font-semibold tracking-tight text-campus-900 sm:text-3xl">{{ $stats[$item['key']] }}</p>
             </div>
         @endforeach
     </div>

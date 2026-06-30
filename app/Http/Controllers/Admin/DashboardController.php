@@ -26,6 +26,7 @@ class DashboardController extends Controller
         return view('admin.dashboard', [
             'stats' => [
                 'students' => User::where('role', 'mahasiswa')->count(),
+                'total_revenue' => '$120',
                 'documents' => Document::count(),
                 'summaries' => Summary::count(),
                 'flashcards' => Flashcard::count(),
