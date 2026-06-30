@@ -30,71 +30,165 @@
         @endforeach
     </div>
 
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <div class="mt-5 grid gap-5 lg:grid-cols-2">
         <!-- Grafik Pendapatan Harian -->
         <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <div>
-                <h2 class="font-semibold text-slate-900">Grafik Pendapatan Harian</h2>
-                <p class="mt-1 text-sm text-slate-500">Estimasi pendapatan harian dari langganan website dan iklan.</p>
-            </div>
-            <div class="overflow-x-auto pb-2">
-                <div class="mt-5 flex h-52 items-end gap-1 p-1 min-w-[420px] sm:min-w-0 sm:gap-2 sm:p-2">
-                    @foreach($dailyRevenue as $day)
-                        <div class="group relative flex h-full flex-1 flex-col justify-end gap-2">
-                            <!-- Tooltip Analysis -->
-                            <div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 rounded-lg bg-slate-900 p-3 text-[11px] text-white shadow-xl opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                                <p class="font-semibold text-slate-300 border-b border-slate-800 pb-1.5 mb-1.5">{{ \Illuminate\Support\Carbon::parse($day->date)->format('d M Y') }}</p>
-                                <div class="space-y-1">
-                                    <div class="flex justify-between gap-2">
-                                        <span class="text-slate-400">Pendapatan:</span>
-                                        <span class="font-bold text-emerald-400">${{ number_format($day->revenue, 2) }}</span>
-                                    </div>
-                                </div>
-                                <!-- Tooltip arrow -->
-                                <div class="absolute top-full left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-slate-900"></div>
-                            </div>
-
-                            <!-- Bar -->
-                            <div class="w-full rounded-t cursor-pointer transition-all hover:opacity-90" style="height: {{ min(100, max(12, ($day->revenue / 60) * 100)) }}%; background: linear-gradient(to top, #10b981, #34d399);"></div>
-                            <span class="text-center text-[10px] text-slate-500 sm:text-xs">{{ $day->formatted_date }}</span>
-                        </div>
-                    @endforeach
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="font-semibold text-slate-900">Grafik Pendapatan Harian</h2>
+                    <p class="mt-1 text-sm text-slate-500">Estimasi pendapatan harian dari langganan website dan iklan.</p>
                 </div>
+                <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">USD ($)</span>
+            </div>
+            <div class="mt-4 relative h-64 w-full">
+                <canvas id="revenueChart"></canvas>
             </div>
         </section>
 
         <!-- Grafik Penggunaan Member (Dummy) -->
         <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <div>
-                <h2 class="font-semibold text-slate-900">Grafik Penggunaan Member</h2>
-                <p class="mt-1 text-sm text-slate-500">Jumlah pengguna aktif harian yang belajar di platform.</p>
-            </div>
-            <div class="overflow-x-auto pb-2">
-                <div class="mt-5 flex h-52 items-end gap-1 p-1 min-w-[420px] sm:min-w-0 sm:gap-2 sm:p-2">
-                    @foreach($memberUsage as $day)
-                        <div class="group relative flex h-full flex-1 flex-col justify-end gap-2">
-                            <!-- Tooltip Analysis -->
-                            <div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 rounded-lg bg-slate-900 p-3 text-[11px] text-white shadow-xl opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                                <p class="font-semibold text-slate-300 border-b border-slate-800 pb-1.5 mb-1.5">{{ \Illuminate\Support\Carbon::parse($day->date)->format('d M Y') }}</p>
-                                <div class="space-y-1">
-                                    <div class="flex justify-between gap-2">
-                                        <span class="text-slate-400">Pengguna Aktif:</span>
-                                        <span class="font-bold text-blue-400">{{ $day->total }} siswa</span>
-                                    </div>
-                                </div>
-                                <!-- Tooltip arrow -->
-                                <div class="absolute top-full left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-slate-900"></div>
-                            </div>
-
-                            <!-- Bar -->
-                            <div class="w-full rounded-t cursor-pointer transition-all hover:opacity-90" style="height: {{ min(100, max(12, ($day->total / 80) * 100)) }}%; background: linear-gradient(to top, #3b82f6, #60a5fa);"></div>
-                            <span class="text-center text-[10px] text-slate-500 sm:text-xs">{{ $day->formatted_date }}</span>
-                        </div>
-                    @endforeach
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="font-semibold text-slate-900">Grafik Penggunaan Member</h2>
+                    <p class="mt-1 text-sm text-slate-500">Jumlah pengguna aktif harian yang belajar di platform.</p>
                 </div>
+                <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">Siswa</span>
+            </div>
+            <div class="mt-4 relative h-64 w-full">
+                <canvas id="memberUsageChart"></canvas>
             </div>
         </section>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const dailyRevenueData = @json($dailyRevenue);
+            const memberUsageData = @json($memberUsage);
+
+            // 1. Revenue Chart
+            const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+            const revenueGradient = ctxRevenue.createLinearGradient(0, 0, 0, 240);
+            revenueGradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+            revenueGradient.addColorStop(1, 'rgba(16, 185, 129, 0.00)');
+
+            new Chart(ctxRevenue, {
+                type: 'line',
+                data: {
+                    labels: dailyRevenueData.map(d => d.formatted_date),
+                    datasets: [{
+                        label: 'Pendapatan',
+                        data: dailyRevenueData.map(d => d.revenue),
+                        borderColor: '#10b981',
+                        borderWidth: 2.5,
+                        fill: true,
+                        backgroundColor: revenueGradient,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        pointHoverBackgroundColor: '#10b981',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#0f172a',
+                            titleFont: { size: 11, weight: '600' },
+                            bodyFont: { size: 12 },
+                            padding: 10,
+                            borderRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.dataset.label + ': $' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 10 }, color: '#64748b' }
+                        },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: { 
+                                font: { size: 10 }, 
+                                color: '#64748b',
+                                callback: function(value) { return '$' + value; }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Member Usage Chart
+            const ctxMember = document.getElementById('memberUsageChart').getContext('2d');
+            const memberGradient = ctxMember.createLinearGradient(0, 0, 0, 240);
+            memberGradient.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
+            memberGradient.addColorStop(1, 'rgba(59, 130, 246, 0.00)');
+
+            new Chart(ctxMember, {
+                type: 'line',
+                data: {
+                    labels: memberUsageData.map(d => d.formatted_date),
+                    datasets: [{
+                        label: 'Pengguna Aktif',
+                        data: memberUsageData.map(d => d.total),
+                        borderColor: '#3b82f6',
+                        borderWidth: 2.5,
+                        fill: true,
+                        backgroundColor: memberGradient,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        pointHoverBackgroundColor: '#3b82f6',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: '#0f172a',
+                            titleFont: { size: 11, weight: '600' },
+                            bodyFont: { size: 12 },
+                            padding: 10,
+                            borderRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.dataset.label + ': ' + context.parsed.y + ' siswa';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 10 }, color: '#64748b' }
+                        },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { size: 10 }, color: '#64748b' }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 
     <div class="mt-5 grid gap-5 lg:grid-cols-2">
         <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
