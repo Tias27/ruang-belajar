@@ -25,7 +25,7 @@
             <div class="mt-4">
                 <p class="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Pendapatan</p>
                 <p class="mt-1 text-3xl font-bold text-slate-900">{{ $total_revenue }}</p>
-                <p class="mt-1 text-xs text-slate-400">Estimasi: {{ $total_revenue_idr }}</p>
+                <p class="mt-1 text-xs text-slate-400" title="Kurs Real-time: 1 USD = Rp {{ number_format($exchange_rate, 0, ',', '.') }}">Estimasi: {{ $total_revenue_idr }}</p>
             </div>
         </div>
 
@@ -82,13 +82,13 @@
         <!-- Target Progress / Analytics -->
         <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 flex flex-col justify-between">
             <div>
-                <h2 class="font-semibold text-slate-900">Analisis Target Monetisasi</h2>
-                <p class="mt-1 text-sm text-slate-500">Progres pencapaian target pendapatan bulan ini.</p>
+                <h2 class="font-semibold text-slate-900">Analisis Kinerja MRR</h2>
+                <p class="mt-1 text-sm text-slate-500">Progres pencapaian target Monthly Recurring Revenue (MRR) bulan ini.</p>
             </div>
             <div class="mt-4 space-y-4">
                 <div>
                     <div class="flex justify-between text-sm font-medium text-slate-700 mb-1.5">
-                        <span>Target Bulanan ($300.00)</span>
+                        <span>Target MRR ($300.00)</span>
                         <span class="text-campus-700 font-semibold">{{ round((floatval(str_replace('$', '', $total_revenue)) / 300) * 100, 1) }}% Tercapai</span>
                     </div>
                     <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">

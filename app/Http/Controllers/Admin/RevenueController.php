@@ -17,6 +17,14 @@ class RevenueController extends Controller
         // Consistent revenue calculation
         $totalRevenue = 120 + ($studentsCount * 0.25) + ($conversationsCount * 0.10);
 
+        // Fetch real-time USD to IDR exchange rate (fallback to 16,300 if API fails)
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(3)->get('https://open.er-api.com/v6/latest/USD');
+            $rate = $response->successful() ? $response->json()['rates']['IDR'] : 16300;
+        } catch (\Exception $e) {
+            $rate = 16300;
+        }
+
         // Get actual students to generate realistic transactions
         $students = User::where('role', 'mahasiswa')->latest()->take(10)->get();
 
@@ -52,7 +60,8 @@ class RevenueController extends Controller
 
         return view('admin.revenue', [
             'total_revenue' => '$' . number_format($totalRevenue, 2, '.', ','),
-            'total_revenue_idr' => 'Rp ' . number_format($totalRevenue * 15000, 0, ',', '.'), // 1 USD = 15,000 IDR approx
+            'total_revenue_idr' => 'Rp ' . number_format($totalRevenue * $rate, 0, ',', '.'),
+            'exchange_rate' => $rate,
             'active_subscriptions' => round($studentsCount * 0.55),
             'average_transaction' => '$' . number_format(6.50, 2),
             'ai_operational_cost' => '$' . number_format(12.50 + ($conversationsCount * 0.03), 2), // Dynamic API expense in USD
