@@ -12,7 +12,7 @@
         </div>
     </section>
 
-    <div class="mt-5 grid gap-4 sm:grid-cols-3">
+    <div class="mt-5 grid grid-cols-3 gap-4">
         @foreach([
             ['label' => 'Pembelajar', 'key' => 'students', 'icon' => 'graduation-cap'],
             ['label' => 'Percakapan AI', 'key' => 'conversations', 'icon' => 'messages-square'],
