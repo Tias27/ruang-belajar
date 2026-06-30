@@ -15,19 +15,14 @@
     <div class="mt-5 grid grid-cols-3 gap-3 sm:gap-4">
         @foreach([
             ['label' => 'Pembelajar', 'key' => 'students', 'icon' => 'graduation-cap'],
-            ['label' => 'Total Pendapatan dari Website dan Iklan', 'key' => 'total_revenue', 'icon' => 'wallet'],
+            ['label' => 'Total Pendapatan', 'key' => 'total_revenue', 'icon' => 'wallet'],
             ['label' => 'Percakapan AI', 'key' => 'conversations', 'icon' => 'messages-square'],
         ] as $item)
             <div class="flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
                 <div class="flex items-center justify-between gap-2">
                     <span class="grid h-7 w-7 place-items-center rounded-lg bg-campus-50 text-campus-700 sm:h-9 sm:w-9"><i data-lucide="{{ $item['icon'] }}" class="h-3.5 w-3.5 sm:h-4 sm:w-4"></i></span>
-                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs">
-                        @if($item['key'] === 'total_revenue')
-                            <span class="hidden sm:inline">Website & Iklan</span>
-                            <span class="inline sm:hidden">Pendapatan</span>
-                        @else
-                            {{ $item['label'] }}
-                        @endif
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs" title="{{ $item['key'] === 'total_revenue' ? 'Total Pendapatan dari Website dan Iklan' : $item['label'] }}">
+                        {{ $item['label'] }}
                     </p>
                 </div>
                 <p class="mt-3 text-lg font-bold tracking-tight text-slate-900 sm:text-3xl">{{ $stats[$item['key']] }}</p>
