@@ -67,7 +67,7 @@
                     <h2 class="font-semibold text-slate-900">Grafik Penggunaan Member</h2>
                     <p class="mt-1 text-sm text-slate-500">Jumlah pengguna aktif harian yang belajar di platform.</p>
                 </div>
-                <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">Siswa</span>
+                <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">Pembelajar</span>
             </div>
             <div class="mt-4 relative h-64 w-full">
                 <canvas id="memberUsageChart"></canvas>
@@ -201,7 +201,7 @@
                             borderRadius: 8,
                             callbacks: {
                                 label: function(context) {
-                                    return ' ' + context.dataset.label + ': ' + context.parsed.y + ' siswa';
+                                    return ' ' + context.dataset.label + ': ' + context.parsed.y + ' pembelajar';
                                 }
                             }
                         }
