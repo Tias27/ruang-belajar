@@ -130,6 +130,7 @@
                     <x-nav-link href="{{ route('admin.dashboard') }}" icon="layout-dashboard" label="Beranda Pengelola" :active="request()->routeIs('admin.dashboard')" />
                     <x-nav-link href="{{ route('admin.users.index') }}" icon="users" label="Pengguna" :active="request()->routeIs('admin.users.*')" />
                     <x-nav-link href="{{ route('admin.documents.index') }}" icon="files" label="Dokumen" :active="request()->routeIs('admin.documents.*')" />
+                    <x-nav-link href="{{ route('admin.analysis') }}" icon="bar-chart-2" label="Analisa" :active="request()->routeIs('admin.analysis')" />
                 @else
                     <x-nav-link href="{{ route('student.dashboard') }}" icon="home" label="Beranda" :active="request()->routeIs('student.dashboard')" />
                     <x-nav-link href="{{ route('student.guide') }}" icon="map" label="Panduan" :active="request()->routeIs('student.guide')" />
@@ -178,6 +179,7 @@
                         <x-nav-link href="{{ route('admin.dashboard') }}" icon="layout-dashboard" label="Beranda Pengelola" :active="request()->routeIs('admin.dashboard')" />
                         <x-nav-link href="{{ route('admin.users.index') }}" icon="users" label="Pengguna" :active="request()->routeIs('admin.users.*')" />
                         <x-nav-link href="{{ route('admin.documents.index') }}" icon="files" label="Dokumen" :active="request()->routeIs('admin.documents.*')" />
+                        <x-nav-link href="{{ route('admin.analysis') }}" icon="bar-chart-2" label="Analisa" :active="request()->routeIs('admin.analysis')" />
                     @else
                         <x-nav-link href="{{ route('student.dashboard') }}" icon="home" label="Beranda" :active="request()->routeIs('student.dashboard')" />
                         <x-nav-link href="{{ route('student.guide') }}" icon="map" label="Panduan" :active="request()->routeIs('student.guide')" />
