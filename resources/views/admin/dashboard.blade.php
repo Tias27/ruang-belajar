@@ -12,18 +12,25 @@
         </div>
     </section>
 
-    <div class="mt-5 grid grid-cols-3 gap-4">
+    <div class="mt-5 grid grid-cols-3 gap-3 sm:gap-4">
         @foreach([
             ['label' => 'Pembelajar', 'key' => 'students', 'icon' => 'graduation-cap'],
             ['label' => 'Total Pendapatan dari Website dan Iklan', 'key' => 'total_revenue', 'icon' => 'wallet'],
             ['label' => 'Percakapan AI', 'key' => 'conversations', 'icon' => 'messages-square'],
         ] as $item)
-            <div class="flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-                <div class="flex items-start justify-between gap-2">
-                    <p class="text-sm font-medium text-slate-500">{{ $item['label'] }}</p>
-                    <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-campus-50 text-campus-700"><i data-lucide="{{ $item['icon'] }}" class="h-4 w-4"></i></span>
+            <div class="flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
+                <div class="flex items-start justify-between gap-1 sm:gap-2">
+                    <p class="text-[11px] font-medium leading-tight text-slate-500 sm:text-sm">
+                        @if($item['key'] === 'total_revenue')
+                            <span class="hidden sm:inline">Total Pendapatan dari Website dan Iklan</span>
+                            <span class="inline sm:hidden">Total Pendapatan</span>
+                        @else
+                            {{ $item['label'] }}
+                        @endif
+                    </p>
+                    <span class="hidden sm:grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-campus-50 text-campus-700"><i data-lucide="{{ $item['icon'] }}" class="h-4 w-4"></i></span>
                 </div>
-                <p class="mt-3 text-2xl font-semibold tracking-tight text-campus-900 sm:text-3xl">{{ $stats[$item['key']] }}</p>
+                <p class="mt-2 text-base font-semibold tracking-tight text-campus-900 sm:mt-3 sm:text-3xl">{{ $stats[$item['key']] }}</p>
             </div>
         @endforeach
     </div>
@@ -35,7 +42,7 @@
                 <h2 class="font-semibold text-slate-900">Grafik Pendapatan Harian</h2>
                 <p class="mt-1 text-sm text-slate-500">Estimasi pendapatan harian dari langganan website dan iklan.</p>
             </div>
-            <div class="mt-5 flex h-52 items-end gap-2 rounded-lg bg-slate-50 p-4">
+            <div class="mt-5 flex h-52 items-end gap-1 rounded-lg bg-slate-50 p-2 sm:gap-2 sm:p-4">
                 @foreach($dailyRevenue as $day)
                     <div class="group relative flex h-full flex-1 flex-col justify-end gap-2">
                         <!-- Tooltip Analysis -->
@@ -53,7 +60,7 @@
 
                         <!-- Bar -->
                         <div class="w-full rounded-t cursor-pointer transition-all hover:opacity-90" style="height: {{ min(100, max(12, ($day->revenue / 60) * 100)) }}%; background: linear-gradient(to top, #10b981, #34d399);"></div>
-                        <span class="text-center text-xs text-slate-500">{{ $day->formatted_date }}</span>
+                        <span class="text-center text-[9px] text-slate-500 sm:text-xs">{{ $day->formatted_date }}</span>
                     </div>
                 @endforeach
             </div>
@@ -65,7 +72,7 @@
                 <h2 class="font-semibold text-slate-900">Grafik Penggunaan Member</h2>
                 <p class="mt-1 text-sm text-slate-500">Jumlah pengguna aktif harian yang belajar di platform.</p>
             </div>
-            <div class="mt-5 flex h-52 items-end gap-2 rounded-lg bg-slate-50 p-4">
+            <div class="mt-5 flex h-52 items-end gap-1 rounded-lg bg-slate-50 p-2 sm:gap-2 sm:p-4">
                 @foreach($memberUsage as $day)
                     <div class="group relative flex h-full flex-1 flex-col justify-end gap-2">
                         <!-- Tooltip Analysis -->
@@ -83,7 +90,7 @@
 
                         <!-- Bar -->
                         <div class="w-full rounded-t cursor-pointer transition-all hover:opacity-90" style="height: {{ min(100, max(12, ($day->total / 80) * 100)) }}%; background: linear-gradient(to top, #3b82f6, #60a5fa);"></div>
-                        <span class="text-center text-xs text-slate-500">{{ $day->formatted_date }}</span>
+                        <span class="text-center text-[9px] text-slate-500 sm:text-xs">{{ $day->formatted_date }}</span>
                     </div>
                 @endforeach
             </div>
