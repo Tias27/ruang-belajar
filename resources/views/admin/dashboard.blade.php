@@ -12,15 +12,11 @@
         </div>
     </section>
 
-    <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+    <div class="mt-5 grid gap-4 sm:grid-cols-3">
         @foreach([
             ['label' => 'Pembelajar', 'key' => 'students', 'icon' => 'graduation-cap'],
-            ['label' => 'Total Pendapatan dari Website dan Iklan', 'key' => 'total_revenue', 'icon' => 'wallet'],
-            ['label' => 'Dokumen', 'key' => 'documents', 'icon' => 'files'],
-            ['label' => 'Ringkasan', 'key' => 'summaries', 'icon' => 'notebook-tabs'],
-            ['label' => 'Kartu Belajar', 'key' => 'flashcards', 'icon' => 'copy-check'],
-            ['label' => 'Soal', 'key' => 'questions', 'icon' => 'list-checks'],
             ['label' => 'Percakapan AI', 'key' => 'conversations', 'icon' => 'messages-square'],
+            ['label' => 'Total Pendapatan dari Website dan Iklan', 'key' => 'total_revenue', 'icon' => 'wallet'],
         ] as $item)
             <div class="flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="flex items-start justify-between gap-2">

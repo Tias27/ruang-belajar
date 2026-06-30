@@ -23,15 +23,20 @@ class DashboardController extends Controller
             ->limit(14)
             ->get();
 
+        $studentsCount = User::where('role', 'mahasiswa')->count();
+        $conversationsCount = ChatMessage::where('role', 'assistant')->count();
+
+        // Realistic dummy revenue in USD:
+        // Base: $85
+        // Per student: $12
+        // Per AI conversation: $0.15
+        $totalRevenue = 85 + ($studentsCount * 12) + ($conversationsCount * 0.15);
+
         return view('admin.dashboard', [
             'stats' => [
-                'students' => User::where('role', 'mahasiswa')->count(),
-                'total_revenue' => '$120',
-                'documents' => Document::count(),
-                'summaries' => Summary::count(),
-                'flashcards' => Flashcard::count(),
-                'questions' => QuizQuestion::count(),
-                'conversations' => ChatMessage::where('role', 'assistant')->count(),
+                'students' => $studentsCount,
+                'conversations' => $conversationsCount,
+                'total_revenue' => '$' . number_format($totalRevenue, 2, '.', ','),
             ],
             'users' => User::latest()->take(8)->get(),
             'documents' => Document::with('user')->latest()->take(8)->get(),
