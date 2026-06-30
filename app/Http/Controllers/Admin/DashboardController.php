@@ -46,18 +46,18 @@ class DashboardController extends Controller
             $date = now()->subDays($i);
             $formattedDate = $date->format('d/m');
 
-            // Dummy revenue between $15.00 and $55.00
+            // Dummy revenue between $2.00 and $12.00
             $dailyRevenue[] = (object)[
                 'date' => $date->format('Y-m-d'),
                 'formatted_date' => $formattedDate,
-                'revenue' => rand(1500, 5500) / 100,
+                'revenue' => rand(200, 1200) / 100,
             ];
 
-            // Dummy active members between 20 and 75
+            // Dummy active members between 5 and 25
             $memberUsage[] = (object)[
                 'date' => $date->format('Y-m-d'),
                 'formatted_date' => $formattedDate,
-                'total' => rand(20, 75),
+                'total' => rand(5, 25),
             ];
         }
 

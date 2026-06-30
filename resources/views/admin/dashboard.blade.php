@@ -89,13 +89,13 @@
                 },
                 bulanan: {
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-                    revenue: [185.00, 242.00, 310.00, 290.00, 380.00, 452.00, 510.00, 480.00, 590.00, 640.00, 720.00, {{ $stats['total_revenue'] ? floatval(str_replace(['$', ','], '', $stats['total_revenue'])) : 278.90 }}],
-                    member: [120, 150, 185, 210, 260, 310, 380, 420, 490, 520, 580, {{ $stats['students'] }}]
+                    revenue: [0, 0, 0, 0, 0, 0, 0, 0, 0, 35.00, 125.00, {{ $stats['total_revenue'] ? floatval(str_replace(['$', ','], '', $stats['total_revenue'])) : 278.90 }}],
+                    member: [0, 0, 0, 0, 0, 0, 0, 0, 0, 62, 248, {{ $stats['students'] }}]
                 },
                 tahunan: {
                     labels: ['2022', '2023', '2024', '2025', '2026'],
-                    revenue: [1840.00, 3210.00, 5480.00, 7890.00, 9650.00],
-                    member: [150, 280, 420, 650, 820]
+                    revenue: [0, 0, 0, 0, {{ $stats['total_revenue'] ? floatval(str_replace(['$', ','], '', $stats['total_revenue'])) : 278.90 }}],
+                    member: [0, 0, 0, 0, {{ $stats['students'] }}]
                 }
             };
 
