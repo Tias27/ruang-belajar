@@ -36,7 +36,7 @@
                 <p class="mt-1 text-sm text-slate-500">Estimasi pendapatan harian dari langganan website dan iklan.</p>
             </div>
             <div class="mt-5 flex h-52 items-end gap-2 rounded-lg bg-slate-50 p-4">
-                @forelse($dailyRevenue as $day)
+                @foreach($dailyRevenue as $day)
                     <div class="group relative flex h-full flex-1 flex-col justify-end gap-2">
                         <!-- Tooltip Analysis -->
                         <div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 rounded-lg bg-slate-900 p-3 text-[11px] text-white shadow-xl opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -46,21 +46,16 @@
                                     <span class="text-slate-400">Pendapatan:</span>
                                     <span class="font-bold text-emerald-400">${{ number_format($day->revenue, 2) }}</span>
                                 </div>
-                                <div class="flex justify-between gap-2 text-[10px] text-slate-500">
-                                    <span>(Berdasarkan {{ $day->total }} Aktivitas)</span>
-                                </div>
                             </div>
                             <!-- Tooltip arrow -->
                             <div class="absolute top-full left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 bg-slate-900"></div>
                         </div>
 
                         <!-- Bar -->
-                        <div class="w-full rounded-t bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all group-hover:from-emerald-700 group-hover:to-emerald-500 cursor-pointer" style="height: {{ min(100, max(12, ($day->revenue / 30) * 100)) }}%"></div>
-                        <span class="text-center text-xs text-slate-500">{{ \Illuminate\Support\Carbon::parse($day->date)->format('d/m') }}</span>
+                        <div class="w-full rounded-t cursor-pointer transition-all hover:opacity-90" style="height: {{ min(100, max(12, ($day->revenue / 60) * 100)) }}%; background: linear-gradient(to top, #10b981, #34d399);"></div>
+                        <span class="text-center text-xs text-slate-500">{{ $day->formatted_date }}</span>
                     </div>
-                @empty
-                    <div class="grid h-full w-full place-items-center text-sm text-slate-500">Belum ada data pendapatan.</div>
-                @endforelse
+                @endforeach
             </div>
         </section>
 
@@ -87,7 +82,7 @@
                         </div>
 
                         <!-- Bar -->
-                        <div class="w-full rounded-t bg-gradient-to-t from-blue-600 to-blue-400 transition-all group-hover:from-blue-700 group-hover:to-blue-500 cursor-pointer" style="height: {{ min(100, max(12, ($day->total / 50) * 100)) }}%"></div>
+                        <div class="w-full rounded-t cursor-pointer transition-all hover:opacity-90" style="height: {{ min(100, max(12, ($day->total / 80) * 100)) }}%; background: linear-gradient(to top, #3b82f6, #60a5fa);"></div>
                         <span class="text-center text-xs text-slate-500">{{ $day->formatted_date }}</span>
                     </div>
                 @endforeach
