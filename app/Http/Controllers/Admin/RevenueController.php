@@ -55,6 +55,7 @@ class RevenueController extends Controller
             'total_revenue_idr' => 'Rp ' . number_format($totalRevenue * 15000, 0, ',', '.'), // 1 USD = 15,000 IDR approx
             'active_subscriptions' => round($studentsCount * 0.55),
             'average_transaction' => '$' . number_format(6.50, 2),
+            'ai_operational_cost' => '$' . number_format(12.50 + ($conversationsCount * 0.03), 2), // Dynamic API expense in USD
             'transactions' => $transactions,
             'breakdown' => $breakdown,
         ]);
