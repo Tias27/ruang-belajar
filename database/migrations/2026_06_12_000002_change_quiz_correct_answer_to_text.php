@@ -12,7 +12,9 @@ return new class extends Migration
             return;
         }
 
-        DB::statement('ALTER TABLE quiz_questions MODIFY correct_answer TEXT NOT NULL');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE quiz_questions MODIFY correct_answer TEXT NOT NULL');
+        }
     }
 
     public function down(): void
@@ -21,6 +23,8 @@ return new class extends Migration
             return;
         }
 
-        DB::statement('ALTER TABLE quiz_questions MODIFY correct_answer VARCHAR(255) NOT NULL');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE quiz_questions MODIFY correct_answer VARCHAR(255) NOT NULL');
+        }
     }
 };

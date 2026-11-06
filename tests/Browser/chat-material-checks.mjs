@@ -1,0 +1,83 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
+export async function checkChatMaterials({ cdp, evaluate, until, go, check, testingRoot }) {
+    for (const [width, height] of [[1440, 900], [390, 844], [320, 640], [390, 480]]) {
+        await cdp('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 760 });
+        await go('/tanya-ai');
+        await evaluate(`window.chat = Alpine.$data(document.querySelector('.live-ai-chat'));
+            window.rect = selector => document.querySelector(selector).getBoundingClientRect();
+            document.querySelector('[aria-label="Tambahkan materi"]').click();`);
+        await until('chat.materialListReady && !chat.materialLoading');
+        await check(`${width}x${height}: picker opens with five documents`, 'document.querySelector(".chat-material-dialog").open && document.querySelectorAll(".chat-material-option").length === 5');
+        await check(`${width}x${height}: popup fits screen`, "rect('.chat-material-dialog').left >= 0 && rect('.chat-material-dialog').right <= innerWidth && rect('.chat-material-dialog').top >= 0 && rect('.chat-material-dialog').bottom <= innerHeight + 1");
+        await check(`${width}x${height}: popup has no horizontal overflow`, "document.querySelector('.chat-material-dialog').scrollWidth <= document.querySelector('.chat-material-dialog').clientWidth && document.documentElement.scrollWidth <= innerWidth");
+        await evaluate("window.pagerTop = rect('.chat-material-pagination').top; chat.loadMaterials(3)");
+        await until('chat.materialPage === 3 && !chat.materialLoading');
+        await check(`${width}x${height}: short last page keeps pager still`, "chat.materialItems.length === 2 && Math.abs(rect('.chat-material-pagination').top - pagerTop) < 2 && performance.timeOrigin === originalNavigation");
+        await evaluate("document.querySelector('.chat-material-option').click(); chat.closeMaterials()");
+        await until("document.querySelectorAll('.chat-material-chip').length === 1");
+        await check(`${width}x${height}: selection leaves composer usable`, "!document.querySelector('.chat-material-dialog').open && rect('textarea[name=question]').width >= 100 && rect('.live-chat-composer').bottom <= innerHeight && rect('[x-ref=messages]').height > 100");
+        await check(`${width}x${height}: attachment icons render`, "!!document.querySelector('.chat-material-chip svg') && !!document.querySelector('[aria-label=\"Tambahkan materi\"] svg')");
+    }
+
+    await cdp('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+    await go('/tanya-ai');
+    await evaluate("window.chat = Alpine.$data(document.querySelector('.live-ai-chat')); chat.openMaterials()");
+    await until('chat.materialListReady && !chat.materialLoading');
+    await evaluate("document.querySelector('.chat-material-option').click(); chat.materialSearch = 'Materi 0'; chat.loadMaterials(1)");
+    await until('chat.materialItems.length === 1 && !chat.materialLoading');
+    await check('search finds matching library material', "chat.materialItems[0].title === 'Materi 0'");
+    await evaluate("document.querySelector('.chat-material-option').click()");
+    await until('chat.materials.length === 2');
+    await check('selection survives search', 'chat.materials.length === 2');
+    await evaluate(String.raw`const file = new File(['%PDF-1.4\n1 0 obj\n<< /Length 90 >>\nstream\nBT (Fotosintesis adalah proses tumbuhan mengubah cahaya menjadi energi kimia.) Tj ET\nendstream\nendobj\n%%EOF'], 'Fotosintesis.pdf', {type: 'application/pdf'});
+        const transfer = new DataTransfer(); transfer.items.add(file);
+        const input = document.querySelector('[x-ref=materialInput]'); input.files = transfer.files; input.dispatchEvent(new Event('change', {bubbles: true}));`);
+    await until('!chat.materialUploading && (!!chat.materialNotice || !!chat.materialError)');
+    await check('new file uploads and becomes active material', "!chat.materialError && chat.materials.length === 3 && chat.materials[2].title === 'Fotosintesis' && chat.materials[2].extension === 'PDF'");
+    await evaluate("chat.materialSearch = 'Fotosintesis'; chat.loadMaterials(1)");
+    await until('!chat.materialLoading && chat.materialItems.length === 1');
+    await check('uploaded material appears in library', "chat.materialItems[0].id === chat.materials[2].id");
+    const popup = await cdp('Page.captureScreenshot', { format: 'png' });
+    await fs.writeFile(path.join(testingRoot, 'chat-material-picker-mobile.png'), Buffer.from(popup.data, 'base64'));
+    await evaluate("chat.closeMaterials(); document.querySelector('.chat-material-chip button').click()");
+    await until('chat.materials.length === 2');
+    await check('remove button detaches only chosen material', "chat.materials[1].title === 'Fotosintesis'");
+    await evaluate(`window.realFetch = window.fetch;
+        window.fetch = async (...args) => { await new Promise(resolve => window.resumeSend = resolve); return realFetch(...args); };
+        chat.question = ''; chat.sendQuestion(); void 0;`);
+    await until("chat.sending && document.querySelectorAll('.chat-material-chip').length === 0");
+    await check('sending attachment-only message clears composer immediately', "chat.materials.length === 0 && chat.messages[0].metadata.materials.length === 2 && chat.messages[0].content === 'Jelaskan materi yang dilampirkan'");
+    await evaluate('window.fetch = window.realFetch; resumeSend()');
+    await until("!chat.sending && chat.messages.length === 2 && location.pathname !== '/tanya-ai'");
+    await check('message and attachments send without reload', "chat.messages[1].content === 'Jawaban uji dari lampiran' && chat.messages[0].metadata.materials.length === 2 && chat.materials.length === 0 && performance.timeOrigin === originalNavigation");
+    await check('sent material badges and references render', "document.querySelectorAll('.chat-message-material').length === 2 && chat.messages[1].metadata.source_snippets.length === 2");
+    const sessionPath = await evaluate('location.pathname');
+    await go(sessionPath);
+    await evaluate("window.chat = Alpine.$data(document.querySelector('.live-ai-chat'))");
+    await check('reopening saved chat leaves composer empty and keeps sent files in message', "chat.materials.length === 0 && chat.messages.length === 2 && chat.messages[0].metadata.materials[1].title === 'Fotosintesis' && document.querySelectorAll('.chat-material-chip').length === 0");
+    await evaluate("chat.question = 'Beri contoh'; chat.sendQuestion()");
+    await until('!chat.sending && chat.messages.length === 4');
+    await check('follow-up keeps material context without attaching files again', 'chat.messages[2].metadata.materials.length === 0 && chat.messages[3].metadata.source_snippets.length === 2 && chat.materials.length === 0');
+    const chatScreenshot = await cdp('Page.captureScreenshot', { format: 'png' });
+    await fs.writeFile(path.join(testingRoot, 'chat-materials-mobile.png'), Buffer.from(chatScreenshot.data, 'base64'));
+    await evaluate("chat.toggleMaterial(chat.messages[0].metadata.materials[0]); chat.toggleMaterial(chat.materials[0]); chat.question = 'Lanjut diskusi'; chat.sendQuestion()");
+    await until('!chat.sending && chat.messages.length === 6');
+    await go(sessionPath);
+    await evaluate("window.chat = Alpine.$data(document.querySelector('.live-ai-chat'))");
+    await check('cancelled draft attachment stays absent after reload without losing earlier context', 'chat.materials.length === 0 && chat.messages[2].metadata.materials.length === 0 && chat.messages[4].metadata.materials.length === 0 && chat.messages[5].metadata.source_snippets.length === 2');
+
+    await evaluate(`window.nativeFetch = window.fetch; window.fetch = () => Promise.reject(new TypeError('Offline')); chat.openMaterials()`);
+    await until('!!chat.materialError && !chat.materialLoading');
+    await check('list failure shows error without losing conversation', 'chat.messages.length === 6 && !chat.materialLoading');
+    await evaluate('window.fetch = window.nativeFetch; chat.loadMaterials(1)');
+    await until('!chat.materialError && chat.materialItems.length === 5');
+    await check('reloading collection recovers after network failure', 'chat.materialListReady');
+    await evaluate(`chat.closeMaterials(); chat.toggleMaterial(chat.messages[0].metadata.materials[0]); window.fetch = async () => new Response(JSON.stringify({errors: {material_ids: ['Materi sudah dihapus']}}), {status: 422, headers: {'Content-Type': 'application/json'}}); chat.question = 'Pertanyaan belum terkirim'; chat.sendQuestion()`);
+    await until('!chat.sending');
+    await check('validation error restores draft attachment and leaves no typing spinner', "chat.question === 'Pertanyaan belum terkirim' && chat.materials.length === 1 && chat.messages.at(-1).content === 'Materi sudah dihapus' && chat.messages.every(message => message.content.trim())");
+    await evaluate("window.fetch = () => Promise.reject(new TypeError('Offline')); chat.sendQuestion()");
+    await until('!chat.sending');
+    await check('network failure also restores unsent file', "chat.question === 'Pertanyaan belum terkirim' && chat.materials.length === 1 && chat.messages.filter(message => message.role === 'user').length === 3");
+}

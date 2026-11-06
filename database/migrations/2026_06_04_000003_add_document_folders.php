@@ -26,7 +26,9 @@ return new class extends Migration
         }
 
         foreach (['summaries', 'flashcards', 'quizzes', 'chat_sessions'] as $table) {
-            DB::statement("ALTER TABLE {$table} MODIFY document_id BIGINT UNSIGNED NULL");
+            if (DB::getDriverName() !== 'sqlite') {
+                DB::statement("ALTER TABLE {$table} MODIFY document_id BIGINT UNSIGNED NULL");
+            }
             if (! Schema::hasColumn($table, 'folder_id')) {
                 Schema::table($table, function (Blueprint $blueprint) {
                     $blueprint->foreignId('folder_id')->nullable()->after('document_id')->constrained('document_folders')->cascadeOnDelete();
@@ -41,7 +43,9 @@ return new class extends Migration
             Schema::table($table, function (Blueprint $blueprint) {
                 $blueprint->dropConstrainedForeignId('folder_id');
             });
-            DB::statement("ALTER TABLE {$table} MODIFY document_id BIGINT UNSIGNED NOT NULL");
+            if (DB::getDriverName() !== 'sqlite') {
+                DB::statement("ALTER TABLE {$table} MODIFY document_id BIGINT UNSIGNED NOT NULL");
+            }
         }
 
         Schema::table('documents', function (Blueprint $table) {

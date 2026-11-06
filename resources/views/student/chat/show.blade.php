@@ -1,6 +1,7 @@
 <x-app-layout title="Tanya AI">
     @php
         $source = $session->folder ?: $session->document;
+        $storeUrl = $session->exists ? route('chat.store', $session) : route('chat.general.store');
         $initialMessages = $session->messages->map(fn($message) => [
             'id' => $message->id,
             'role' => $message->role,
@@ -12,7 +13,14 @@
     <script>
         window.chatSessionPage = function () {
             return {
+                ...window.chatMaterials({
+                    materials: [],
+                    listUrl: @js(route('chat.materials.index')),
+                    uploadUrl: @js(route('chat.materials.store')),
+                    csrf: @js(csrf_token()),
+                }),
                 title: @js($session->title),
+                storeUrl: @js($storeUrl),
                 question: '',
                 sending: false,
                 messages: @js($initialMessages),
@@ -70,158 +78,58 @@
                     const shouldScroll = force || this.isNearBottom();
                     this.$nextTick(() => {
                         if (shouldScroll && this.$refs.messages) {
-                            this.$refs.messages.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: 'smooth' });
+                            this.$refs.messages.scrollTo({ top: this.$refs.messages.scrollHeight, behavior: force ? 'instant' : 'smooth' });
                         }
                         if (window.lucide) {
                             window.lucide.createIcons();
                         }
                     });
                 },
-                formatMessage(content, isAi = true) {
-                    const normalizeMath = (value) => String(value || '')
-                        .replace(/\$\$([\s\S]*?)\$\$/g, '$1')
-                        .replace(/\$([^$]+)\$/g, '$1')
-                        .replace(/\\text\{([^{}]*)\}/g, '$1')
-                        .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1) / ($2)')
-                        .replace(/\\sum/g, 'Sigma')
-                        .replace(/\\times/g, 'x')
-                        .replace(/\\rightarrow/g, '->')
-                        .replace(/\\geq/g, '>=')
-                        .replace(/\\leq/g, '<=')
-                        .replace(/\\neq/g, '!=')
-                        .replace(/\\\(|\\\)|\\\[|\\\]/g, '');
-
-                    const escaped = normalizeMath(content)
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/'/g, '&#039;');
-
-                    const lines = escaped
-                        .replace(/â€¢/g, '-')
-                        .replace(/â†'/g, '->')
-                        .replace(/Î£/g, 'Sigma')
-                        .split(/\n/);
-
-                    let listOpen = false;
-                    let tableBuffer = [];
-
-                    const closeList = () => {
-                        if (!listOpen) return '';
-                        listOpen = false;
-                        return '</ul>';
-                    };
-
-                    const flushTable = () => {
-                        if (tableBuffer.length === 0) return '';
-                        const rows = tableBuffer.filter(r => !/^[\s|:-]+$/.test(r.replace(/\|/g, '').trim()));
-                        tableBuffer = [];
-                        if (rows.length === 0) return '';
-                        const parseRow = (r) => r.split('|').map(c => c.trim()).filter((_, i, a) => i !== 0 && i !== a.length - 1);
-                        const headers = parseRow(rows[0]);
-                        const body = rows.slice(1);
-                        const th = headers.map(h => `<th class="border border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-sm font-semibold text-slate-700">${inline(h)}</th>`).join('');
-                        const trs = body.map(r => {
-                            const cells = parseRow(r);
-                            const tds = cells.map(c => `<td class="border border-slate-200 px-4 py-2.5 text-sm text-slate-700">${inline(c)}</td>`).join('');
-                            return `<tr class="even:bg-slate-50/50">${tds}</tr>`;
-                        }).join('');
-                        return `<div class="my-4 w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm"><table class="w-full border-collapse text-left"><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table></div>`;
-                    };
-
-                    const inline = (value) => value
-                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                        .replace(/`([^`]+)`/g, '<code class="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-slate-800">$1</code>');
-
-                    const result = [];
-
-                    for (let i = 0; i < lines.length; i++) {
-                        const trimmed = lines[i].trim();
-
-                        // Table row detection
-                        if (/^\|/.test(trimmed)) {
-                            tableBuffer.push(trimmed);
-                            continue;
-                        }
-
-                        // Flush table when we hit a non-table line
-                        if (tableBuffer.length > 0) {
-                            result.push(flushTable());
-                        }
-
-                        if (!trimmed) {
-                            result.push(closeList());
-                            continue;
-                        }
-
-                        if (/^```/.test(trimmed)) continue;
-
-                        if (/^#{1,6}\s+/.test(trimmed)) {
-                            result.push(closeList() + '<h3 class="mt-4 mb-2 text-base font-bold text-slate-900">' + inline(trimmed.replace(/^#{1,6}\s+/, '')) + '</h3>');
-                            continue;
-                        }
-
-                        if (/^[-•*]\s+/.test(trimmed)) {
-                            const open = listOpen ? '' : '<ul class="my-2 ml-5 list-disc space-y-1.5">';
-                            listOpen = true;
-                            result.push(open + '<li>' + inline(trimmed.replace(/^[-•*]\s+/, '')) + '</li>');
-                            continue;
-                        }
-
-                        if (/^\d+\.\s+/.test(trimmed)) {
-                            result.push(closeList() + '<p class="mb-2 ml-2">' + inline(trimmed) + '</p>');
-                            continue;
-                        }
-
-                        const looksLikeFormula = isAi && /=|\b(?:CR|CI|RI|Sigma|Bobot|Eigen|Normalisasi)\b/i.test(trimmed) && trimmed.length <= 160;
-                        result.push(closeList() + (looksLikeFormula
-                            ? '<div class="my-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm text-slate-800 shadow-sm">' + inline(trimmed) + '</div>'
-                            : '<p class="mb-2 leading-relaxed">' + inline(trimmed) + '</p>'));
-                    }
-
-                    // Flush any remaining table
-                    if (tableBuffer.length > 0) result.push(flushTable());
-                    result.push(closeList());
-
-                    return result.filter(Boolean).join('');
-                },
                 async sendQuestion() {
                     const text = this.question.trim();
-                    if ((!text && !this.imageFile) || this.sending) return;
+                    if ((!text && !this.imageFile && !this.materials.length) || this.sending || this.materialUploading) return;
 
                     const localId = 'local-' + Date.now();
-                    const localMetadata = this.imagePreview ? { image_path: this.imagePreview } : null;
+                    const localMetadata = { materials: this.materials.map(item => ({ ...item })) };
+                    if (this.imagePreview) localMetadata.image_path = this.imagePreview;
+                    const question = text || (this.imageFile ? 'Jelaskan gambar ini' : 'Jelaskan materi yang dilampirkan');
+                    const pendingImage = this.imageFile;
+                    const pendingPreview = this.imagePreview;
 
                     this.messages.push({
                         id: localId,
                         role: 'user',
-                        content: text || 'Mengirim gambar...',
+                        content: question,
                         metadata: localMetadata
                     });
 
                     const formData = new FormData();
-                    formData.append('question', text || 'Jelaskan gambar ini');
+                    formData.append('question', question);
+                    if (this.materials.length) {
+                        formData.append('materials_present', '1');
+                        this.materials.forEach(item => formData.append('material_ids[]', item.id));
+                    }
                     if (this.imageFile) {
                         formData.append('image', this.imageFile);
                     }
 
                     this.question = '';
+                    this.materials = [];
                     this.clearImage();
                     this.sending = true;
                     this.$refs.textarea.style.height = 'auto'; // Reset textarea height
                     this.scrollToBottom(true);
 
+                    const assistantMessageId = 'assistant-' + Date.now();
+                    let requestAccepted = false;
                     try {
-                        const assistantMessageId = 'assistant-' + Date.now();
-                        this.messages.push({ id: assistantMessageId, role: 'assistant', content: '', metadata: null });
+                        this.messages.push({ id: assistantMessageId, role: 'assistant', content: '', metadata: null, streaming: true });
                         const assistantIndex = this.messages.length - 1;
 
-                        const response = await fetch(@js(route('chat.store', $session)), {
+                        const response = await fetch(this.storeUrl, {
                             method: 'POST',
                             headers: {
-                                'Accept': 'text/event-stream',
+                                'Accept': 'application/json, text/event-stream',
                                 'X-CSRF-TOKEN': @js(csrf_token()),
                             },
                             body: formData,
@@ -231,8 +139,9 @@
                             const raw = await response.text();
                             let data = {};
                             try { data = JSON.parse(raw); } catch (e) { }
-                            throw new Error(data.message || 'Pertanyaan belum bisa diproses.');
+                            throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || 'Pertanyaan belum bisa diproses.');
                         }
+                        requestAccepted = true;
 
                         const reader = response.body.getReader();
                         const decoder = new TextDecoder();
@@ -259,7 +168,11 @@
                                                 if (window.lucide) window.lucide.createIcons();
                                             });
                                         } else if (parsed.done) {
+                                            this.messages[assistantIndex].streaming = false;
                                             this.title = parsed.title || this.title;
+                                            if (parsed.store_url) this.storeUrl = parsed.store_url;
+                                            if (parsed.session_url) history.replaceState(history.state, '', parsed.session_url);
+                                            this.messages[assistantIndex].content = parsed.message.content ?? this.messages[assistantIndex].content;
                                             this.messages[assistantIndex].id = parsed.message.id;
                                             this.messages[assistantIndex].metadata = parsed.message.metadata;
                                             this.$nextTick(() => {
@@ -273,12 +186,21 @@
                             }
                         }
                     } catch (error) {
+                        if (!requestAccepted) {
+                            this.messages = this.messages.filter(message => message.id !== localId);
+                            this.question = text;
+                            this.materials = localMetadata.materials;
+                            this.imageFile = pendingImage;
+                            this.imagePreview = pendingPreview;
+                        }
+                        this.messages = this.messages.filter(message => message.id !== assistantMessageId || message.content.trim());
                         this.messages.push({
                             id: 'error-' + Date.now(),
                             role: 'assistant',
                             content: error.message || 'Maaf, jawaban belum berhasil dibuat. Coba kirim ulang pertanyaannya.',
                         });
                     } finally {
+                        this.messages.forEach(message => { if (message.streaming) message.streaming = false; });
                         this.sending = false;
                         this.$nextTick(() => {
                             if (window.lucide) window.lucide.createIcons();
@@ -289,25 +211,25 @@
         };
     </script>
 
-    <div class="h-full w-full flex flex-col bg-[#f8fbff]" x-data="chatSessionPage()" x-init="scrollToBottom(true)">
+    <div class="learning-live live-chat live-ai-chat h-full w-full flex flex-col" x-data="chatSessionPage()" x-init="if (messages.length) scrollToBottom(true)">
         <!-- Header Page -->
         <section
-            class="flex-none px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between border-b border-slate-200/60 bg-white shadow-sm">
-            <div class="flex items-center gap-3">
+            class="live-chat-header flex-none px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between border-b border-slate-200/60 bg-white shadow-sm">
+            <div class="flex min-w-0 items-center gap-3">
                 <a class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-campus-700 shadow-sm transition hover:bg-campus-50 border border-slate-200"
-                    href="{{ $session->folder ? route('folders.show', $session->folder) : route('documents.show', $session->document) }}"
-                    title="Kembali">
+                    href="{{ $session->folder ? route('folders.show', $session->folder) : ($session->document ? route('documents.show', $session->document) : route('chat.index')) }}"
+                    title="Kembali" aria-label="{{ $source ? 'Kembali ke materi' : 'Kembali ke riwayat' }}">
                     <i data-lucide="arrow-left" class="h-4 w-4"></i>
                 </a>
                 <div class="min-w-0">
                     <div class="flex items-center gap-2 mb-0.5">
                         <span
-                            class="inline-flex items-center rounded bg-campus-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-campus-700">
-                            {{ $session->folder ? 'Folder' : 'Materi' }}
+                            class="inline-flex items-center rounded bg-campus-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-campus-700">
+                            {{ $source ? ($session->folder ? 'Folder' : 'Materi') : 'Chat bebas' }}
                         </span>
-                        <p class="line-clamp-1 text-xs font-semibold text-slate-500">{{ $source->title }}</p>
+                        <p class="line-clamp-1 text-xs font-semibold text-slate-500">{{ $source?->title ?? 'Bahas apa saja tanpa upload materi' }}</p>
                     </div>
-                    <h1 class="break-words text-[15px] font-bold tracking-tight text-campus-950" x-text="title"></h1>
+                    <h1 class="truncate text-[14px] font-bold tracking-tight text-campus-950" x-text="title" :title="title"></h1>
                 </div>
             </div>
         </section>
@@ -316,55 +238,44 @@
         <div class="flex-1 flex flex-col relative min-h-0 overflow-hidden">
 
             <!-- Messages Area -->
-            <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-44 pt-6 px-4 sm:px-6 lg:px-8"
+            <div x-ref="messages" class="live-chat-messages flex-1 min-h-0 overflow-y-auto p-4 sm:px-6 lg:px-8"
                 style="scroll-behavior: smooth; overscroll-behavior-y: contain;">
 
                 <!-- Empty State / Welcome Message -->
                 <template x-if="messages.length === 0">
-                    <div class="flex h-full flex-col items-center justify-center p-4">
-                        <div
-                            class="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-100 text-campus-600">
-                            <i data-lucide="bot" class="h-8 w-8"></i>
+                    <div class="live-chat-welcome">
+                        <div class="live-chat-welcome-icon" aria-hidden="true">
+                            <i data-lucide="messages-square"></i>
                         </div>
-                        <h3 class="mb-2 text-center text-2xl font-bold tracking-tight text-slate-900">Halo! Apa yang
-                            ingin kamu pelajari?</h3>
-                        <p class="mb-8 max-w-md text-center text-[15px] leading-relaxed text-slate-500">Aku siap
-                            membantu kamu mendalami materi ini. Pilih topik cepat di bawah atau ketik pertanyaanmu
-                            sendiri.</p>
+                        <h2>{{ $source ? 'Mau bahas bagian mana?' : 'Mau ngobrolin apa?' }}</h2>
+                        <p>Pilih pertanyaan awal atau tulis yang bikin kamu penasaran</p>
 
-                        <div class="flex w-full max-w-3xl flex-wrap justify-center gap-3">
-                            <button
-                                @click="question = 'Jelaskan intisari materi ini dengan bahasa yang sangat sederhana.'; sendQuestion()"
-                                class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
-                                <span
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><i
-                                        data-lucide="message-circle" class="h-4 w-4"></i></span>
+                        <div class="live-chat-prompts">
+                            <button type="button"
+                                @click="question = @js($source ? 'Jelaskan intisari materi ini dengan bahasa yang sangat sederhana.' : 'Jelaskan bagaimana hujan terbentuk dengan bahasa sederhana.'); sendQuestion()"
+                                class="live-chat-prompt">
+                                <i data-lucide="message-circle" aria-hidden="true"></i>
                                 <div>
-                                    <span class="block text-sm font-bold text-slate-700">Jelaskan Sederhana</span>
-                                    <span class="mt-1 block text-[12px] text-slate-500">Ringkasan dengan bahasa
-                                        awam</span>
+                                    <strong>Jelaskan sederhana</strong>
+                                    <span>{{ $source ? 'Inti materi, bahasa sehari-hari' : 'Kenapa hujan bisa turun?' }}</span>
                                 </div>
                             </button>
-                            <button
-                                @click="question = 'Bantu aku memahami konsep yang paling sulit di materi ini.'; sendQuestion()"
-                                class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
-                                <span
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600"><i
-                                        data-lucide="lightbulb" class="h-4 w-4"></i></span>
+                            <button type="button"
+                                @click="question = @js($source ? 'Bantu aku memahami konsep yang paling sulit di materi ini.' : 'Bantu aku menyusun jadwal belajar yang realistis.'); sendQuestion()"
+                                class="live-chat-prompt">
+                                <i data-lucide="lightbulb" aria-hidden="true"></i>
                                 <div>
-                                    <span class="block text-sm font-bold text-slate-700">Pahami Konsep</span>
-                                    <span class="mt-1 block text-[12px] text-slate-500">Bedah bagian yang rumit</span>
+                                    <strong>{{ $source ? 'Pahami konsep' : 'Susun rencana' }}</strong>
+                                    <span>{{ $source ? 'Urai bagian yang rumit' : 'Bikin jadwal belajar' }}</span>
                                 </div>
                             </button>
-                            <button
-                                @click="question = 'Beri aku analogi atau contoh nyata untuk materi ini.'; sendQuestion()"
-                                class="group flex flex-col items-start gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-campus-200 hover:shadow-md w-full sm:w-[calc(33.333%-0.5rem)]">
-                                <span
-                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600"><i
-                                        data-lucide="sparkles" class="h-4 w-4"></i></span>
+                            <button type="button"
+                                @click="question = @js($source ? 'Beri aku analogi atau contoh nyata untuk materi ini.' : 'Ayo cari ide kegiatan kreatif untuk akhir pekan.'); sendQuestion()"
+                                class="live-chat-prompt">
+                                <i data-lucide="sparkles" aria-hidden="true"></i>
                                 <div>
-                                    <span class="block text-sm font-bold text-slate-700">Beri Analogi</span>
-                                    <span class="mt-1 block text-[12px] text-slate-500">Contoh di dunia nyata</span>
+                                    <strong>{{ $source ? 'Beri contoh' : 'Cari ide' }}</strong>
+                                    <span>{{ $source ? 'Hubungkan ke keseharian' : 'Kegiatan kreatif akhir pekan' }}</span>
                                 </div>
                             </button>
                         </div>
@@ -373,20 +284,25 @@
 
                 <!-- Chat Bubbles -->
                 <template x-for="message in messages" :key="message.id">
-                    <div class="flex w-full justify-center">
+                    <div class="live-chat-message flex w-full justify-center">
                         <div class="w-full max-w-3xl flex"
                             :class="message.role === 'user' ? 'justify-end pl-12' : 'justify-start pr-4 sm:pr-12'">
 
                             <!-- User Message -->
                             <template x-if="message.role === 'user'">
                                 <div
-                                    class="max-w-[85%] rounded-3xl bg-slate-100 px-5 py-3.5 text-[15px] leading-relaxed text-slate-800 flex flex-col gap-2">
+                                    class="max-w-[85%] rounded-3xl bg-slate-100 px-5 py-3.5 text-[12px] leading-relaxed text-slate-800 flex flex-col gap-2">
                                     <template x-if="message.metadata?.image_path">
                                         <div class="my-1 max-w-sm overflow-hidden rounded-2xl border border-slate-200 shadow-sm bg-white p-1">
                                             <img :src="message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path" class="max-h-60 w-full object-contain rounded-xl hover:scale-[1.02] transition cursor-pointer" @click="window.open(message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path, '_blank')">
                                         </div>
                                     </template>
-                                    <div x-show="message.content !== 'Mengirim gambar...' && message.content !== 'Jelaskan gambar ini'" x-html="formatMessage(message.content, false)" class="[&_p]:mb-0"></div>
+                                    <div class="chat-message-materials" x-show="message.metadata?.materials?.length">
+                                        <template x-for="material in (message.metadata?.materials || [])" :key="material.id">
+                                            <span class="chat-message-material" :title="material.title"><i data-lucide="file-text" aria-hidden="true"></i><span x-text="material.title"></span></span>
+                                        </template>
+                                    </div>
+                                    <div x-show="message.content !== 'Mengirim gambar...' && message.content !== 'Jelaskan gambar ini'" x-text="message.content" class="whitespace-pre-wrap"></div>
                                 </div>
                             </template>
 
@@ -400,7 +316,7 @@
                                         </div>
                                     </div>
                                     <div x-data="{ showSources: false }"
-                                        class="min-w-0 flex-1 text-[15px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[13px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
+                                        class="min-w-0 flex-1 text-[12px] leading-relaxed text-slate-800 pt-1">
 
                                         <!-- Typing indicator inside empty assistant message -->
                                         <template x-if="!message.content.trim()">
@@ -412,7 +328,7 @@
                                         </template>
 
                                         <template x-if="message.content.trim()">
-                                            <div x-html="formatMessage(message.content)"></div>
+                                            <div x-chat-content="[message.content, message.streaming]"></div>
                                         </template>
 
                                         <!-- Source Snippets Toggle -->
@@ -440,7 +356,7 @@
                                                         <template x-for="snippet in message.metadata.source_snippets"
                                                             :key="snippet.document_id + snippet.snippet">
                                                             <div
-                                                                class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[13px] leading-5 text-slate-600 shadow-sm">
+                                                                class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[12px] leading-5 text-slate-600 shadow-sm">
                                                                 <div
                                                                     class="mb-1.5 flex items-center gap-1.5 font-semibold text-campus-800">
                                                                     <i data-lucide="file-text"
@@ -463,14 +379,23 @@
                     </div>
                 </template>
             </div>
-            <!-- Input Area — floating at bottom like ChatGPT -->
-            <div class="absolute bottom-0 left-0 right-0 px-3 pt-6 sm:px-4 lg:px-8 pointer-events-none"
-                style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem)); background: linear-gradient(to top, white 60%, transparent);">
-                <form method="POST" action="{{ route('chat.store', $session) }}" @submit.prevent="sendQuestion()"
+            <!-- Composer stays outside the message scroller. -->
+            <div class="live-chat-composer">
+                <form method="POST" action="{{ $storeUrl }}" @submit.prevent="sendQuestion()"
                     @dragover.prevent
                     @drop.prevent="onDrop($event)"
                     class="flex w-full flex-col mx-auto max-w-3xl pointer-events-auto">
                     @csrf
+
+                    <div class="chat-material-chips" x-show="materials.length" x-cloak aria-label="Materi yang akan dikirim">
+                        <template x-for="material in materials" :key="material.id">
+                            <span class="chat-material-chip">
+                                <i data-lucide="file-text" aria-hidden="true"></i>
+                                <span x-text="material.title" :title="material.title"></span>
+                                <button type="button" @click="toggleMaterial(material)" :disabled="sending || materialUploading" :aria-label="'Lepas materi ' + material.title"><i data-lucide="x" aria-hidden="true"></i></button>
+                            </span>
+                        </template>
+                    </div>
 
                     <!-- Image Preview -->
                     <template x-if="imagePreview">
@@ -483,35 +408,37 @@
                     </template>
 
                     <div
-                        class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-xl shadow-black/8 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
+                        class="live-chat-input relative flex min-w-0 items-end gap-2 bg-white">
                         
                         <input type="file" x-ref="imageInput" @change="onImageSelected" accept="image/*" class="hidden">
                         
-                        <button type="button" @click="triggerSelectImage()" 
+                        <button type="button" @click="triggerSelectImage()" aria-label="Lampirkan gambar" 
                             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 hover:text-slate-600 transition active:scale-95">
                             <i data-lucide="image" class="h-5 w-5"></i>
                         </button>
 
-                        <textarea x-ref="textarea" x-model="question" name="question" rows="1"
-                            @paste="onPaste($event)"
-                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[15px] focus:ring-0 focus:outline-none"
-                            placeholder="Tanya AI tentang materi ini..."
-                            @keydown.enter.prevent="if(!$event.shiftKey) sendQuestion()"
-                            @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
-                            style="border: none !important; background: transparent !important; box-shadow: none !important; outline: none !important; resize: none !important; overflow-y: hidden;"></textarea>
+                        <button type="button" @click="openMaterials()" :disabled="sending || materialUploading" aria-label="Tambahkan materi" title="Tambahkan materi" class="chat-material-trigger">
+                            <i data-lucide="paperclip" aria-hidden="true"></i>
+                        </button>
 
-                        <button type="submit" :disabled="(!question.trim() && !imageFile) || sending"
+                        <textarea aria-label="Pertanyaan untuk AI" x-ref="textarea" x-model="question" name="question" rows="1" maxlength="2000"
+                            @paste="onPaste($event)"
+                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[14px] focus:ring-0 focus:outline-none"
+                            placeholder="{{ $source ? 'Tanya tentang materi...' : 'Tanya apa saja...' }}"
+                            @keydown.enter="if (!$event.shiftKey && !$event.isComposing) { $event.preventDefault(); sendQuestion(); }"
+                            @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
+                            style="border: none !important; background: transparent !important; box-shadow: none !important; outline: none !important; resize: none !important;"></textarea>
+
+                        <button type="submit" aria-label="Kirim pertanyaan" :disabled="(!question.trim() && !imageFile && !materials.length) || sending || materialUploading"
                             class="group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                             <i data-lucide="arrow-up" class="h-5 w-5"></i>
                             <span class="sr-only">Kirim</span>
                         </button>
                     </div>
-                    <div class="mt-2 text-center text-[11px] font-medium text-slate-400">
-                        AI bisa aja keliru buat jawabannya, jadi jangan lupa cek lagii yaa, AI akan merespon secara
-                        realtime
-                    </div>
+                    <p class="live-chat-hint">AI bisa keliru, cek lagi dengan materimu</p>
                 </form>
             </div>
         </div>
+        <x-chat-material-picker />
     </div>
 </x-app-layout>

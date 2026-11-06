@@ -51,6 +51,14 @@ return [
         'fallback_provider' => env('AI_FALLBACK_PROVIDER', 'gemini'),
     ],
 
+    'nine_router' => [
+        'api_key' => env('NINE_ROUTER_API_KEY'),
+        'base_url' => env('NINE_ROUTER_BASE_URL'),
+        'model' => env('NINE_ROUTER_MODEL'),
+        'timeout' => (int) env('NINE_ROUTER_TIMEOUT', 300),
+        'connect_timeout' => (int) env('NINE_ROUTER_CONNECT_TIMEOUT', 15),
+    ],
+
     'kimchi' => [
         'api_key' => env('KIMCHI_API_KEY'),
         'base_url' => env('KIMCHI_BASE_URL', 'https://llm.cast.ai/openai/v1'),

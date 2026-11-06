@@ -1,108 +1,117 @@
-<x-app-layout title="Kartu Belajar">
+<x-app-layout title="Kartu belajar">
     @php
         $source = $folder ?: $document;
-        $statCards = [
-            ['key' => 'sulit', 'label' => 'Sulit', 'class' => 'bg-rose-50 text-rose-700'],
-            ['key' => 'ulang', 'label' => 'Ulang lagi', 'class' => 'bg-amber-50 text-amber-700'],
-            ['key' => 'baru', 'label' => 'Baru', 'class' => 'bg-slate-50 text-slate-700'],
-            ['key' => 'paham', 'label' => 'Paham', 'class' => 'bg-emerald-50 text-emerald-700'],
-        ];
+        $sourceUrl = $folder ? route('folders.show', $folder) : route('documents.show', $document);
+        $deckCards = $flashcards->map(fn ($card) => ['id' => $card->id, 'study_status' => $card->study_status, 'review_count' => $card->review_count])->values();
+        $statusLabels = ['sulit' => 'Sulit', 'ulang' => 'Ulang lagi', 'baru' => 'Baru', 'paham' => 'Paham'];
     @endphp
 
-    <div class="min-w-0 overflow-x-hidden">
-        <section class="overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-campus-50 to-white p-5 sm:p-8 shadow-sm border border-campus-100 relative">
-            @if(isset($room) && $room)
-                <a class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-800" href="{{ route('study-rooms.show', $room) }}">
-                    <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke Room Belajar
-                </a>
-            @else
-                <a class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-campus-700 shadow-sm border border-slate-100 transition-colors hover:bg-campus-100" href="{{ $folder ? route('folders.show', $folder) : route('documents.show', $document) }}">
-                    <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke {{ $folder ? 'folder' : 'materi' }}
-                </a>
-            @endif
-            <div class="mt-5 flex min-w-0 flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-                <div class="min-w-0">
-                    <span class="inline-flex rounded-full bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-campus-700 shadow-sm ring-1 ring-slate-100">Flashcards</span>
-                    <h1 class="mt-4 break-words text-2xl font-extrabold tracking-tight text-campus-950 sm:text-3xl">{{ $source->title }}</h1>
-                    <p class="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-600">Hafalkan materi dengan interaktif. Buka jawaban, lalu tandai tingkat pemahaman Anda.</p>
+    <div class="learning-live live-flashcards min-w-0" x-data="flashcardDeck(@js($deckCards))">
+        <header class="live-page-heading">
+            <a class="back-link" href="{{ isset($room) && $room ? route('study-rooms.show', $room) : $sourceUrl }}">
+                <i data-lucide="arrow-left" class="h-4 w-4" aria-hidden="true"></i>
+                {{ isset($room) && $room ? 'Kembali ke belajar bareng' : 'Kembali ke materi' }}
+            </a>
+            <p class="eyebrow">Kartu belajar</p>
+            <h1>{{ $source->title }}</h1>
+            <p class="subtitle">Coba ingat jawabannya, lalu balik kartunya. Sedikit-sedikit, makin paham.</p>
+        </header>
+
+        <div class="live-flashcard-stats" aria-label="Progres kartu belajar">
+            @foreach($statusLabels as $key => $label)
+                <div class="live-flashcard-stat"><span>{{ $label }}</span><strong x-text="count(@js($key))">{{ $stats[$key] ?? 0 }}</strong></div>
+            @endforeach
+        </div>
+
+        <div class="live-card-deck" >
+            @if($flashcards->isNotEmpty())
+                <div class="live-card-count">
+                    <span aria-live="polite">Kartu <strong x-text="current + 1">1</strong> dari {{ $flashcards->count() }}</span>
+                    <span>Yang perlu diulang tampil dulu</span>
                 </div>
-            </div>
+            @endif
 
-            <div class="mt-6 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
-                @foreach($statCards as $item)
-                    <div class="rounded-[1.25rem] {{ $item['class'] }} p-4 ring-1 ring-black/5 shadow-sm transition-all hover:scale-[1.02]">
-                        <p class="text-[11px] font-bold uppercase tracking-wider opacity-80">{{ $item['label'] }}</p>
-                        <p class="mt-1 text-3xl font-black">{{ $stats[$item['key']] ?? 0 }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-
-        <div class="mt-6 grid min-w-0 gap-6 md:grid-cols-2 xl:grid-cols-3">
             @forelse($flashcards as $flashcard)
-                @php
-                    $statusLabel = ['baru' => 'Baru', 'ulang' => 'Ulang', 'sulit' => 'Sulit', 'paham' => 'Paham'][$flashcard->study_status] ?? 'Baru';
-                    $statusColor = [
-                        'baru' => 'bg-slate-100 text-slate-700 ring-slate-200',
-                        'ulang' => 'bg-amber-50 text-amber-700 ring-amber-200',
-                        'sulit' => 'bg-rose-50 text-rose-700 ring-rose-200',
-                        'paham' => 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                    ][$flashcard->study_status] ?? 'bg-slate-100 text-slate-700 ring-slate-200';
-                @endphp
-                <article x-data="{open:false}" class="flex flex-col min-w-0 overflow-hidden rounded-[1.75rem] bg-white p-6 shadow-sm border border-slate-100 transition-all hover:shadow-md hover:border-campus-200 relative">
-                    <div class="flex min-w-0 items-start justify-between gap-3 mb-4">
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-campus-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-campus-700 ring-1 ring-campus-200/50">
-                            <i data-lucide="help-circle" class="h-3 w-3"></i> Pertanyaan
-                        </span>
-                        <span class="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider ring-1 {{ $statusColor }}">{{ $statusLabel }}</span>
-                    </div>
-                    
-                    <div class="flex-1 min-w-0">
-                        <p class="min-h-[4rem] text-[15px] font-medium leading-relaxed text-slate-900 overflow-wrap-anywhere break-words hyphens-auto">{!! Str::markdown($flashcard->front) !!}</p>
+                <article x-show="current === {{ $loop->index }}" @if(!$loop->first) x-cloak @endif
+                         class="live-flashcard" aria-label="Kartu {{ $loop->iteration }}">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-xs text-slate-500">Pikirkan dulu, nggak perlu buru-buru.</span>
+                        <span class="live-card-status" data-status="{{ $flashcard->study_status }}" :data-status="cards[{{ $loop->index }}].study_status" x-text="labels[cards[{{ $loop->index }}].study_status]">{{ $statusLabels[$flashcard->study_status] ?? 'Baru' }}</span>
                     </div>
 
-                    <button type="button" @click="open=!open" class="mt-6 flex w-full h-12 items-center justify-center gap-2 rounded-full bg-slate-50 px-5 text-[14px] font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-slate-100 focus:outline-none">
-                        <i data-lucide="eye" class="h-4 w-4" x-show="!open"></i>
-                        <i data-lucide="eye-off" class="h-4 w-4" x-show="open" x-cloak></i>
-                        <span x-text="open ? 'Sembunyikan Jawaban' : 'Buka Jawaban'"></span>
+                    <div class="live-flashcard-question">{!! Str::markdown($flashcard->front, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+
+                    <button type="button" @click="open = !open" :disabled="saving" :aria-expanded="open" aria-controls="answer-{{ $flashcard->id }}" class="live-card-flip">
+                        <i data-lucide="rotate-3d" aria-hidden="true"></i>
+                        <span x-text="open ? 'Tutup jawaban' : 'Lihat jawaban'">Lihat jawaban</span>
                     </button>
 
-                    <div x-show="open" x-cloak x-transition.opacity class="mt-4 overflow-hidden rounded-[1.25rem] bg-gradient-to-b from-campus-50 to-white p-5 ring-1 ring-campus-100 shadow-inner">
-                        <span class="block mb-2 text-[11px] font-bold uppercase tracking-wider text-campus-700">Kunci Jawaban</span>
-                        <div class="text-[14px] leading-relaxed text-slate-700 overflow-wrap-anywhere break-words hyphens-auto [&>h1]:font-bold [&>h2]:font-bold [&>h3]:font-bold [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>li]:mb-1">{!! Str::markdown($flashcard->display_back ?? $flashcard->back) !!}</div>
-                        
-                        <div class="mt-5 grid grid-cols-3 gap-3">
-                            @foreach([
-                                ['status' => 'sulit', 'label' => 'Sulit', 'class' => 'bg-white text-rose-700 ring-rose-200 hover:bg-rose-50 hover:ring-rose-300'],
-                                ['status' => 'ulang', 'label' => 'Ulang', 'class' => 'bg-white text-amber-700 ring-amber-200 hover:bg-amber-50 hover:ring-amber-300'],
-                                ['status' => 'paham', 'label' => 'Paham', 'class' => 'bg-white text-emerald-700 ring-emerald-200 hover:bg-emerald-50 hover:ring-emerald-300'],
-                            ] as $action)
-                                <form method="POST" action="{{ route('flashcards.review', $flashcard) }}">
+                    <div id="answer-{{ $flashcard->id }}" x-show="open" x-cloak x-transition.opacity class="live-card-answer">
+                        <p class="text-xs font-semibold text-slate-500">JAWABAN</p>
+                        <div>{!! Str::markdown($flashcard->display_back ?? $flashcard->back, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}</div>
+                        <p class="mt-5 text-center text-sm">Sejauh mana kamu ingat?</p>
+                        <div class="live-card-review">
+                            @foreach(['sulit' => 'Masih sulit', 'ulang' => 'Ulang lagi', 'paham' => 'Sudah paham'] as $status => $label)
+                                <form method="POST" action="{{ route('flashcards.review', $flashcard) }}" @submit.prevent="review($el)">
                                     @csrf
                                     @method('PATCH')
-                                    <input type="hidden" name="study_status" value="{{ $action['status'] }}">
-                                    <button class="h-10 w-full rounded-xl px-2 text-[12px] font-bold shadow-sm ring-1 transition-colors {{ $action['class'] }}">{{ $action['label'] }}</button>
+                                    <input type="hidden" name="study_status" value="{{ $status }}">
+                                    <button :disabled="saving" class="disabled:opacity-50" x-text="saving ? 'Menyimpan...' : @js($label)">{{ $label }}</button>
                                 </form>
                             @endforeach
                         </div>
                     </div>
 
-                    <div class="mt-5 flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        <span>Direview {{ $flashcard->review_count }}x</span>
-                        @if($flashcard->last_reviewed_at)
-                            <span>{{ $flashcard->last_reviewed_at->diffForHumans() }}</span>
-                        @endif
+                    <div class="mt-5 flex flex-wrap justify-between gap-2 text-xs text-slate-500">
+                        <span x-text="`Diulang ${cards[{{ $loop->index }}].review_count} kali`">Diulang {{ $flashcard->review_count }} kali</span>
                     </div>
                 </article>
             @empty
-                <div class="flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50 p-12 text-center shadow-sm md:col-span-2 xl:col-span-3">
-                    <span class="grid h-16 w-16 place-items-center rounded-full bg-white text-slate-300 shadow-sm mb-4">
-                        <i data-lucide="layers" class="h-8 w-8"></i>
-                    </span>
-                    <h3 class="text-lg font-bold text-slate-900">Belum Ada Flashcard</h3>
-                    <p class="mt-1 text-sm text-slate-500">Buat flashcard dari materi Anda untuk mulai menghafal.</p>
-                </div>
+                <section class="live-panel p-8 text-center">
+                    <i data-lucide="layers" class="mx-auto mb-4 h-10 w-10 text-slate-400" aria-hidden="true"></i>
+                    <h2 class="text-lg font-semibold">Belum ada kartu belajar</h2>
+                    <p class="mt-2 text-sm text-slate-500">Buat kartu dari materi ini, lalu mulai ulang konsep pentingnya.</p>
+                    <a href="{{ isset($room) && $room ? route('study-rooms.show', $room) : $sourceUrl.'#learn-flashcard' }}" class="button button-primary mt-5">Buka materi</a>
+                </section>
             @endforelse
+
+            <p x-show="error" x-cloak x-text="error" role="alert" class="mt-3 text-sm text-red-700"></p>
+            <p x-show="notice" x-cloak x-text="notice" role="status" class="mt-3 text-sm text-slate-600"></p>
+
+            @if($flashcards->count() > 1)
+                <div class="live-card-controls">
+                    <button type="button" @click="go(current - 1)" :disabled="saving || current === 0">
+                        <i data-lucide="arrow-left" aria-hidden="true"></i> Sebelumnya
+                    </button>
+                    <button type="button" @click="go(current + 1)" :disabled="saving || current === total - 1">
+                        Berikutnya <i data-lucide="arrow-right" aria-hidden="true"></i>
+                    </button>
+                </div>
+            @endif
+            @if($flashcards->isNotEmpty())
+                <section class="live-deck-list" aria-label="Daftar kartu">
+                    <h2>Daftar kartu <span>{{ $flashcards->count() }}</span></h2>
+                    <ol>
+                        @foreach($flashcards as $flashcard)
+                            <li x-show="listPage === {{ intdiv($loop->index, 5) }}" @if($loop->index >= 5) x-cloak @endif>
+                                <button type="button" @click="go({{ $loop->index }})" :disabled="saving"
+                                        :aria-current="current === {{ $loop->index }} ? 'true' : null">
+                                    <span class="live-deck-number">{{ $loop->iteration }}</span>
+                                    <span class="live-deck-title">{{ strip_tags(Str::markdown($flashcard->front, ['html_input' => 'strip', 'allow_unsafe_links' => false])) }}</span>
+                                    <span class="live-deck-status live-card-status" data-status="{{ $flashcard->study_status }}" :data-status="cards[{{ $loop->index }}].study_status" x-text="labels[cards[{{ $loop->index }}].study_status]">{{ $statusLabels[$flashcard->study_status] ?? 'Baru' }}</span>
+                                </button>
+                            </li>
+                        @endforeach
+                    </ol>
+                    @if($flashcards->count() > 5)
+                        <div class="live-card-controls">
+                            <button type="button" @click="listPage--" :disabled="saving || listPage === 0">Sebelumnya</button>
+                            <span x-text="`${listPage + 1} / ${Math.ceil(total / 5)}`" aria-live="polite"></span>
+                            <button type="button" @click="listPage++" :disabled="saving || listPage >= Math.ceil(total / 5) - 1">Selanjutnya</button>
+                        </div>
+                    @endif
+                </section>
+            @endif
         </div>
     </div>
 </x-app-layout>

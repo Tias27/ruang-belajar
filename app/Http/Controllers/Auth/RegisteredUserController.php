@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\MathCaptchaService;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,39 +15,51 @@ class RegisteredUserController extends Controller
 {
     public function create()
     {
-        return view('auth.register');
+        $captcha = \App\Services\MathCaptchaService::getQuestion();
+        return view('auth.register', compact('captcha'));
     }
 
     public function store(Request $request)
     {
-        $request->merge([
-            'username' => Str::of((string) $request->input('username'))->squish()->lower()->toString(),
-        ]);
+        // Anti array/type-juggling
+                $request->merge([
+                    'username' => is_string($request->input('username'))
+                        ? Str::of($request->input('username'))->squish()->lower()->toString()
+                        : '',
+                ]);
 
-        $data = $request->validate([
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[\pL\pN ._-]+$/u', 'unique:users,username'],
-            'program_studi' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-        ], [
-            'email.required' => 'Email wajib diisi.',
-            'email.email' => 'Format email belum benar.',
-            'email.unique' => 'Email ini sudah terdaftar.',
-            'username.required' => 'Nama pengguna wajib diisi.',
-            'username.regex' => 'Nama pengguna boleh memakai huruf, angka, spasi, titik, garis bawah, atau tanda hubung.',
-            'username.min' => 'Nama pengguna minimal 3 karakter.',
-            'username.unique' => 'Nama pengguna ini sudah dipakai.',
-            'program_studi.required' => 'Jenjang atau jurusan wajib diisi.',
-            'password.required' => 'Kata sandi wajib diisi.',
-            'password.confirmed' => 'Konfirmasi kata sandi tidak sama.',
-            'password.min' => 'Kata sandi minimal :min karakter.',
-        ]);
+                $data = $request->validate([
+                    'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+                    'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[\\pL\\pN ._-]+$/u', 'unique:users,username'],
+                    'password' => ['required', 'confirmed', Password::defaults()],
+                    'math_captcha' => ['required', 'integer'],
+                ], [
+                    'email.required' => 'Email wajib diisi.',
+                    'email.email' => 'Format email belum benar.',
+                    'email.unique' => 'Email ini sudah terdaftar.',
+                    'username.required' => 'Nama pengguna wajib diisi.',
+                    'username.regex' => 'Nama pengguna boleh memakai huruf, angka, spasi, titik, garis bawah, atau tanda hubung.',
+                    'username.min' => 'Nama pengguna minimal 3 karakter.',
+                    'username.unique' => 'Nama pengguna ini sudah dipakai.',
+                    'password.required' => 'Kata sandi wajib diisi.',
+                    'password.confirmed' => 'Konfirmasi kata sandi tidak sama.',
+                    'password.min' => 'Kata sandi minimal :min karakter.',
+                    'math_captcha.required' => 'Jawaban hitungan wajib diisi.',
+                    'math_captcha.integer' => 'Jawaban harus berupa angka.',
+                ]);
+
+                // Validate math captcha — pertahankan semua input, cuma captcha yg reset
+                if (!MathCaptchaService::validate((int) $data['math_captcha'])) {
+                    return redirect()->route('register')
+                        ->withInput($request->all())
+                        ->withErrors(['math_captcha' => 'Jawaban hitungan salah. Coba lagi.']);
+                }
 
         $user = User::create([
             'name' => $data['username'],
             'username' => $data['username'],
             'email' => $data['email'],
-            'program_studi' => $data['program_studi'],
+            'program_studi' => '',
             'role' => 'mahasiswa',
             'password' => Hash::make($data['password']),
         ]);

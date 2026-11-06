@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Summary;
 use App\Services\GeminiService;
 use App\Services\LearningSourceService;
+use App\Services\SummaryReuse;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Str;
@@ -16,7 +17,7 @@ class GenerateSummaryJob implements ShouldQueue
 
     public int $tries = 2;
 
-    public int $timeout = 300;
+    public int $timeout = 360;
 
     public function __construct(public int $summaryId, public ?array $selectedDocIds = null)
     {
@@ -40,8 +41,16 @@ class GenerateSummaryJob implements ShouldQueue
             return;
         }
 
+        // Leave time to validate and persist after the provider's 300-second deadline.
+        if (function_exists('set_time_limit')) @set_time_limit(360);
         try {
+            $reuse = app(SummaryReuse::class);
+            $snapshot = $reuse->snapshot($source, $this->selectedDocIds);
             $result = $gemini->summarize($source, $this->selectedDocIds);
+            if (function_exists('set_time_limit')) @set_time_limit(60);
+            if (! is_string($result['full_summary'] ?? null) || blank($result['full_summary'])) {
+                throw new \UnexpectedValueException('AI belum mengembalikan isi ringkasan');
+            }
             $keyPointsText = is_array($result['key_points'] ?? null)
                 ? implode(' ', $result['key_points'])
                 : (string) ($result['key_points'] ?? '');
@@ -50,7 +59,11 @@ class GenerateSummaryJob implements ShouldQueue
                 $result['short_summary'] ?? '',
                 $result['full_summary'] ?? '',
                 $keyPointsText,
-            ]));
+            ]), 3, $this->selectedDocIds);
+            if ($reuse->snapshot($source->fresh(), $this->selectedDocIds)['hash'] !== $snapshot['hash']) {
+                $snapshot['hash'] = 'source-changed-during-generation';
+            }
+            $result['_source_snapshot'] = $snapshot;
 
             $summary->update([
                 'short_summary' => $result['short_summary'] ?? 'Ringkasan singkat belum tersedia.',

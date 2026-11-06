@@ -1,19 +1,40 @@
-<x-app-layout>
-    <div class="mx-auto max-w-md py-10">
-        <h1 class="text-3xl font-semibold text-campus-900">Atur ulang kata sandi</h1>
-        <form method="POST" action="{{ route('password.store') }}" class="mt-6 space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            @csrf
-            <input type="hidden" name="token" value="{{ $token }}">
-            <label class="block text-sm font-medium">Surel
-                <input name="email" type="email" value="{{ old('email', $request->email) }}" required class="mt-1 w-full rounded-lg border-slate-300">
-            </label>
-            <label class="block text-sm font-medium">Kata sandi baru
-                <input name="password" type="password" required class="mt-1 w-full rounded-lg border-slate-300">
-            </label>
-            <label class="block text-sm font-medium">Konfirmasi kata sandi
-                <input name="password_confirmation" type="password" required class="mt-1 w-full rounded-lg border-slate-300">
-            </label>
-            <button class="w-full rounded-lg bg-campus-700 px-4 py-3 text-sm font-semibold text-white hover:bg-campus-900">Simpan kata sandi</button>
-        </form>
-    </div>
-</x-app-layout>
+@extends('layouts.guest')
+
+@section('title', 'Atur ulang kata sandi - Ruang Belajar')
+
+@section('content')
+<section class="screen forgot-screen" id="screen-reset" aria-labelledby="reset-title">
+    <div class="forgot-icon" data-icon="mail"></div>
+    <p class="eyebrow">Sebentar lagi bisa lanjut belajar.</p>
+    <h1 id="reset-title">Bikin kata sandi baru</h1>
+    <p class="subtitle">Pilih kata sandi yang mudah kamu ingat.</p>
+    @include('auth._feedback')
+    <form id="reset-form" method="POST" action="{{ route('password.store') }}" class="guest-form">
+        @csrf
+        <input type="hidden" name="token" value="{{ $token }}">
+        <div class="guest-field">
+            <label for="reset-email">Email akunmu</label>
+            <input id="reset-email" name="email" type="email" value="{{ old('email', $request->email) }}" autocomplete="email" required aria-describedby="reset-email-error" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}">
+            <span class="field-error" id="reset-email-error" @if (!$errors->has('email')) hidden @endif>@error('email'){{ $message }}@enderror</span>
+        </div>
+        <div class="guest-field">
+            <label for="reset-password">Kata sandi baru</label>
+            <div class="password-field">
+                <input id="reset-password" name="password" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter" minlength="8" required aria-describedby="reset-password-error" aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}">
+                <button type="button" data-password-toggle="reset-password" aria-label="Lihat kata sandi" aria-pressed="false"><span data-icon="eye"></span></button>
+            </div>
+            <span class="field-error" id="reset-password-error" @if (!$errors->has('password')) hidden @endif>@error('password'){{ $message }}@enderror</span>
+        </div>
+        <div class="guest-field">
+            <label for="reset-confirm">Ulangi kata sandi</label>
+            <div class="password-field">
+                <input id="reset-confirm" name="password_confirmation" type="password" autocomplete="new-password" placeholder="Ketik sekali lagi" required aria-describedby="reset-confirm-error" aria-invalid="{{ $errors->has('password_confirmation') ? 'true' : 'false' }}">
+                <button type="button" data-password-toggle="reset-confirm" aria-label="Lihat kata sandi" aria-pressed="false"><span data-icon="eye"></span></button>
+            </div>
+            <span class="field-error" id="reset-confirm-error" @if (!$errors->has('password_confirmation')) hidden @endif>@error('password_confirmation'){{ $message }}@enderror</span>
+        </div>
+        <button class="button button-primary auth-submit" type="submit">Simpan kata sandi<span data-icon="arrow-right"></span></button>
+    </form>
+    <a href="{{ route('login') }}" class="back-link"><span data-icon="arrow-left"></span>Balik ke halaman masuk</a>
+</section>
+@endsection

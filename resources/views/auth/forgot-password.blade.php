@@ -1,12 +1,23 @@
-<x-app-layout>
-    <div class="mx-auto max-w-md py-10">
-        <h1 class="text-3xl font-semibold text-campus-900">Lupa kata sandi</h1>
-        <form method="POST" action="{{ route('password.email') }}" class="mt-6 space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            @csrf
-            <label class="block text-sm font-medium">Surel
-                <input name="email" type="email" required class="mt-1 w-full rounded-lg border-slate-300">
-            </label>
-            <button class="w-full rounded-lg bg-campus-700 px-4 py-3 text-sm font-semibold text-white hover:bg-campus-900">Kirim tautan pemulihan</button>
-        </form>
-    </div>
-</x-app-layout>
+@extends('layouts.guest')
+
+@section('title', 'Lupa kata sandi - Ruang Belajar')
+
+@section('content')
+<section class="screen forgot-screen" id="screen-forgot" aria-labelledby="forgot-title">
+    <div class="forgot-icon" data-icon="mail"></div>
+    <p class="eyebrow">Nggak apa-apa, bisa diatur ulang.</p>
+    <h1 id="forgot-title">Lupa kata sandi?</h1>
+    <p class="subtitle">Masukkan email yang kamu pakai saat daftar.</p>
+    @include('auth._feedback')
+    <form id="forgot-form" method="POST" action="{{ route('password.email') }}" class="guest-form">
+        @csrf
+        <div class="guest-field">
+            <label for="forgot-email">Email akunmu</label>
+            <input id="forgot-email" type="email" name="email" value="{{ old('email') }}" autocomplete="email" placeholder="nama@email.com" required aria-describedby="forgot-email-error" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}">
+            <span class="field-error" id="forgot-email-error" @if (!$errors->has('email')) hidden @endif>@error('email'){{ $message }}@enderror</span>
+        </div>
+        <button class="button button-primary auth-submit" type="submit">Kirim tautan reset<span data-icon="arrow-right"></span></button>
+    </form>
+    <a href="{{ route('login') }}" class="back-link"><span data-icon="arrow-left"></span>Balik ke halaman masuk</a>
+</section>
+@endsection

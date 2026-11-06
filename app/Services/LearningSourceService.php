@@ -108,11 +108,12 @@ class LearningSourceService
         return "{$safeReason}\n\nJawaban sementara dari potongan materi yang paling relevan:\n\n{$points}\n\nIni belum secerdas jawaban AI penuh, tapi bisa dipakai untuk menangkap bagian materi yang berkaitan dengan pertanyaanmu.";
     }
 
-    public function snippetsFor(Document|DocumentFolder $source, string $query, int $limit = 3): array
+    public function snippetsFor(Document|DocumentFolder $source, string $query, int $limit = 3, ?array $selectedDocIds = null): array
     {
         $keywords = $this->keywords($query);
         $documents = $source instanceof DocumentFolder
-            ? $source->documents()->oldest()->get(['id', 'title', 'extracted_text'])
+            ? $source->documents()->when($selectedDocIds, fn ($query) => $query->whereIn('public_id', $selectedDocIds))
+                ->oldest()->get(['id', 'title', 'extracted_text'])
             : collect([$source]);
 
         $snippets = $documents
@@ -122,7 +123,7 @@ class LearningSourceService
             ->map(fn (array $snippet) => [
                 'document_id' => $snippet['document_id'],
                 'title' => $snippet['title'],
-                'snippet' => $snippet['snippet'],
+                'snippet' => $this->completeLimit($this->clean($snippet['snippet']), 900),
             ])
             ->values()
             ->all();
@@ -151,13 +152,12 @@ class LearningSourceService
 
         return collect($this->chunks($document->extracted_text))
             ->map(function (string $chunk) use ($document, $keywords) {
-                $clean = $this->clean($chunk);
-
+                // Cached chunks are already cleaned; finalize only the winning references.
                 return [
                     'document_id' => $document->id,
                     'title' => $document->title,
-                    'snippet' => $this->completeLimit($clean, 900),
-                    'score' => $this->score($clean, $keywords),
+                    'snippet' => $chunk,
+                    'score' => $this->score($chunk, $keywords),
                 ];
             })
             ->filter(fn (array $snippet) => $snippet['score'] > 0);
@@ -284,6 +284,13 @@ class LearningSourceService
     }
 
     private function chunks(string $text): array
+    {
+        return app(MaterialPreparationCache::class)->remember(
+            'chunks', $text, fn () => $this->prepareChunks($text)
+        );
+    }
+
+    private function prepareChunks(string $text): array
     {
         $clean = $this->clean($text);
         $paragraphs = preg_split('/(?<=\.)\s+|\n{2,}|(?=\b\d+\.\s+)/', $clean) ?: [];

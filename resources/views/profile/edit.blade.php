@@ -1,11 +1,11 @@
 <x-app-layout title="Akun Saya">
     <div class="mx-auto max-w-5xl min-w-0 overflow-x-hidden">
-        <section class="overflow-hidden rounded-[1.75rem] bg-campus-50 p-5 sm:p-7">
+        <section class="overflow-hidden border-b border-slate-200 pb-6">
             <div class="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div class="min-w-0">
-                    <span class="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-campus-700 shadow-sm">Akun Saya</span>
-                    <h1 class="mt-4 text-2xl font-semibold tracking-tight text-campus-900 sm:text-3xl">Atur profil dan keamanan</h1>
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Ubah identitas akun tanpa perlu mengganti kata sandi. Kata sandi punya form terpisah.</p>
+                    <p class="eyebrow">Ruang belajarmu, caramu</p>
+                    <h1 class="mt-4 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">Atur akunmu di sini</h1>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Perbarui profil atau ganti kata sandi saat kamu perlu.</p>
                 </div>
                 <div class="flex min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-3 shadow-sm">
                     <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-campus-50 text-campus-700">

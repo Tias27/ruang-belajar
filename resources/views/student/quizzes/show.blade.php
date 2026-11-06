@@ -6,8 +6,8 @@
         $isEssay = $quiz->question_type === 'essay';
     @endphp
 
-    <div class="min-w-0 overflow-x-hidden" x-data="{ showQuestions: {{ ($latestAttempt && $room) ? 'false' : 'true' }} }">
-        <section class="overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-campus-50 to-white p-5 sm:p-8 shadow-sm border border-campus-100 relative">
+    <div class="learning-live live-quiz min-w-0 overflow-x-hidden" x-data="{ showQuestions: {{ ($latestAttempt && $room) ? 'false' : 'true' }} }">
+        <section class="live-page-heading overflow-hidden rounded-[1.75rem] bg-gradient-to-r from-campus-50 to-white p-5 sm:p-8 shadow-sm border border-campus-100 relative">
             @if(isset($room) && $room)
                 <a class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-2 text-sm font-semibold text-campus-700 shadow-sm border border-slate-100 transition-colors hover:bg-campus-100" href="{{ route('study-rooms.show', $room) }}">
                     <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke Room Belajar Bareng
@@ -30,7 +30,7 @@
 
                 @if($latestAttempt)
                     <div class="w-fit shrink-0 rounded-[1.25rem] bg-white p-4 shadow-sm ring-1 ring-slate-100 text-center min-w-[100px]">
-                        <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">{{ $isEssay ? 'Skor AI' : 'Nilai Kamu' }}</p>
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">{{ $isEssay ? 'Skor AI' : 'Nilai Kamu' }}</p>
                         <p class="mt-1 text-3xl font-black text-campus-700">{{ $latestAttempt->score }}<span class="text-lg text-slate-400">/{{ $latestAttempt->total }}</span></p>
                     </div>
                 @endif
@@ -93,10 +93,10 @@
                                     <span class="block text-sm font-extrabold text-slate-700 truncate leading-tight flex items-center gap-1.5">
                                         {{ $member->name }}
                                         @if($isMe)
-                                            <span class="text-[9px] font-bold bg-campus-600 text-white px-2 py-0.5 rounded-full">Saya</span>
+                                            <span class="text-[8px] font-bold bg-campus-600 text-white px-2 py-0.5 rounded-full">Saya</span>
                                         @endif
                                     </span>
-                                    <span class="block text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                                    <span class="block text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
                                         {{ $isHost ? 'Host / Pembuat' : 'Peserta' }}
                                     </span>
                                 </div>
@@ -107,7 +107,7 @@
                                     <span class="text-base font-black text-campus-700 bg-white border border-slate-200/80 px-3.5 py-1.5 rounded-2xl shadow-sm">
                                         {{ $attempt->score }}<span class="text-xs text-slate-400 font-semibold">/{{ $attempt->total }}</span>
                                     </span>
-                                    <span class="block text-[10px] text-slate-400 mt-1.5 font-medium">{{ $attempt->submitted_at->diffForHumans() }}</span>
+                                    <span class="block text-[9px] text-slate-400 mt-1.5 font-medium">{{ $attempt->submitted_at->diffForHumans() }}</span>
                                 @else
                                     <span class="text-xs font-semibold text-slate-400 italic">Belum mengerjakan</span>
                                 @endif
@@ -118,12 +118,12 @@
 
                 <!-- Action buttons below leaderboard -->
                 <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 border-t border-slate-100 pt-6">
-                    <a href="{{ route('study-rooms.show', $room) }}" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-900 hover:bg-slate-800 text-[14px] font-bold text-white px-6 shadow-md shadow-black/10 transition-all hover:-translate-y-0.5 w-full sm:w-auto">
+                    <a href="{{ route('study-rooms.show', $room) }}" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-900 hover:bg-slate-800 text-[13px] font-bold text-white px-6 shadow-md shadow-black/10 transition-all hover:-translate-y-0.5 w-full sm:w-auto">
                         <i data-lucide="arrow-left" class="h-4.5 w-4.5"></i>
                         Kembali ke Room Belajar
                     </a>
                     
-                    <button type="button" @click="showQuestions = !showQuestions" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-campus-50 hover:bg-campus-100 text-[14px] font-bold text-campus-700 px-6 border border-campus-100 shadow-sm transition-all hover:-translate-y-0.5 w-full sm:w-auto">
+                    <button type="button" @click="showQuestions = !showQuestions" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-campus-50 hover:bg-campus-100 text-[13px] font-bold text-campus-700 px-6 border border-campus-100 shadow-sm transition-all hover:-translate-y-0.5 w-full sm:w-auto">
                         <i data-lucide="list-checks" class="h-4.5 w-4.5"></i>
                         <span x-text="showQuestions ? 'Sembunyikan Pembahasan Soal' : 'Lihat Pembahasan & Jawaban Saya'"></span>
                     </button>
@@ -156,7 +156,7 @@
             </section>
         @else
 
-        <form x-show="showQuestions" method="POST" action="{{ route('quizzes.attempts.store', $quiz) }}{{ request()->has('room') ? '?room=' . request('room') : '' }}" class="mt-5 space-y-4">
+        <form x-show="showQuestions" method="POST" action="{{ route('quizzes.attempts.store', $quiz) }}{{ request()->has('room') ? '?room=' . request('room') : '' }}" class="live-quiz-form mt-5 space-y-4">
             @csrf
             @foreach($quiz->questions as $question)
                 @php
@@ -175,11 +175,11 @@
 
                 <section class="min-w-0 overflow-hidden rounded-[1.5rem] bg-white p-5 shadow-sm border border-slate-100 sm:p-7" x-data="{detail:false, currentSelection: '{{ $selected ? addslashes($selected) : '' }}'}">
                     <div class="flex min-w-0 items-start gap-4">
-                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-campus-50 text-[15px] font-bold text-campus-700 ring-1 ring-campus-100 shadow-sm">{{ $question->position }}</span>
+                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-campus-50 text-[14px] font-bold text-campus-700 ring-1 ring-campus-100 shadow-sm">{{ $question->position }}</span>
                         <div class="min-w-0 flex-1">
-                            <p class="break-words text-[15px] font-semibold leading-relaxed text-slate-900">{{ $question->question }}</p>
+                            <p class="break-words text-[14px] font-semibold leading-relaxed text-slate-900">{{ $question->question }}</p>
                             @if($isEssay && !$latestAttempt)
-                                <p class="mt-2 flex items-center gap-1.5 text-[13px] font-medium text-slate-500">
+                                <p class="mt-2 flex items-center gap-1.5 text-[12px] font-medium text-slate-500">
                                     <i data-lucide="info" class="h-4 w-4"></i> Jawab singkat sesuai pemahaman materi.
                                 </p>
                             @endif
@@ -193,8 +193,8 @@
 
                     @if($isEssay)
                         <div class="mt-5 rounded-[1.25rem] bg-slate-50 p-4 ring-1 ring-slate-100">
-                            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Jawaban Kamu</label>
-                            <textarea name="answers[{{ $question->id }}]" rows="{{ $latestAttempt ? 2 : 3 }}" required placeholder="Ketik jawaban di sini..." class="w-full resize-y rounded-xl border-slate-200 bg-white px-4 py-3 text-[14px] leading-relaxed shadow-sm transition-colors focus:border-campus-500 focus:ring-campus-500 placeholder:text-slate-400" {{ $latestAttempt ? 'readonly' : '' }}>{{ $selected }}</textarea>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Jawaban Kamu</label>
+                            <textarea aria-label="Jawaban soal {{ $question->position }}" name="answers[{{ $question->id }}]" rows="{{ $latestAttempt ? 2 : 3 }}" required placeholder="Ketik jawaban di sini..." class="w-full resize-y rounded-xl border-slate-200 bg-white px-4 py-3 text-[13px] leading-relaxed shadow-sm transition-colors focus:border-campus-500 focus:ring-campus-500 placeholder:text-slate-400" {{ $latestAttempt ? 'readonly' : '' }}>{{ $selected }}</textarea>
                         </div>
                     @else
                         <div class="mt-6 grid gap-3">
@@ -208,7 +208,7 @@
                                 
                                 @if($latestAttempt)
                                     {{-- Graded View --}}
-                                    <label class="relative flex min-w-0 items-start gap-4 rounded-[1.25rem] p-4 text-[14px] leading-relaxed transition-all ring-1 {{ $isCorrect ? 'bg-emerald-50 text-emerald-900 ring-emerald-200 shadow-sm' : ($isWrongSelection ? 'bg-rose-50 text-rose-900 ring-rose-200 shadow-sm' : 'bg-white text-slate-500 ring-slate-100 opacity-60') }}">
+                                    <label class="relative flex min-w-0 items-start gap-4 rounded-[1.25rem] p-4 text-[13px] leading-relaxed transition-all ring-1 {{ $isCorrect ? 'bg-emerald-50 text-emerald-900 ring-emerald-200 shadow-sm' : ($isWrongSelection ? 'bg-rose-50 text-rose-900 ring-rose-200 shadow-sm' : 'bg-white text-slate-500 ring-slate-100 opacity-60') }}">
                                         <div class="mt-0.5 shrink-0">
                                             @if($isCorrect)
                                                 <i data-lucide="check-circle-2" class="h-5 w-5 text-emerald-600"></i>
@@ -223,7 +223,7 @@
                                     </label>
                                 @else
                                     {{-- Interactive View --}}
-                                    <label class="relative flex min-w-0 cursor-pointer items-start gap-4 rounded-[1.25rem] p-4 text-[14px] leading-relaxed transition-all hover:bg-slate-50 ring-1"
+                                    <label class="relative flex min-w-0 cursor-pointer items-start gap-4 rounded-[1.25rem] p-4 text-[13px] leading-relaxed transition-all hover:bg-slate-50 ring-1"
                                         x-bind:class="currentSelection === '{{ addslashes($option) }}' ? 'bg-campus-50 text-campus-900 ring-campus-500 shadow-md scale-[1.01]' : 'bg-white text-slate-700 ring-slate-200'">
                                         <div class="mt-0.5 shrink-0 flex items-center justify-center">
                                             <div class="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors" x-bind:class="currentSelection === '{{ addslashes($option) }}' ? 'border-campus-600' : 'border-slate-300'">
@@ -264,13 +264,13 @@
                             </div>
                         @else
                             <div class="mt-5 rounded-[1.25rem] bg-emerald-50 p-4 ring-1 ring-emerald-200">
-                                <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1">Kunci Jawaban</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-1">Kunci Jawaban</p>
                                 <p class="font-medium text-emerald-900">{{ $correctOption }}</p>
                             </div>
 
                             @if($question->explanation)
-                                <div class="mt-3 rounded-[1.25rem] bg-slate-50 p-4 text-[14px] leading-relaxed text-slate-700 ring-1 ring-slate-100">
-                                    <p class="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Pembahasan</p>
+                                <div class="mt-3 rounded-[1.25rem] bg-slate-50 p-4 text-[13px] leading-relaxed text-slate-700 ring-1 ring-slate-100">
+                                    <p class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Pembahasan</p>
                                     <p class="break-words">{{ $question->explanation }}</p>
                                 </div>
                             @endif
@@ -283,23 +283,23 @@
                 @if($latestAttempt)
                     @if(isset($room) && $room)
                         <div class="flex flex-wrap gap-3 justify-center">
-                            <a href="{{ route('study-rooms.show', $room) }}" class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-slate-900 px-8 text-[15px] font-bold text-white shadow-xl shadow-black/10 transition-all hover:-translate-y-1 hover:bg-slate-800 w-full sm:w-auto">
+                            <a href="{{ route('study-rooms.show', $room) }}" class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-slate-900 px-8 text-[14px] font-bold text-white shadow-xl shadow-black/10 transition-all hover:-translate-y-1 hover:bg-slate-800 w-full sm:w-auto">
                                 <i data-lucide="arrow-left" class="h-5 w-5"></i>
                                 Kembali ke Room Belajar
                             </a>
-                            <button type="button" @click="showQuestions = false; window.scrollTo({top: 0, behavior: 'smooth'})" class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-50 border border-campus-100 px-8 text-[15px] font-bold text-campus-700 shadow-xl shadow-campus-700/5 transition-all hover:-translate-y-1 hover:bg-campus-100 w-full sm:w-auto">
+                            <button type="button" @click="showQuestions = false; window.scrollTo({top: 0, behavior: 'smooth'})" class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-50 border border-campus-100 px-8 text-[14px] font-bold text-campus-700 shadow-xl shadow-campus-700/5 transition-all hover:-translate-y-1 hover:bg-campus-100 w-full sm:w-auto">
                                 <i data-lucide="award" class="h-5 w-5"></i>
                                 Kembali ke Skor Akhir
                             </button>
                         </div>
                     @else
-                        <a href="{{ route('quizzes.show', $quiz) }}?retake=true" class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-700 px-8 text-[15px] font-bold text-white shadow-xl shadow-campus-700/30 ring-1 ring-white/20 transition-all hover:-translate-y-1 hover:bg-campus-800 hover:shadow-campus-700/40 w-full sm:w-auto">
+                        <a href="{{ route('quizzes.show', $quiz) }}?retake=true" class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-700 px-8 text-[14px] font-bold text-white shadow-xl shadow-campus-700/30 ring-1 ring-white/20 transition-all hover:-translate-y-1 hover:bg-campus-800 hover:shadow-campus-700/40 w-full sm:w-auto">
                             <i data-lucide="refresh-cw" class="h-5 w-5"></i>
                             Kerjakan Ulang
                         </a>
                     @endif
                 @else
-                    <button class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-700 px-8 text-[15px] font-bold text-white shadow-xl shadow-campus-700/30 ring-1 ring-white/20 transition-all hover:-translate-y-1 hover:bg-campus-800 hover:shadow-campus-700/40 w-full sm:w-auto">
+                    <button class="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-campus-700 px-8 text-[14px] font-bold text-white shadow-xl shadow-campus-700/30 ring-1 ring-white/20 transition-all hover:-translate-y-1 hover:bg-campus-800 hover:shadow-campus-700/40 w-full sm:w-auto">
                         <i data-lucide="check-circle" class="h-5 w-5"></i>
                         {{ $isEssay ? 'Simpan Jawaban Esai' : 'Koreksi Jawaban Saya' }}
                     </button>

@@ -1,7 +1,11 @@
 <x-app-layout title="Room Belajar Bareng">
+    @push('styles')
+        <link rel="stylesheet" href="{{ asset('ui/rooms-live.css') }}?v={{ filemtime(public_path('ui/rooms-live.css')) }}">
+    @endpush
     @php
         $target = $room->target;
         $isFolder = $target instanceof \App\Models\DocumentFolder;
+        $roomDocumentCount = $isFolder ? ($room->selected_document_ids ? count($room->selected_document_ids) : $target->documents->count()) : 0;
     @endphp
 
     <script>
@@ -23,12 +27,33 @@
                 onlineUsers: [],
                 messageText: '',
                 sending: false,
+                messageError: '',
+                pinCopyStatus: '',
                 showSidebar: false,
                 showCloseConfirmationModal: false,
                 lastMessageId: @js($room->messages->last()?->id ?? 0),
                 imageFile: null,
                 imagePreview: null,
                 _pollInterval: null,
+
+                async copyPin() {
+                    try {
+                        await navigator.clipboard.writeText(@js($room->pin));
+                        this.pinCopyStatus = 'PIN disalin';
+                    } catch (error) {
+                        this.pinCopyStatus = 'Salin PIN yang tampil di atas';
+                    }
+                },
+
+                destroy() {
+                    clearInterval(this._pollInterval);
+                    window.Echo?.leave('study-room.' + this.roomId);
+                },
+
+                messageImageUrl(path) {
+                    if (path.startsWith('data:') || /^https?:\/\//i.test(path)) return path;
+                    return @js(rtrim(asset('/'), '/') . '/') + path.replace(/^\/+/, '');
+                },
 
                 triggerSelectImage() {
                     this.$refs.imageInput.click();
@@ -162,7 +187,7 @@
 
                 async pollMessages() {
                     try {
-                        const res = await fetch(`/study-rooms/${this.roomUuid}/messages?after_id=${this.lastMessageId}`, {
+                        const res = await fetch(@js(route('study-rooms.messages.index', $room)) + '?after_id=' + this.lastMessageId, {
                             headers: { 'Accept': 'application/json' },
                         });
                         if (!res.ok) return;
@@ -263,6 +288,9 @@
                                async sendMessage() {
                     const text = this.messageText.trim();
                     if ((!text && !this.imageFile) || this.sending) return;
+                    this.messageError = '';
+                    const originalImage = this.imageFile;
+                    const originalPreview = this.imagePreview;
 
                     // Append message locally immediately to feel super snappy
                     const tempId = 'temp-' + Date.now();
@@ -292,7 +320,7 @@
                     this.scrollToBottom(true);
                     
                     try {
-                        const response = await fetch(`/study-rooms/${this.roomUuid}/messages`, {
+                        const response = await fetch(@js(route('study-rooms.messages.store', $room)), {
                             method: 'POST',
                             headers: {
                                 'Accept': 'text/event-stream',
@@ -385,7 +413,11 @@
                         console.error(error);
                         // Remove the local temp message
                         this.messages = this.messages.filter(m => m.id !== tempId);
-                        alert('Gagal mengirim pesan. Silakan coba lagi.');
+                        this.messageText = text;
+                        this.imageFile = originalImage;
+                        this.imagePreview = originalPreview;
+                        this.messageError = 'Pesan belum terkirim. Coba kirim lagi.';
+                    } finally {
                         this.sending = false;
                     }
                 },
@@ -501,19 +533,19 @@
         };
     </script>
 
-    <div class="h-full w-full flex flex-col lg:flex-row bg-[#f8fbff] min-h-0 overflow-hidden" x-data="studyRoomPage()" x-init="init()">
+    <div class="rooms-chat h-full w-full flex flex-col lg:flex-row min-h-0 overflow-hidden" x-data="studyRoomPage()" @keydown.escape.window="showSidebar = false; showCloseConfirmationModal = false">
         
         <!-- Left Side: Chat Workspace (Takes full space on mobile, major space on desktop) -->
-        <div class="flex-1 flex flex-col min-w-0 min-h-0 border-r border-slate-200/60 bg-white">
+        <div class="rooms-chat-main flex-1 flex flex-col min-w-0 min-h-0 border-r border-slate-200/60">
             
             <!-- Chat Header -->
-            <section class="flex-none px-4 py-3 sm:px-6 flex items-center justify-between border-b border-slate-200/60 bg-white shadow-sm">
+            <section class="rooms-chat-header flex-none px-4 py-3 sm:px-6 flex items-center justify-between border-b border-slate-200/60">
                 <div class="flex items-center gap-3 min-w-0 flex-1">
                     <a class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-campus-700 shadow-sm transition hover:bg-campus-50 border border-slate-200" href="{{ route('study-rooms.index') }}" title="Kembali ke Ruang Belajar">
                         <i data-lucide="arrow-left" class="h-4 w-4"></i>
                     </a>
                     <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">
+                        <div class="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             Sesi Belajar Bareng
                         </div>
@@ -526,13 +558,13 @@
                 
                 <div class="flex items-center gap-2 shrink-0">
                     <!-- Detail Button (opens mobile drawer) -->
-                    <button @click="showSidebar = true" type="button" class="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition">
+                    <button @click="showSidebar = true" type="button" class="lg:hidden flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition" :aria-expanded="showSidebar" aria-controls="room-details-drawer">
                         <i data-lucide="users" class="h-3.5 w-3.5 text-slate-500"></i>
                         <span>Detail</span>
                     </button>
 
                     <!-- PIN badge -->
-                    <span class="px-3 py-1.5 rounded-lg bg-campus-50 border border-campus-100 text-campus-700 font-bold text-sm tracking-wider">
+                    <span class="room-header-pin px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 font-semibold text-sm tracking-wider">
                         PIN: {{ $room->pin }}
                     </span>
                 </div>
@@ -544,15 +576,15 @@
                 <div x-ref="messages" class="flex-1 space-y-8 overflow-y-auto pb-44 pt-6 px-4 sm:px-6" style="scroll-behavior: smooth; overscroll-behavior-y: contain;">
                     
                     <!-- Welcome Room Banner -->
-                    <div class="rounded-2xl border border-campus-100 bg-campus-50/50 p-6 max-w-2xl mx-auto text-center shadow-sm">
+                    <div class="rooms-chat-welcome rounded-2xl border p-6 max-w-2xl mx-auto text-center">
                         <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-campus-100 text-campus-600">
                             <i data-lucide="users" class="h-6 w-6"></i>
                         </div>
-                        <h3 class="text-base font-bold text-slate-800">Selamat Datang di Room Belajar Bareng!</h3>
+                        <h3 class="text-base font-semibold text-slate-800">Sudah satu meja. Yuk, mulai ngobrol</h3>
                         <p class="text-sm text-slate-600 mt-1.5 leading-relaxed">
-                            Di room ini, kamu dan teman-temanmu bisa berdiskusi mengenai materi 
+                            Lagi bahas 
                             <strong class="text-campus-900">"{{ $target->name ?? $target->title }}"</strong>.
-                            Ketik pesan di bawah, dan asisten AI kita juga akan membantu menjawab pertanyaan kalian.
+                            Tulis pertanyaan atau bagi cara paham kamu. AI ikut bantu dari materi ini.
                         </p>
                     </div>
 
@@ -572,11 +604,11 @@
                                 <div class="w-full flex" :class="message.user_id === userId ? 'justify-end pl-12' : 'justify-start pr-4 sm:pr-12'">
                                     <!-- User Bubble -->
                                     <template x-if="!message.is_ai">
-                                        <div class="max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-sm flex flex-col gap-2"
-                                             :class="message.user_id === userId ? 'bg-campus-600 text-white' : 'bg-slate-100 text-slate-800'">
+                                        <div class="max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed shadow-sm flex flex-col gap-2"
+                                             :class="message.user_id === userId ? 'room-self-bubble' : 'room-other-bubble'">
                                             <template x-if="message.metadata?.image_path">
                                                 <div class="my-1 max-w-sm overflow-hidden rounded-2xl border border-slate-200 shadow-sm bg-white p-1">
-                                                    <img :src="message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path" class="max-h-60 w-full object-contain rounded-xl hover:scale-[1.02] transition cursor-pointer" @click="window.open(message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path, '_blank')">
+                                                    <img :src="messageImageUrl(message.metadata.image_path)" alt="Gambar dari obrolan" class="max-h-60 w-full object-contain rounded-xl hover:scale-[1.02] transition cursor-pointer" @click="window.open(messageImageUrl(message.metadata.image_path), '_blank')">
                                                 </div>
                                             </template>
                                             <div x-show="message.message !== 'Mengirim gambar...' && message.message !== 'Jelaskan gambar ini'" x-html="formatMessage(message.message, false)" class="[&_p]:mb-0"></div>
@@ -587,11 +619,11 @@
                                     <template x-if="message.is_ai">
                                         <div class="flex w-full gap-3" x-data="{ showSources: false }">
                                             <div class="shrink-0 mt-1">
-                                                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 text-amber-600 shadow-sm ring-1 ring-amber-100">
+                                                <div class="room-ai-avatar flex h-8 w-8 items-center justify-center rounded-full">
                                                     <i data-lucide="bot" class="h-5 w-5"></i>
                                                 </div>
                                             </div>
-                                            <div class="min-w-0 flex-1 text-[14px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[13px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
+                                            <div class="min-w-0 flex-1 text-[13px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[12px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
                                                 <div x-html="formatMessage(message.message)"></div>
 
                                                 <!-- Source Snippets Toggle -->
@@ -619,7 +651,7 @@
                                                                 <template x-for="snippet in message.metadata.source_snippets"
                                                                     :key="snippet.document_id + snippet.snippet">
                                                                     <div
-                                                                        class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[13px] leading-5 text-slate-600 shadow-sm">
+                                                                        class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[12px] leading-5 text-slate-600 shadow-sm">
                                                                         <div
                                                                             class="mb-1.5 flex items-center gap-1.5 font-semibold text-campus-800">
                                                                             <i data-lucide="file-text"
@@ -662,7 +694,7 @@
                 </div>
 
                 <!-- Input Area — floating at bottom like ChatGPT -->
-                <div class="absolute bottom-0 left-0 right-0 px-3 pt-6 sm:px-4 pointer-events-none" style="padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem)); background: linear-gradient(to top, white 60%, transparent);">
+                <div class="rooms-chat-composer absolute bottom-0 left-0 right-0 px-3 pt-6 sm:px-4 pointer-events-none">
                     <form @submit.prevent="sendMessage()" 
                         @dragover.prevent
                         @drop.prevent="onDrop($event)"
@@ -670,17 +702,17 @@
                         <!-- Image Preview -->
                         <template x-if="imagePreview">
                             <div class="relative ml-5 mb-3 inline-flex self-start">
-                                <img :src="imagePreview" class="h-20 w-20 object-cover rounded-2xl border-2 border-white shadow-md">
-                                <button type="button" @click="clearImage()" class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-md transition-all active:scale-90">
+                                <img :src="imagePreview" alt="Gambar yang akan dikirim" class="h-20 w-20 object-cover rounded-2xl border-2 border-white shadow-md">
+                                <button type="button" @click="clearImage()" aria-label="Hapus lampiran gambar" class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-md transition-all active:scale-90">
                                     <i data-lucide="x" class="h-3.5 w-3.5"></i>
                                 </button>
                             </div>
                         </template>
 
-                        <div class="relative flex min-w-0 flex-1 items-end gap-2 rounded-[2rem] bg-white p-2 shadow-xl shadow-black/8 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
+                        <div class="rooms-chat-input relative flex min-w-0 flex-1 items-end gap-2 p-2 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-campus-300 transition-all duration-200">
                             <input type="file" x-ref="imageInput" @change="onImageSelected" accept="image/*" class="hidden">
                             
-                            <button type="button" @click="triggerSelectImage()" 
+                            <button type="button" @click="triggerSelectImage()" aria-label="Lampirkan gambar"
                                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 hover:text-slate-600 transition active:scale-95">
                                 <i data-lucide="image" class="h-5 w-5"></i>
                             </button>
@@ -690,20 +722,21 @@
                                 x-model="messageText" 
                                 rows="1"
                                 @paste="onPaste($event)"
-                                class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[14px] focus:ring-0 focus:outline-none" 
-                                placeholder="Ketik pesan untuk didiskusikan..." 
-                                @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"
+                                class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[13px] focus:ring-0 focus:outline-none" 
+                                placeholder="Apa yang mau dibahas?" aria-label="Pesan untuk teman dan AI" maxlength="2000"
+                                @keydown.enter="if (!$event.shiftKey && !$event.isComposing) { $event.preventDefault(); sendMessage(); }"
                                 @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
                                 style="border: none !important; background: transparent !important; box-shadow: none !important; outline: none !important; resize: none !important; overflow-y: hidden;"
                             ></textarea>
                             
-                            <button type="submit" :disabled="(!messageText.trim() && !imageFile) || sending" class="group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
+                            <button type="submit" :disabled="(!messageText.trim() && !imageFile) || sending" class="room-chat-send group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full transition-all active:scale-95 disabled:cursor-not-allowed">
                                 <i data-lucide="send" class="h-4 w-4"></i>
                                 <span class="sr-only">Kirim</span>
                             </button>
                         </div>
-                        <div class="mt-2 text-center text-[10px] font-medium text-slate-400">
-                            Pesan kamu akan disiarkan langsung ke semua anggota di room ini. AI akan merespons secara real-time.
+                        <p x-show="messageError" x-text="messageError" x-cloak class="room-message-error" role="alert"></p>
+                        <div class="mt-2 text-center text-[9px] font-medium text-slate-500">
+                            Pesan terlihat oleh semua anggota. Shift + Enter untuk baris baru.
                         </div>
                     </form>
                 </div>
@@ -711,20 +744,18 @@
         </div>
 
         <!-- Right Side: Sidebar Info & Participants (Desktop only) -->
-        <div class="hidden lg:flex w-80 shrink-0 bg-[#f8fbff] p-6 flex-col gap-6 min-h-0 overflow-y-auto border-l border-slate-200/60">
+        <div class="rooms-chat-aside hidden lg:flex w-80 shrink-0 p-6 flex-col gap-5 min-h-0 overflow-y-auto border-l border-slate-200/60">
             
             <!-- Room Code Card -->
-            <div class="rounded-2xl bg-gradient-to-br from-campus-600 to-campus-800 p-5 text-white shadow-md relative overflow-hidden shrink-0">
-                <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-2 translate-y-2">
-                    <i data-lucide="users" class="w-24 h-24"></i>
-                </div>
-                <span class="block text-[10px] font-bold uppercase tracking-wider text-campus-200">PIN ROOM</span>
-                <h2 class="text-3xl font-black mt-1 tracking-widest">{{ $room->pin }}</h2>
-                <p class="text-xs text-campus-100 mt-2">Bagikan PIN ini ke teman agar bisa bergabung dan belajar bersama.</p>
+            <div class="room-pin-card shrink-0">
+                <span>PIN RUANG</span>
+                <h2>{{ $room->pin }}</h2>
+                <p>Bagikan ke teman. Mereka bisa masuk lewat halaman Belajar bareng.</p>
+                <button type="button" class="room-pin-copy" @click="copyPin()"><i data-lucide="copy"></i><span x-text="pinCopyStatus || 'Salin PIN'" aria-live="polite">Salin PIN</span></button>
             </div>
 
             <!-- Material Card -->
-            <div class="rounded-2xl bg-white border border-slate-200/85 p-4 shadow-sm shrink-0">
+            <div class="rooms-chat-card rounded-2xl border p-4 shrink-0">
                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">Materi Pembahasan</h4>
                 <div class="flex items-start gap-3">
                     <div class="shrink-0 p-2 rounded-xl bg-campus-50 text-campus-700">
@@ -735,14 +766,14 @@
                             {{ $target->name ?? $target->title }}
                         </span>
                         <span class="block text-xs text-slate-500 mt-0.5">
-                            {{ $isFolder ? $target->documents_count . ' File' : strtoupper($target->extension) . ' • ' . number_format($target->size / 1024 / 1024, 2) . ' MB' }}
+                            {{ $isFolder ? $roomDocumentCount . ' file' : strtoupper($target->extension) . ' • ' . number_format($target->size / 1024 / 1024, 2) . ' MB' }}
                         </span>
                     </div>
                 </div>
             </div>
 
             <!-- Fitur Belajar AI Card -->
-            <div class="rounded-2xl bg-white border border-slate-200/85 p-4 shadow-sm shrink-0" x-data="{ quizOpen: false, quizLoading: false, quizType: 'multiple_choice', quizCount: 10, fcLoading: false }">
+            <div class="rooms-chat-card rounded-2xl border p-4 shrink-0" x-data="{ quizOpen: false, quizLoading: false, quizType: 'multiple_choice', quizCount: 10, fcLoading: false }">
                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">Aktivitas Belajar AI</h4>
                 
                 <div class="space-y-3">
@@ -750,7 +781,7 @@
                     <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                <i data-lucide="copy-check" class="h-4 w-4 text-purple-600"></i>
+                                <i data-lucide="copy-check" class="h-4 w-4 text-campus-600"></i>
                                 Kartu Belajar
                             </span>
                             @php
@@ -758,29 +789,29 @@
                                 $fcRoute = $isFolder ? route('folders.flashcards.index', $target) : route('flashcards.index', $target);
                                 $fcStoreRoute = $isFolder ? route('folders.flashcards.store', $target) : route('flashcards.store', $target);
                             @endphp
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700">
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
                                 {{ $fcCount }} Kartu
                             </span>
                         </div>
                         
                         @if($fcCount > 0)
-                            <a href="{{ $fcRoute }}?room={{ $room->uuid }}" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition shadow-sm">
+                            <a href="{{ $fcRoute }}?room={{ $room->uuid }}" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-campus-600 text-white text-xs font-bold hover:bg-campus-700 transition shadow-sm">
                                 <i data-lucide="play" class="h-3.5 w-3.5"></i>
                                 Mulai Latihan Kartu
                             </a>
                         @else
                             <form method="POST" action="{{ $fcStoreRoute }}?room={{ $room->uuid }}" x-on:submit="fcLoading = true">
                                 @csrf
-                                <button type="submit" :disabled="fcLoading" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-purple-50 text-purple-700 text-xs font-bold hover:bg-purple-100 transition border border-purple-100 disabled:opacity-75 disabled:cursor-wait">
+                                <button type="submit" :disabled="fcLoading" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-campus-50 text-campus-700 text-xs font-bold hover:bg-campus-100 transition border border-campus-100 disabled:opacity-75 disabled:cursor-wait">
                                     <template x-if="!fcLoading">
                                         <span class="flex items-center gap-1.5">
                                             <i data-lucide="plus" class="h-3.5 w-3.5"></i>
-                                            Buat Flashcard Baru
+                                            Buat kartu belajar
                                         </span>
                                     </template>
                                     <template x-if="fcLoading">
                                         <span class="flex items-center gap-1.5">
-                                            <span class="h-3.5 w-3.5 animate-spin rounded-full border border-purple-200 border-t-purple-700"></span>
+                                            <span class="h-3.5 w-3.5 animate-spin rounded-full border border-campus-200 border-t-campus-700"></span>
                                             Membuat Kartu...
                                         </span>
                                     </template>
@@ -793,7 +824,7 @@
                     <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                <i data-lucide="list-checks" class="h-4 w-4 text-emerald-600"></i>
+                                <i data-lucide="list-checks" class="h-4 w-4 text-slate-600"></i>
                                 Latihan Soal
                             </span>
                             @php
@@ -801,8 +832,8 @@
                                 $quizCount = $quizzes->count();
                                 $quizStoreRoute = $isFolder ? route('folders.quizzes.store', $target) : route('quizzes.store', $target);
                             @endphp
-                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
-                                {{ $quizCount }} Soal
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
+                                {{ $quizCount }} latihan
                             </span>
                         </div>
 
@@ -810,15 +841,15 @@
                         @if($quizCount > 0)
                             <div class="max-h-28 overflow-y-auto mb-2 space-y-1.5 pr-1 font-sans">
                                 @foreach($quizzes as $quiz)
-                                    <a href="{{ route('quizzes.show', $quiz) }}?room={{ $room->uuid }}" class="block p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[11px] text-slate-700 font-semibold truncate transition">
+                                    <a href="{{ route('quizzes.show', $quiz) }}?room={{ $room->uuid }}" class="block p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[10px] text-slate-700 font-semibold truncate transition">
                                         {{ $quiz->title }}
                                     </a>
                                 @endforeach
                             </div>
                         @endif                        <!-- Create Quiz Form Toggle -->
-                        <button type="button" x-show="!quizOpen" @click="quizOpen = true" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition border border-emerald-100">
+                        <button type="button" x-show="!quizOpen" @click="quizOpen = true" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-campus-50 text-campus-700 text-xs font-bold hover:bg-campus-100 transition border border-campus-100">
                             <i data-lucide="plus" class="h-3.5 w-3.5"></i>
-                            Buat Soal Latihan Baru
+                            Buat latihan baru
                         </button>
 
                         <div x-show="quizOpen" x-cloak class="mt-2 pt-2 border-t border-slate-200">
@@ -828,12 +859,12 @@
                                 <input type="hidden" name="question_count" x-model="quizCount">
                                 
                                 <div class="grid grid-cols-2 gap-1.5 rounded-full bg-slate-200/60 p-0.5 mb-2">
-                                    <button type="button" @click="quizType='multiple_choice'" class="h-7 rounded-full text-[10px] font-bold transition" :class="quizType === 'multiple_choice' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'">PG</button>
-                                    <button type="button" @click="quizType='essay'" class="h-7 rounded-full text-[10px] font-bold transition" :class="quizType === 'essay' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'">Esai</button>
+                                    <button type="button" @click="quizType='multiple_choice'" class="h-7 rounded-full text-[9px] font-bold transition" :class="quizType === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Pilihan ganda</button>
+                                    <button type="button" @click="quizType='essay'" class="h-7 rounded-full text-[9px] font-bold transition" :class="quizType === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Esai</button>
                                 </div>
 
                                 <div class="flex items-center justify-between gap-2 bg-white px-2 py-1.5 rounded-lg border border-slate-200 mb-2">
-                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Jumlah</span>
+                                    <span class="text-[9px] font-bold text-slate-500 uppercase">Jumlah</span>
                                     <div class="flex items-center gap-1">
                                         <button type="button" @click="quizCount = Math.max(1, quizCount - 1)" class="grid h-6 w-6 place-items-center rounded-full bg-slate-100 text-slate-600"><i data-lucide="minus" class="h-3 w-3"></i></button>
                                         <span class="w-6 text-center text-xs font-bold text-slate-800" x-text="quizCount">10</span>
@@ -843,9 +874,9 @@
 
                                 <div class="flex gap-2">
                                     <button type="button" @click="quizOpen = false" :disabled="quizLoading" class="flex-1 h-9 rounded-lg bg-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-300 transition disabled:opacity-50">Batal</button>
-                                    <button type="submit" :disabled="quizLoading" class="flex-[2] h-9 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition shadow-sm disabled:opacity-75 disabled:cursor-wait">
+                                    <button type="submit" :disabled="quizLoading" class="flex-[2] h-9 inline-flex items-center justify-center gap-1.5 rounded-lg bg-campus-600 text-white text-xs font-bold hover:bg-campus-700 transition shadow-sm disabled:opacity-75 disabled:cursor-wait">
                                         <template x-if="!quizLoading">
-                                            <span>Mulai Soal</span>
+                                            <span>Buat latihan</span>
                                         </template>
                                         <template x-if="quizLoading">
                                             <span class="flex items-center gap-1">
@@ -862,10 +893,10 @@
             </div>
 
             <!-- Active Members Box -->
-            <div class="rounded-2xl bg-white border border-slate-200/85 p-4 shadow-sm shrink-0">
+            <div class="rooms-chat-card rounded-2xl border p-4 shrink-0">
                 <div class="flex items-center justify-between mb-3">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Anggota Sesi</h4>
-                    <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                    <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
                         <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span x-text="onlineUsers.length">0</span> Online
                     </span>
@@ -876,15 +907,13 @@
                     <!-- Host Item -->
                     <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
                         <div class="flex items-center gap-2.5 min-w-0">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode($room->host->name) }}&background=1456a3&color=fff" 
-                                 class="h-7 w-7 rounded-full shadow-sm shrink-0" 
-                                 alt="{{ $room->host->name }}">
+                            <span class="room-member-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($room->host->name, 0, 1)) }}</span>
                             <div class="min-w-0">
                                 <span class="block text-xs font-bold text-slate-700 truncate leading-tight">
                                     {{ $room->host->name }}
                                 </span>
-                                <span class="inline-block text-[9px] font-bold text-campus-700 uppercase tracking-wider">
-                                    Host / Pembuat
+                                <span class="inline-block text-[8px] font-bold text-campus-700 uppercase tracking-wider">
+                                    Pembuat ruang
                                 </span>
                             </div>
                         </div>
@@ -902,14 +931,12 @@
                         @foreach($room->users as $participant)
                             <div class="flex items-center justify-between p-2 rounded-xl bg-white hover:bg-slate-50 transition border border-transparent">
                                 <div class="flex items-center gap-2.5 min-w-0">
-                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($participant->name) }}&background=7c5cff&color=fff" 
-                                         class="h-7 w-7 rounded-full shadow-sm shrink-0" 
-                                         alt="{{ $participant->name }}">
+                                    <span class="room-member-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($participant->name, 0, 1)) }}</span>
                                     <div class="min-w-0">
                                         <span class="block text-xs font-semibold text-slate-700 truncate leading-tight">
                                             {{ $participant->name }}
                                         </span>
-                                        <span class="block text-[9px] text-slate-400 font-medium">
+                                        <span class="block text-[8px] text-slate-400 font-medium">
                                             Siswa
                                         </span>
                                     </div>
@@ -941,7 +968,7 @@
         </div>
 
         <!-- Mobile Sidebar Slide-over Drawer -->
-        <div x-show="showSidebar" x-cloak class="relative z-50 lg:hidden" role="dialog" aria-modal="true">
+        <div id="room-details-drawer" x-show="showSidebar" x-cloak class="relative z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label="Detail ruang belajar">
             <!-- Backdrop overlay -->
             <div 
                 x-show="showSidebar"
@@ -968,14 +995,14 @@
                             x-transition:leave-end="translate-x-full"
                             class="pointer-events-auto w-screen max-w-md"
                         >
-                            <div class="flex h-full flex-col bg-[#f8fbff] shadow-2xl">
+                            <div class="rooms-chat-drawer flex h-full flex-col shadow-2xl">
                                 <!-- Drawer Header -->
                                 <div class="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6 bg-white shrink-0">
                                     <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
                                         <i data-lucide="info" class="h-5 w-5 text-slate-500"></i>
                                         Detail Room Belajar
                                     </h2>
-                                    <button @click="showSidebar = false" type="button" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-500">
+                                    <button @click="showSidebar = false" type="button" aria-label="Tutup detail ruang" class="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-500">
                                         <i data-lucide="x" class="h-5 w-5"></i>
                                     </button>
                                 </div>
@@ -983,17 +1010,15 @@
                                 <!-- Drawer Body (scrollable) -->
                                 <div class="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-6">
                                     <!-- Room Code Card -->
-                                    <div class="rounded-2xl bg-gradient-to-br from-campus-600 to-campus-800 p-5 text-white shadow-md relative overflow-hidden shrink-0">
-                                        <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-x-2 translate-y-2">
-                                            <i data-lucide="users" class="w-24 h-24"></i>
-                                        </div>
-                                        <span class="block text-[10px] font-bold uppercase tracking-wider text-campus-200">PIN ROOM</span>
-                                        <h2 class="text-3xl font-black mt-1 tracking-widest">{{ $room->pin }}</h2>
-                                        <p class="text-xs text-campus-100 mt-2">Bagikan PIN ini ke teman agar bisa bergabung dan belajar bersama.</p>
-                                    </div>
+                                    <div class="room-pin-card shrink-0">
+                <span>PIN RUANG</span>
+                <h2>{{ $room->pin }}</h2>
+                <p>Bagikan ke teman. Mereka bisa masuk lewat halaman Belajar bareng.</p>
+                <button type="button" class="room-pin-copy" @click="copyPin()"><i data-lucide="copy"></i><span x-text="pinCopyStatus || 'Salin PIN'" aria-live="polite">Salin PIN</span></button>
+            </div>
 
                                     <!-- Material Card -->
-                                    <div class="rounded-2xl bg-white border border-slate-200/85 p-4 shadow-sm shrink-0">
+                                    <div class="rooms-chat-card rounded-2xl border p-4 shrink-0">
                                         <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">Materi Pembahasan</h4>
                                         <div class="flex items-start gap-3">
                                             <div class="shrink-0 p-2 rounded-xl bg-campus-50 text-campus-700">
@@ -1004,14 +1029,14 @@
                                                     {{ $target->name ?? $target->title }}
                                                 </span>
                                                 <span class="block text-xs text-slate-500 mt-0.5">
-                                                    {{ $isFolder ? $target->documents_count . ' File' : strtoupper($target->extension) . ' • ' . number_format($target->size / 1024 / 1024, 2) . ' MB' }}
+                                                    {{ $isFolder ? $roomDocumentCount . ' file' : strtoupper($target->extension) . ' • ' . number_format($target->size / 1024 / 1024, 2) . ' MB' }}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Fitur Belajar AI Card -->
-                                    <div class="rounded-2xl bg-white border border-slate-200/85 p-4 shadow-sm shrink-0" x-data="{ quizOpen: false, quizLoading: false, quizType: 'multiple_choice', quizCount: 10, fcLoading: false }">
+                                    <div class="rooms-chat-card rounded-2xl border p-4 shrink-0" x-data="{ quizOpen: false, quizLoading: false, quizType: 'multiple_choice', quizCount: 10, fcLoading: false }">
                                         <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">Aktivitas Belajar AI</h4>
                                         
                                         <div class="space-y-3">
@@ -1019,7 +1044,7 @@
                                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
                                                 <div class="flex items-center justify-between mb-2">
                                                     <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                                        <i data-lucide="copy-check" class="h-4 w-4 text-purple-600"></i>
+                                                        <i data-lucide="copy-check" class="h-4 w-4 text-campus-600"></i>
                                                         Kartu Belajar
                                                     </span>
                                                     @php
@@ -1027,29 +1052,29 @@
                                                         $fcRoute = $isFolder ? route('folders.flashcards.index', $target) : route('flashcards.index', $target);
                                                         $fcStoreRoute = $isFolder ? route('folders.flashcards.store', $target) : route('flashcards.store', $target);
                                                     @endphp
-                                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700">
+                                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
                                                         {{ $fcCount }} Kartu
                                                     </span>
                                                 </div>
                                                 
                                                 @if($fcCount > 0)
-                                                    <a href="{{ $fcRoute }}?room={{ $room->uuid }}" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition shadow-sm">
+                                                    <a href="{{ $fcRoute }}?room={{ $room->uuid }}" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-campus-600 text-white text-xs font-bold hover:bg-campus-700 transition shadow-sm">
                                                         <i data-lucide="play" class="h-3.5 w-3.5"></i>
                                                         Mulai Latihan Kartu
                                                     </a>
                                                 @else
                                                     <form method="POST" action="{{ $fcStoreRoute }}?room={{ $room->uuid }}" x-on:submit="fcLoading = true">
                                                         @csrf
-                                                        <button type="submit" :disabled="fcLoading" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-purple-50 text-purple-700 text-xs font-bold hover:bg-purple-100 transition border border-purple-100 disabled:opacity-75 disabled:cursor-wait">
+                                                        <button type="submit" :disabled="fcLoading" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-campus-50 text-campus-700 text-xs font-bold hover:bg-campus-100 transition border border-campus-100 disabled:opacity-75 disabled:cursor-wait">
                                                             <template x-if="!fcLoading">
                                                                 <span class="flex items-center gap-1.5">
                                                                     <i data-lucide="plus" class="h-3.5 w-3.5"></i>
-                                                                    Buat Flashcard Baru
+                                                                    Buat kartu belajar
                                                                 </span>
                                                             </template>
                                                             <template x-if="fcLoading">
                                                                 <span class="flex items-center gap-1.5">
-                                                                    <span class="h-3.5 w-3.5 animate-spin rounded-full border border-purple-200 border-t-purple-700"></span>
+                                                                    <span class="h-3.5 w-3.5 animate-spin rounded-full border border-campus-200 border-t-campus-700"></span>
                                                                     Membuat Kartu...
                                                                 </span>
                                                             </template>
@@ -1062,7 +1087,7 @@
                                             <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
                                                 <div class="flex items-center justify-between mb-2">
                                                     <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                                        <i data-lucide="list-checks" class="h-4 w-4 text-emerald-600"></i>
+                                                        <i data-lucide="list-checks" class="h-4 w-4 text-slate-600"></i>
                                                         Latihan Soal
                                                     </span>
                                                     @php
@@ -1070,8 +1095,8 @@
                                                         $quizCount = $quizzes->count();
                                                         $quizStoreRoute = $isFolder ? route('folders.quizzes.store', $target) : route('quizzes.store', $target);
                                                     @endphp
-                                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
-                                                        {{ $quizCount }} Soal
+                                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
+                                                        {{ $quizCount }} latihan
                                                     </span>
                                                 </div>
 
@@ -1079,7 +1104,7 @@
                                                 @if($quizCount > 0)
                                                     <div class="max-h-28 overflow-y-auto mb-2 space-y-1.5 pr-1 font-sans">
                                                         @foreach($quizzes as $quiz)
-                                                            <a href="{{ route('quizzes.show', $quiz) }}?room={{ $room->uuid }}" class="block p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[11px] text-slate-700 font-semibold truncate transition">
+                                                            <a href="{{ route('quizzes.show', $quiz) }}?room={{ $room->uuid }}" class="block p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[10px] text-slate-700 font-semibold truncate transition">
                                                                 {{ $quiz->title }}
                                                             </a>
                                                         @endforeach
@@ -1087,9 +1112,9 @@
                                                 @endif
 
                                                 <!-- Create Quiz Form Toggle -->
-                                                <button type="button" x-show="!quizOpen" @click="quizOpen = true" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition border border-emerald-100">
+                                                <button type="button" x-show="!quizOpen" @click="quizOpen = true" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-campus-50 text-campus-700 text-xs font-bold hover:bg-campus-100 transition border border-campus-100">
                                                     <i data-lucide="plus" class="h-3.5 w-3.5"></i>
-                                                    Buat Soal Latihan Baru
+                                                    Buat latihan baru
                                                 </button>
 
                                                 <div x-show="quizOpen" x-cloak class="mt-2 pt-2 border-t border-slate-200">
@@ -1099,12 +1124,12 @@
                                                         <input type="hidden" name="question_count" x-model="quizCount">
                                                         
                                                         <div class="grid grid-cols-2 gap-1.5 rounded-full bg-slate-200/60 p-0.5 mb-2">
-                                                            <button type="button" @click="quizType='multiple_choice'" class="h-7 rounded-full text-[10px] font-bold transition" :class="quizType === 'multiple_choice' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'">PG</button>
-                                                            <button type="button" @click="quizType='essay'" class="h-7 rounded-full text-[10px] font-bold transition" :class="quizType === 'essay' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'">Esai</button>
+                                                            <button type="button" @click="quizType='multiple_choice'" class="h-7 rounded-full text-[9px] font-bold transition" :class="quizType === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Pilihan ganda</button>
+                                                            <button type="button" @click="quizType='essay'" class="h-7 rounded-full text-[9px] font-bold transition" :class="quizType === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Esai</button>
                                                         </div>
 
                                                         <div class="flex items-center justify-between gap-2 bg-white px-2 py-1.5 rounded-lg border border-slate-200 mb-2">
-                                                            <span class="text-[10px] font-bold text-slate-500 uppercase">Jumlah</span>
+                                                            <span class="text-[9px] font-bold text-slate-500 uppercase">Jumlah</span>
                                                             <div class="flex items-center gap-1">
                                                                 <button type="button" @click="quizCount = Math.max(1, quizCount - 1)" class="grid h-6 w-6 place-items-center rounded-full bg-slate-100 text-slate-600"><i data-lucide="minus" class="h-3 w-3"></i></button>
                                                                 <span class="w-6 text-center text-xs font-bold text-slate-800" x-text="quizCount">10</span>
@@ -1114,9 +1139,9 @@
 
                                                         <div class="flex gap-2">
                                                             <button type="button" @click="quizOpen = false" :disabled="quizLoading" class="flex-1 h-9 rounded-lg bg-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-300 transition disabled:opacity-50">Batal</button>
-                                                            <button type="submit" :disabled="quizLoading" class="flex-[2] h-9 inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition shadow-sm disabled:opacity-75 disabled:cursor-wait">
+                                                            <button type="submit" :disabled="quizLoading" class="flex-[2] h-9 inline-flex items-center justify-center gap-1.5 rounded-lg bg-campus-600 text-white text-xs font-bold hover:bg-campus-700 transition shadow-sm disabled:opacity-75 disabled:cursor-wait">
                                                                 <template x-if="!quizLoading">
-                                                                    <span>Mulai Soal</span>
+                                                                    <span>Buat latihan</span>
                                                                 </template>
                                                                 <template x-if="quizLoading">
                                                                     <span class="flex items-center gap-1">
@@ -1133,10 +1158,10 @@
                                     </div>
 
                                     <!-- Active Members Box -->
-                                    <div class="rounded-2xl bg-white border border-slate-200/85 p-4 shadow-sm flex flex-col gap-3">
+                                    <div class="rooms-chat-card rounded-2xl border p-4 flex flex-col gap-3">
                                         <div class="flex items-center justify-between shrink-0">
                                             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Anggota Sesi</h4>
-                                            <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                            <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
                                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                                 <span x-text="onlineUsers.length">0</span> Online
                                             </span>
@@ -1147,15 +1172,13 @@
                                             <!-- Host Item -->
                                             <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
                                                 <div class="flex items-center gap-2.5 min-w-0">
-                                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($room->host->name) }}&background=1456a3&color=fff" 
-                                                         class="h-7 w-7 rounded-full shadow-sm shrink-0" 
-                                                         alt="{{ $room->host->name }}">
+                                                    <span class="room-member-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($room->host->name, 0, 1)) }}</span>
                                                     <div class="min-w-0">
                                                         <span class="block text-xs font-bold text-slate-700 truncate leading-tight">
                                                             {{ $room->host->name }}
                                                         </span>
-                                                        <span class="inline-block text-[9px] font-bold text-campus-700 uppercase tracking-wider">
-                                                            Host / Pembuat
+                                                        <span class="inline-block text-[8px] font-bold text-campus-700 uppercase tracking-wider">
+                                                            Pembuat ruang
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1173,14 +1196,12 @@
                                                 @foreach($room->users as $participant)
                                                     <div class="flex items-center justify-between p-2 rounded-xl bg-white hover:bg-slate-50 transition border border-transparent">
                                                         <div class="flex items-center gap-2.5 min-w-0">
-                                                            <img src="https://ui-avatars.com/api/?name={{ urlencode($participant->name) }}&background=7c5cff&color=fff" 
-                                                                 class="h-7 w-7 rounded-full shadow-sm shrink-0" 
-                                                                 alt="{{ $participant->name }}">
+                                                            <span class="room-member-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($participant->name, 0, 1)) }}</span>
                                                             <div class="min-w-0">
                                                                 <span class="block text-xs font-semibold text-slate-700 truncate leading-tight">
                                                                     {{ $participant->name }}
                                                                 </span>
-                                                                <span class="block text-[9px] text-slate-400 font-medium">
+                                                                <span class="block text-[8px] text-slate-400 font-medium">
                                                                     Siswa
                                                                 </span>
                                                             </div>
@@ -1227,9 +1248,10 @@
         <div 
             x-show="showCloseConfirmationModal" 
             x-cloak 
-            class="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in"
+            class="fixed inset-0 z-[100] flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"
+            aria-labelledby="close-room-title"
         >
             <!-- Backdrop -->
             <div 
@@ -1259,7 +1281,7 @@
                     <i data-lucide="power" class="h-7 w-7"></i>
                 </div>
 
-                <h3 class="text-lg font-black text-slate-800 tracking-tight">Tutup Sesi Belajar Bareng?</h3>
+                <h3 id="close-room-title" class="text-lg font-semibold text-slate-800 tracking-tight">Tutup ruang belajar?</h3>
                 <p class="text-sm text-slate-500 mt-2.5 leading-relaxed">
                     Apakah Anda yakin ingin menutup sesi belajar ini? Semua peserta akan dikeluarkan dari room, dan histori kuis sesi ini akan dibersihkan secara otomatis.
                 </p>

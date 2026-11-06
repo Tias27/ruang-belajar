@@ -3,14 +3,25 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 window.Pusher = Pusher;
 
-const isHttps = window.location.protocol === 'https:';
+const config = document.querySelector('meta[name="realtime-config"]');
+window.Echo = null;
 
-window.Echo = new Echo({
-    broadcaster: 'reverb',
-    key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
-    wsPort: isHttps ? 443 : (import.meta.env.VITE_REVERB_PORT ?? 80),
-    wssPort: isHttps ? 443 : (import.meta.env.VITE_REVERB_PORT ?? 443),
-    forceTLS: isHttps,
-    enabledTransports: ['ws', 'wss'],
-});
+if (config) {
+    try {
+        const options = JSON.parse(config.content);
+        const isHttps = window.location.protocol === 'https:';
+        if (options.key) {
+            window.Echo = new Echo({
+                broadcaster: 'reverb',
+                key: options.key,
+                wsHost: options.host || window.location.hostname,
+                wsPort: isHttps ? 443 : options.port,
+                wssPort: isHttps ? 443 : options.port,
+                forceTLS: isHttps,
+                enabledTransports: ['ws', 'wss'],
+            });
+        }
+    } catch (error) {
+        console.warn('Realtime study room tidak aktif, memakai polling.', error);
+    }
+}

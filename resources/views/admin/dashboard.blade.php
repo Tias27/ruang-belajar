@@ -21,7 +21,7 @@
             <div class="flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
                 <div class="flex items-center justify-between gap-2">
                     <span class="grid h-7 w-7 place-items-center rounded-lg bg-campus-50 text-campus-700 sm:h-9 sm:w-9"><i data-lucide="{{ $item['icon'] }}" class="h-3.5 w-3.5 sm:h-4 sm:w-4"></i></span>
-                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs" title="{{ $item['key'] === 'total_revenue' ? 'Total Pendapatan dari Website dan Iklan' : $item['label'] }}">
+                    <p class="text-[9px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs" title="{{ $item['key'] === 'total_revenue' ? 'Total Pendapatan dari Website dan Iklan' : $item['label'] }}">
                         {{ $item['label'] }}
                     </p>
                 </div>
@@ -31,7 +31,7 @@
     </div>
 
     <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('ui/vendor/chart.umd.js') }}"></script>
 
     <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
         <h3 class="text-sm font-semibold text-slate-800 flex items-center gap-2">
@@ -77,6 +77,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            Chart.defaults.font.family = 'Plus Jakarta Sans';
             const dailyRevenueData = @json($dailyRevenue);
             const memberUsageData = @json($memberUsage);
 
@@ -102,8 +103,8 @@
             // 1. Revenue Chart
             const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
             const revenueGradient = ctxRevenue.createLinearGradient(0, 0, 0, 240);
-            revenueGradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
-            revenueGradient.addColorStop(1, 'rgba(16, 185, 129, 0.00)');
+            revenueGradient.addColorStop(0, 'rgba(121, 150, 117, 0.10)');
+            revenueGradient.addColorStop(1, 'rgba(121, 150, 117, 0.00)');
 
             const revenueChart = new Chart(ctxRevenue, {
                 type: 'line',
@@ -112,14 +113,14 @@
                     datasets: [{
                         label: 'Pendapatan',
                         data: timeDatasets.harian.revenue,
-                        borderColor: '#10b981',
+                        borderColor: '#799675',
                         borderWidth: 2.5,
                         fill: true,
                         backgroundColor: revenueGradient,
                         tension: 0.4,
                         pointRadius: 0,
                         pointHoverRadius: 4,
-                        pointHoverBackgroundColor: '#10b981',
+                        pointHoverBackgroundColor: '#799675',
                         pointHoverBorderColor: '#fff',
                         pointHoverBorderWidth: 2,
                     }]
@@ -132,9 +133,9 @@
                         tooltip: {
                             mode: 'index',
                             intersect: false,
-                            backgroundColor: '#0f172a',
-                            titleFont: { size: 11, weight: '600' },
-                            bodyFont: { size: 12 },
+                            backgroundColor: '#262626',
+                            titleFont: { size: 10, weight: '600' },
+                            bodyFont: { size: 11 },
                             padding: 10,
                             borderRadius: 8,
                             callbacks: {
@@ -147,13 +148,13 @@
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { font: { size: 10 }, color: '#64748b' }
+                            ticks: { font: { size: 9 }, color: '#666666' }
                         },
                         y: {
-                            grid: { color: '#f1f5f9' },
+                            grid: { color: '#e7e8e4' },
                             ticks: { 
-                                font: { size: 10 }, 
-                                color: '#64748b',
+                                font: { size: 9 }, 
+                                color: '#666666',
                                 callback: function(value) { return '$' + value; }
                             }
                         }
@@ -164,8 +165,8 @@
             // 2. Member Usage Chart
             const ctxMember = document.getElementById('memberUsageChart').getContext('2d');
             const memberGradient = ctxMember.createLinearGradient(0, 0, 0, 240);
-            memberGradient.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
-            memberGradient.addColorStop(1, 'rgba(59, 130, 246, 0.00)');
+            memberGradient.addColorStop(0, 'rgba(65, 111, 148, 0.10)');
+            memberGradient.addColorStop(1, 'rgba(65, 111, 148, 0.00)');
 
             const memberChart = new Chart(ctxMember, {
                 type: 'line',
@@ -174,14 +175,14 @@
                     datasets: [{
                         label: 'Pengguna Aktif',
                         data: timeDatasets.harian.member,
-                        borderColor: '#3b82f6',
+                        borderColor: '#416f94',
                         borderWidth: 2.5,
                         fill: true,
                         backgroundColor: memberGradient,
                         tension: 0.4,
                         pointRadius: 0,
                         pointHoverRadius: 4,
-                        pointHoverBackgroundColor: '#3b82f6',
+                        pointHoverBackgroundColor: '#416f94',
                         pointHoverBorderColor: '#fff',
                         pointHoverBorderWidth: 2,
                     }]
@@ -194,9 +195,9 @@
                         tooltip: {
                             mode: 'index',
                             intersect: false,
-                            backgroundColor: '#0f172a',
-                            titleFont: { size: 11, weight: '600' },
-                            bodyFont: { size: 12 },
+                            backgroundColor: '#262626',
+                            titleFont: { size: 10, weight: '600' },
+                            bodyFont: { size: 11 },
                             padding: 10,
                             borderRadius: 8,
                             callbacks: {
@@ -209,11 +210,11 @@
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { font: { size: 10 }, color: '#64748b' }
+                            ticks: { font: { size: 9 }, color: '#666666' }
                         },
                         y: {
-                            grid: { color: '#f1f5f9' },
-                            ticks: { font: { size: 10 }, color: '#64748b' }
+                            grid: { color: '#e7e8e4' },
+                            ticks: { font: { size: 9 }, color: '#666666' }
                         }
                     }
                 }
@@ -263,7 +264,7 @@
                         
                         $iconColor = [
                             'generate_summary' => 'bg-emerald-50 text-emerald-700',
-                            'generate_quiz' => 'bg-purple-50 text-purple-700',
+                            'generate_quiz' => 'bg-campus-50 text-campus-700',
                             'generate_flashcards' => 'bg-blue-50 text-blue-700',
                             'chat_document' => 'bg-amber-50 text-amber-700',
                         ][$activity->action] ?? 'bg-slate-50 text-slate-700';

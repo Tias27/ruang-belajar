@@ -89,7 +89,7 @@ class FlashcardController extends Controller
         abort_if(! $isAuthorized, 403);
 
         $flashcards = $document->flashcards()
-            ->orderByRaw("FIELD(study_status, 'sulit', 'ulang', 'baru', 'paham')")
+            ->orderByRaw("CASE study_status WHEN 'sulit' THEN 1 WHEN 'ulang' THEN 2 WHEN 'baru' THEN 3 WHEN 'paham' THEN 4 ELSE 5 END")
             ->orderBy('position')
             ->get();
 
@@ -121,7 +121,7 @@ class FlashcardController extends Controller
         abort_if(! $isAuthorized, 403);
 
         $flashcards = $folder->flashcards()
-            ->orderByRaw("FIELD(study_status, 'sulit', 'ulang', 'baru', 'paham')")
+            ->orderByRaw("CASE study_status WHEN 'sulit' THEN 1 WHEN 'ulang' THEN 2 WHEN 'baru' THEN 3 WHEN 'paham' THEN 4 ELSE 5 END")
             ->orderBy('position')
             ->get();
 
@@ -173,6 +173,14 @@ class FlashcardController extends Controller
         ]);
 
         $logger->log('review_flashcard', $flashcard, ['status' => $data['study_status']]);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'id' => $flashcard->id,
+                'study_status' => $flashcard->study_status,
+                'review_count' => $flashcard->review_count,
+            ]);
+        }
 
         return back()->with('status', 'Status kartu diperbarui.');
     }

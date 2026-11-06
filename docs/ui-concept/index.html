@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f6f2">
+  <title>Ruang Belajar - Konsep UI</title>
+  <link rel="stylesheet" href="prototype.css">
+  <link rel="stylesheet" href="friendly.css">
+  <link rel="stylesheet" href="guest.css">
+  <link rel="stylesheet" href="garden.css">
+  <link rel="stylesheet" href="workspace.css">
+  <link rel="stylesheet" href="rooms.css">
+  <script src="prototype.js" defer></script>
+  <script src="guest.js" defer></script>
+  <script src="garden.js" defer></script>
+  <script src="rooms.js" defer></script>
+</head>
+<body class="guest-view landing-view">
+  <a class="skip-link" href="#main">Lewati navigasi</a>
+  <header class="guest-header" id="guest-header">
+    <a href="#landing" class="guest-brand" aria-label="Ruang Belajar, halaman awal"><span data-icon="book"></span>ruangbelajar.</a>
+    <nav class="guest-links" aria-label="Tentang Ruang Belajar"><a href="#landing?section=how">Cara kerjanya</a><a href="#landing?section=features">Bisa bantu apa?</a></nav>
+    <div class="guest-actions"><a href="#login" class="guest-login-link">Masuk</a><a href="#register" class="button button-primary">Mulai belajar<span data-icon="arrow-right"></span></a></div>
+    <a href="#landing" class="auth-back-link"><span data-icon="arrow-left"></span>Kembali ke awal</a>
+  </header>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Navigasi utama">
+      <a href="#home" class="brand" aria-label="Ruang Belajar, beranda"><span class="brand-symbol" data-icon="book"></span><span>ruangbelajar.</span></a>
+      <p class="nav-label">Tempat belajarmu</p>
+      <nav class="main-nav">
+        <a href="#home" data-nav="home"><span data-icon="home"></span>Beranda</a>
+        <a href="#library" data-nav="library"><span data-icon="folder"></span>Materi saya<span class="nav-count">8</span></a>
+        <a href="#history" data-nav="history"><span data-icon="history"></span>Riwayat belajar</a>
+        <a href="#rooms" data-nav="rooms"><span data-icon="users"></span>Belajar bareng</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <a class="help-link" href="#guide"><span data-icon="help"></span>Cara pakainya<span data-icon="arrow-up-right"></span></a>
+        <div class="account"><span class="avatar">N</span><div><strong>Nadia Putri</strong><span>Ruang belajar pribadi</span></div></div>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <a href="#home" class="mobile-brand">ruangbelajar.</a>
+        <span class="breadcrumb" id="breadcrumb">Ruang belajarmu <span>/</span> <strong>Beranda</strong></span>
+        <a class="workspace-preview-link" href="#landing"><span data-icon="arrow-up-right"></span>Lihat halaman awal</a>
+      </header>
+
+      <main id="main" tabindex="-1">
+        <section class="screen" id="screen-landing" aria-labelledby="landing-title">
+          <div class="landing-hero">
+            <div class="garden-scene" data-garden-scene aria-hidden="true"></div>
+            <div class="hero-copy">
+              <h1 id="landing-title">Belajar boleh<br><span>pelan-pelan.</span></h1>
+              <p class="hero-description">Bawa materi yang bikin kamu penasaran.<br>Kita ringkas, bahas, dan latihan sampai makin paham.</p>
+              <div class="garden-shortcuts" aria-label="Kenali fitur belajar"><a href="#landing?section=features"><span data-icon="align-left"></span>Ambil intinya</a><a href="#landing?section=features"><span data-icon="message"></span>Bahas yang bingung</a><a href="#landing?section=features"><span data-icon="layers"></span>Ingat lebih lama</a></div>
+              <div class="hero-actions"><a href="#register" class="button button-primary">Yuk, mulai belajar<span data-icon="arrow-right"></span></a><a href="#landing?section=how" class="hero-how-link">Lihat caranya<span data-icon="arrow-down"></span></a></div>
+              <p class="hero-footnote">Dari PDF, slide, sampai foto catatanmu.</p>
+            </div>
+            <div class="garden-caption"><span data-icon="book-open"></span>Satu halaman dulu. Sisanya menyusul.</div>
+            <button class="motion-toggle" type="button" data-motion-toggle aria-pressed="false" aria-label="Jeda animasi"><span data-icon="pause"></span></button>
+          </div>
+
+          <section class="garden-demo-section" aria-labelledby="garden-demo-title">
+            <div class="garden-demo-copy"><p class="eyebrow">Materimu tetap jadi titik mulainya</p><h2 id="garden-demo-title">Dari "nggak ngerti"<br>jadi "oh, gitu!"</h2><p>Bukan cuma tempat menyimpan file. Di sini kamu bisa pelan-pelan mengurai isi materi, satu pertanyaan setiap kali.</p><div class="garden-example-note"><span data-icon="hand"></span><span>Coba empat cara belajar<br>di contoh ini.</span></div></div>
+            <div class="hero-example" aria-label="Contoh belajar dari materi Biologi">
+              <div class="example-source"><span class="example-file-icon" data-icon="file"></span><div><strong>Sistem Pernapasan.pdf</strong><span>Materi kamu, titik mulainya.</span></div><span class="source-check" data-icon="check"></span></div>
+              <div class="example-connection" aria-hidden="true"><span></span><span data-icon="arrow-down"></span></div>
+              <div class="example-window">
+                <div class="example-window-heading"><span data-icon="book-open"></span><strong>Yuk, pahami isinya.</strong><span class="example-badge">Contoh</span></div>
+                <div class="example-tabs" role="tablist" aria-label="Coba contoh fitur"><button id="demo-tab-summary" role="tab" aria-selected="true" aria-controls="example-content" data-demo-tab="summary" class="active">Ringkasan</button><button id="demo-tab-chat" role="tab" aria-selected="false" aria-controls="example-content" tabindex="-1" data-demo-tab="chat">Tanya AI</button><button id="demo-tab-quiz" role="tab" aria-selected="false" aria-controls="example-content" tabindex="-1" data-demo-tab="quiz">Latihan soal</button><button id="demo-tab-cards" role="tab" aria-selected="false" aria-controls="example-content" tabindex="-1" data-demo-tab="cards">Kartu belajar</button></div>
+                <div id="example-content" class="example-content" role="tabpanel" aria-labelledby="demo-tab-summary" tabindex="0"><p class="example-overline" id="example-overline">Mulai dari intinya</p><h2 id="example-title">Gimana caranya<br>kita bernapas?</h2><p id="example-description">Oksigen masuk lewat hidung, lalu menuju paru-paru. Di alveolus, oksigen bertukar tempat dengan karbon dioksida.</p><div class="example-takeaway"><span data-icon="check"></span><p id="example-takeaway">Alveolus itu tempat pertukaran gas, bukan sekadar kantong udara.</p></div><p class="example-source-note" id="example-source-note">Diringkas dari materi, halaman 3-12</p></div>
+              </div>
+              <p class="example-caption"><span data-icon="hand"></span>Coba klik tabnya. Belajarnya bisa beda-beda.</p>
+            </div>
+          </section>
+
+          <section class="how-section" id="how" aria-labelledby="how-title"><div class="landing-section-heading"><p class="eyebrow">Nggak perlu mulai dari nol</p><h2 id="how-title">Materinya dari kamu.<br>Bantuan belajarnya di sini.</h2></div><div class="how-steps"><article><span class="step-marker">1</span><h3>Bawa materimu</h3><p>Upload file yang mau dipelajari. Beberapa file satu topik? Jadikan satu folder.</p></article><article><span class="step-marker">2</span><h3>Pilih cara belajarnya</h3><p>Mau baca ringkasan, tanya, atau langsung latihan? Pilih sesuai kebutuhanmu.</p></article><article><span class="step-marker">3</span><h3>Balik lagi kapan pun</h3><p>Materi dan hasil belajarmu tersimpan. Tinggal lanjut dari tempat terakhir.</p></article></div></section>
+
+          <section class="features-section" id="features" aria-labelledby="features-title"><div class="features-intro"><p class="eyebrow">Belajar nggak harus satu cara</p><h2 id="features-title">Lagi butuh<br>bantuan apa?</h2><p>Mulai dari yang paling kamu butuhkan. Semua tetap nyambung ke materi yang kamu buka.</p><a href="#home" class="text-link">Lihat contoh ruang belajar<span data-icon="arrow-right"></span></a></div><div class="features-list"><article><span data-icon="align-left"></span><div><h3>"Mau tahu inti materinya dulu."</h3><p><strong>Ringkasan</strong> bantu ambil poin penting tanpa baca ulang semuanya.</p></div></article><article><span data-icon="message"></span><div><h3>"Bagian ini maksudnya apa, ya?"</h3><p><strong>Tanya AI</strong> buat bahas bagian yang belum kebayang.</p></div></article><article><span data-icon="check-square"></span><div><h3>"Sudah paham belum, ya?"</h3><p><strong>Latihan soal</strong> buat cek jawaban dan pelajari pembahasannya.</p></div></article><article><span data-icon="layers"></span><div><h3>"Kemarin ingat, sekarang lupa."</h3><p><strong>Kartu belajar</strong> bantu ulang konsep sedikit demi sedikit.</p></div></article></div></section>
+
+          <footer class="guest-footer"><a href="#landing" class="guest-brand">ruangbelajar.</a><p>Pelan-pelan, yang penting makin paham.</p><span>Konsep UI / data contoh</span></footer>
+        </section>
+
+        <section class="screen auth-screen" id="screen-login" hidden aria-labelledby="login-title">
+          <aside class="auth-story"><p class="story-kicker"><span data-icon="book-open"></span>Ruang belajarmu</p><h2>Balik lagi?<br>Lanjut belajarnya, yuk.</h2><p>Materi, catatan, dan hasil belajarmu tetap di tempatnya. Tinggal lanjut.</p><div class="garden-scene" data-garden-scene aria-hidden="true"></div><div class="garden-caption">Nggak harus selesai sekaligus.</div><button class="motion-toggle" type="button" data-motion-toggle aria-pressed="false" aria-label="Jeda animasi"><span data-icon="pause"></span></button></aside>
+          <div class="auth-form-area"><div class="auth-intro"><p class="eyebrow">Hai, ketemu lagi.</p><h1 id="login-title">Masuk dulu, yuk.</h1><p>Materimu sudah nunggu di dalam.</p></div><form id="login-form" class="guest-form" novalidate>
+            <div class="guest-field"><label for="login-username">Nama pengguna</label><input id="login-username" name="username" autocomplete="off" placeholder="Contoh: nadia.putri" maxlength="50" required aria-describedby="login-username-error"><span class="field-error" id="login-username-error" hidden></span></div>
+            <div class="guest-field"><div class="field-label-row"><label for="login-password">Kata sandi</label><a href="#forgot">Lupa kata sandi?</a></div><div class="password-field"><input id="login-password" name="password" type="password" autocomplete="off" placeholder="Kata sandimu" required aria-describedby="login-password-error"><button type="button" data-password-toggle="login-password" aria-label="Lihat kata sandi" aria-pressed="false"><span data-icon="eye"></span></button></div><span class="field-error" id="login-password-error" hidden></span></div>
+            <div class="captcha-field"><div><label for="login-captcha">Hitung sebentar</label><p>Verifikasi sebelum masuk.</p></div><div class="captcha-controls"><span id="login-captcha-question">7 + 2 =</span><input id="login-captcha" name="math_captcha" inputmode="numeric" autocomplete="off" aria-labelledby="login-captcha-question" aria-describedby="login-captcha-error" placeholder="?" required><button type="button" data-captcha-refresh="login" aria-label="Ganti hitungan"><span data-icon="rotate"></span></button></div></div><span class="field-error captcha-error" id="login-captcha-error" hidden></span>
+            <label class="remember-option"><input type="checkbox" name="remember">Tetap masuk di perangkat ini</label>
+            <button class="button button-primary auth-submit" type="submit">Masuk<span data-icon="arrow-right"></span></button><p class="auth-switch">Belum punya akun? <a href="#register">Bikin akun dulu</a></p>
+          </form><div class="auth-preview-note"><span data-icon="info"></span><p>Ini preview desain. Pakai data contoh, ya.<br><a href="#home">Atau langsung lihat contoh beranda.</a></p></div></div>
+        </section>
+
+        <section class="screen auth-screen" id="screen-register" hidden aria-labelledby="register-title">
+          <aside class="auth-story register-story"><p class="story-kicker"><span data-icon="book-open"></span>Mulai dari materi yang kamu punya</p><h2>Biar materinya<br>nggak cuma<br>numpuk di folder.</h2><p>Simpan di satu tempat, pahami isinya, lalu belajar dengan caramu.</p><div class="garden-scene" data-garden-scene aria-hidden="true"></div><div class="garden-caption">Satu langkah dulu. Sisanya menyusul.</div><button class="motion-toggle" type="button" data-motion-toggle aria-pressed="false" aria-label="Jeda animasi"><span data-icon="pause"></span></button></aside>
+          <div class="auth-form-area"><div class="auth-intro"><p class="eyebrow">Belum kenalan? Yuk, mulai.</p><h1 id="register-title">Bikin ruang belajarmu.</h1><p>Isi sedikit, lalu bawa materi pertamamu.</p></div><form id="register-form" class="guest-form" novalidate>
+            <div class="guest-field"><label for="register-email">Email</label><input id="register-email" name="email" type="email" autocomplete="off" placeholder="nama@email.com" maxlength="255" required aria-describedby="register-email-error"><span class="field-error" id="register-email-error" hidden></span></div>
+            <div class="guest-field"><label for="register-username">Nama pengguna</label><input id="register-username" name="username" autocomplete="off" placeholder="Contoh: nadia.putri" minlength="3" maxlength="50" required aria-describedby="register-username-hint register-username-error"><span class="field-hint" id="register-username-hint">Nama ini yang kamu pakai buat masuk nanti.</span><span class="field-error" id="register-username-error" hidden></span></div>
+            <div class="guest-field"><label for="register-password">Kata sandi</label><div class="password-field"><input id="register-password" name="password" type="password" autocomplete="off" placeholder="Minimal 8 karakter" minlength="8" required aria-describedby="register-password-hint register-password-error"><button type="button" data-password-toggle="register-password" aria-label="Lihat kata sandi" aria-pressed="false"><span data-icon="eye"></span></button></div><span class="field-hint" id="register-password-hint">Minimal 8 karakter.</span><span class="field-error" id="register-password-error" hidden></span></div>
+            <div class="guest-field"><label for="register-confirm">Ulangi kata sandi</label><div class="password-field"><input id="register-confirm" name="password_confirmation" type="password" autocomplete="off" placeholder="Ketik sekali lagi" required aria-describedby="register-confirm-error"><button type="button" data-password-toggle="register-confirm" aria-label="Lihat kata sandi" aria-pressed="false"><span data-icon="eye"></span></button></div><span class="field-error" id="register-confirm-error" hidden></span></div>
+            <div class="captcha-field"><div><label for="register-captcha">Hitung sebentar</label><p>Satu langkah lagi.</p></div><div class="captcha-controls"><span id="register-captcha-question">4 + 3 =</span><input id="register-captcha" name="math_captcha" inputmode="numeric" autocomplete="off" aria-labelledby="register-captcha-question" aria-describedby="register-captcha-error" placeholder="?" required><button type="button" data-captcha-refresh="register" aria-label="Ganti hitungan"><span data-icon="rotate"></span></button></div></div><span class="field-error captcha-error" id="register-captcha-error" hidden></span>
+            <button class="button button-primary auth-submit" type="submit">Bikin akun<span data-icon="arrow-right"></span></button><p class="auth-switch">Sudah punya akun? <a href="#login">Masuk aja</a></p>
+          </form><div class="auth-preview-note"><span data-icon="info"></span><p>Ini preview desain. Pakai data contoh, ya.<br>Form ini belum membuat akun sungguhan.</p></div></div>
+        </section>
+
+        <section class="screen forgot-screen" id="screen-forgot" hidden aria-labelledby="forgot-title"><div class="forgot-icon" data-icon="mail"></div><p class="eyebrow">Nggak apa-apa, bisa diatur ulang.</p><h1 id="forgot-title">Lupa kata sandi?</h1><p class="subtitle">Masukkan email yang kamu pakai saat daftar.</p><form id="forgot-form" class="guest-form" novalidate><div class="guest-field"><label for="forgot-email">Email akunmu</label><input id="forgot-email" type="email" name="email" autocomplete="off" placeholder="nama@email.com" required aria-describedby="forgot-email-error"><span class="field-error" id="forgot-email-error" hidden></span></div><button class="button button-primary auth-submit">Kirim tautan reset<span data-icon="arrow-right"></span></button><p class="reset-demo-message" id="reset-demo-message" role="status" hidden>Di aplikasi nanti, tautan reset dikirim ke email jika akun terdaftar. Preview ini tidak mengirim email.</p></form><a href="#login" class="back-link"><span data-icon="arrow-left"></span>Balik ke halaman masuk</a><p class="demo-caption">Preview desain. Gunakan email contoh.</p></section>
+
+        <section class="screen" id="screen-home" hidden aria-labelledby="home-title">
+          <div class="page-heading">
+            <div><p class="eyebrow greeting">Hai, Nadia.</p><h1 id="home-title">Lanjut belajar, yuk.</h1><p class="subtitle">Buka materi terakhir atau bawa sesuatu yang baru.</p></div>
+            <button class="button button-primary" data-upload><span data-icon="plus"></span>Tambah materi</button>
+          </div>
+
+          <div class="dashboard-grid">
+            <div class="dashboard-primary">
+              <section class="continue-panel" aria-labelledby="continue-title">
+                <div class="continue-content">
+                  <p class="eyebrow blue"><span data-icon="book-open"></span>Terakhir kamu buka</p>
+                  <span class="file-meta">Biologi <span>/</span> PDF, 24 halaman</span>
+                  <h2 id="continue-title">Sistem Pernapasan<br>Manusia</h2>
+                  <p>Ringkasan siap dibaca. Mulai dari<br>satu bagian dulu juga boleh.</p>
+                  <a class="button button-primary" href="#study"><span data-icon="book-open"></span>Lanjut belajar<span data-icon="arrow-right"></span></a>
+                </div>
+                <div class="garden-scene workspace-garden" data-garden-scene data-garden-compact aria-hidden="true"></div>
+                <button class="motion-toggle" type="button" data-motion-toggle aria-pressed="false" aria-label="Jeda animasi"><span data-icon="pause"></span></button>
+              </section>
+
+              <section class="learning-start" aria-labelledby="learning-start-title">
+                <div class="section-heading"><div><h2 id="learning-start-title">Mau dibantu apa?</h2><p>Langsung coba dari materi Sistem Pernapasan.</p></div></div>
+                <div class="learning-options">
+                  <a href="#study?tab=summary"><span data-icon="align-left"></span><strong>Ringkasan</strong><span>Ambil intinya</span><span data-icon="arrow-right"></span></a>
+                  <a href="#study?tab=chat"><span data-icon="message"></span><strong>Tanya AI</strong><span>Bahas yang bingung</span><span data-icon="arrow-right"></span></a>
+                  <a href="#study?tab=quiz"><span data-icon="check-square"></span><strong>Latihan soal</strong><span>Cek pemahamanmu</span><span data-icon="arrow-right"></span></a>
+                  <a href="#study?tab=cards"><span data-icon="layers"></span><strong>Kartu belajar</strong><span>Ingat lagi pelan-pelan</span><span data-icon="arrow-right"></span></a>
+                </div>
+              </section>
+
+              <section class="materials-section" aria-labelledby="recent-title">
+                <div class="section-heading"><div><h2 id="recent-title">Materi terbaru</h2><p>Tinggal pilih, lalu lanjut belajar.</p></div><a class="text-link" href="#library">Lihat semua<span data-icon="arrow-right"></span></a></div>
+                <div class="material-list">
+                  <a href="#study" class="material-row"><span class="file-icon" data-icon="file"></span><div class="material-name"><strong>Sistem Pernapasan Manusia</strong><span>Biologi <span class="meta-dot">/</span> PDF <span class="meta-dot">/</span> 24 halaman</span></div><span class="row-date">2 jam lalu</span><span data-icon="arrow-up-right"></span></a>
+                  <a href="#study?material=ekonomi" class="material-row"><span class="file-icon" data-icon="folder"></span><div class="material-name"><strong>Pengantar Ekonomi Mikro</strong><span>Ekonomi <span class="meta-dot">/</span> Folder, 3 file</span></div><span class="row-date">Kemarin</span><span data-icon="arrow-up-right"></span></a>
+                  <a href="#study?material=statistika" class="material-row"><span class="file-icon" data-icon="file"></span><div class="material-name"><strong>Statistika Dasar</strong><span>Matematika <span class="meta-dot">/</span> PPTX <span class="meta-dot">/</span> 18 slide</span></div><span class="row-date">31 Okt</span><span data-icon="arrow-up-right"></span></a>
+                </div>
+              </section>
+            </div>
+
+            <aside class="dashboard-secondary" aria-label="Aktivitas belajar">
+              <section class="review-note"><div class="note-top"><span data-icon="layers"></span><span>Sempatkan sebentar</span></div><div class="review-card-peek" aria-hidden="true"><span>Masih ingat?</span><strong>Apa fungsi<br>alveolus?</strong><span data-icon="rotate"></span></div><h2>6 kartu buat diulang</h2><p>Coba jawab dulu tanpa intip. Sedikit-sedikit, makin nempel.</p><a class="button button-secondary" href="#study?tab=cards">Ulangi kartu<span data-icon="arrow-right"></span></a><div class="note-bottom">Sistem Pernapasan Manusia</div></section>
+              <section class="activity-section"><h2>Belakangan ini</h2><div class="activity-item"><span class="activity-dot"></span><div><strong>Membaca ringkasan</strong><p>Sistem Pernapasan Manusia</p><span>Hari ini, 14.20</span></div></div><div class="activity-item"><span class="activity-dot"></span><div><strong>Menyelesaikan 10 soal</strong><p>Pengantar Ekonomi Mikro</p><span>Kemarin, 19.45</span></div></div><a class="text-link subtle" href="#history">Buka riwayat<span data-icon="arrow-right"></span></a></section>
+              <div class="quiet-help"><span data-icon="help"></span><p>Baru mampir? <a href="#guide">Lihat cara pakainya.</a></p></div>
+            </aside>
+          </div>
+          <footer class="page-footer"><span>Pelan-pelan, yang penting makin paham.</span><span>Data contoh untuk review desain</span></footer>
+        </section>
+
+        <section class="screen" id="screen-library" hidden aria-labelledby="library-title">
+          <div class="page-heading"><div><p class="eyebrow">Rak belajarmu</p><h1 id="library-title">Materi saya</h1><p class="subtitle">File dan foldermu kumpul di sini. Pilih satu buat mulai.</p></div><button class="button button-primary" data-upload><span data-icon="plus"></span>Tambah materi</button></div>
+          <div class="library-toolbar"><label class="search-box"><span data-icon="search"></span><input id="material-search" type="search" placeholder="Cari judul atau mata pelajaran..." aria-label="Cari materi"></label><div class="filter-buttons" role="group" aria-label="Jenis materi"><button class="filter active" data-filter="all" aria-pressed="true">Semua <span>8</span></button><button class="filter" data-filter="file" aria-pressed="false">File</button><button class="filter" data-filter="folder" aria-pressed="false">Folder</button></div></div>
+          <p class="library-count" id="library-count" aria-live="polite">8 materi</p>
+          <div class="library-columns" aria-hidden="true"><span>Nama materi</span><span>Ditambahkan</span><span></span></div>
+          <div class="library-table" id="library-list"></div>
+          <p class="empty-search" id="empty-search" hidden>Materinya belum ketemu. Coba kata lain, ya.</p>
+          <div class="library-tip"><span data-icon="folder"></span><p><strong>Beberapa file, satu topik?</strong> Jadikan satu folder biar belajarnya nyambung.</p><button class="text-link" data-upload>Buat folder<span data-icon="arrow-right"></span></button></div>
+        </section>
+
+        <section class="screen study-screen" id="screen-study" hidden aria-labelledby="study-title">
+          <a href="#library" class="back-link"><span data-icon="arrow-left"></span>Materi saya</a>
+          <div class="study-heading"><div><p class="eyebrow" id="study-meta">Biologi / PDF, 24 halaman</p><h1 id="study-title">Sistem Pernapasan Manusia</h1><p class="subtitle">Baca dulu, tanya kalau bingung, lalu coba latihan.</p></div><button class="button button-secondary" id="source-button"><span data-icon="file"></span>Lihat file</button></div>
+          <div class="study-tabs" role="tablist" aria-label="Cara belajar"><button id="tab-summary" class="study-tab active" role="tab" aria-selected="true" aria-controls="panel-summary" data-tab="summary"><span data-icon="align-left"></span><span><strong>Ringkasan</strong><small>Baca inti materi</small></span></button><button id="tab-chat" class="study-tab" role="tab" aria-selected="false" aria-controls="panel-chat" tabindex="-1" data-tab="chat"><span data-icon="message"></span><span><strong>Tanya AI</strong><small>Bahas yang bingung</small></span></button><button id="tab-quiz" class="study-tab" role="tab" aria-selected="false" aria-controls="panel-quiz" tabindex="-1" data-tab="quiz"><span data-icon="check-square"></span><span><strong>Latihan soal</strong><small>Cek pemahamanmu</small></span></button><button id="tab-cards" class="study-tab" role="tab" aria-selected="false" aria-controls="panel-cards" tabindex="-1" data-tab="cards"><span data-icon="layers"></span><span><strong>Kartu belajar</strong><small>Ulangi yang penting</small></span></button></div>
+          <div class="study-grid">
+            <div class="study-content">
+              <section class="study-panel reading-panel" id="panel-summary" role="tabpanel" aria-labelledby="tab-summary">
+                <div class="reading-top"><span class="eyebrow">Mulai dari intinya</span><span class="reading-time"><span data-icon="clock"></span>4 menit baca</span></div>
+                <h2 id="summary-title">Gimana caranya kita bernapas?</h2>
+                <p class="reading-lead" id="summary-lead">Setiap tarikan napas membawa oksigen ke dalam tubuh. Sistem pernapasan bekerja untuk menukar oksigen dan karbon dioksida, agar sel bisa menghasilkan energi.</p>
+                <div class="key-idea"><span class="key-label">Yang perlu kamu ingat</span><p id="key-idea">Bernapas bukan sekadar menghirup udara. Ada proses pertukaran gas yang menghubungkan paru-paru, darah, dan seluruh sel tubuh.</p></div>
+                <article class="reading-section"><span class="section-number">01</span><div><h3 id="section-one-title">Perjalanan udara masuk ke tubuh</h3><p id="section-one-body">Udara masuk melalui hidung, melewati faring, laring, dan trakea. Dari sana, udara mengalir ke bronkus, bronkiolus, lalu sampai di alveolus.</p><div class="flow-line" id="air-flow"><span>Hidung</span><span data-icon="arrow-right"></span><span>Trakea</span><span data-icon="arrow-right"></span><span>Bronkus</span><span data-icon="arrow-right"></span><strong>Alveolus</strong></div><span class="source-ref">Sumber: halaman 3-8</span></div></article>
+                <article class="reading-section"><span class="section-number">02</span><div><h3 id="section-two-title">Alveolus, tempat pertukaran gas</h3><p id="section-two-body">Dinding alveolus sangat tipis dan dikelilingi kapiler darah. Oksigen berdifusi ke dalam darah, sementara karbon dioksida bergerak sebaliknya untuk dikeluarkan.</p><span class="source-ref">Sumber: halaman 9-12</span></div></article>
+                <div class="reading-next"><p>Sudah mulai kebayang?</p><button class="text-link" data-tab="quiz">Coba latihan soal<span data-icon="arrow-right"></span></button></div>
+              </section>
+
+              <section class="study-panel" id="panel-chat" hidden role="tabpanel" aria-labelledby="tab-chat"><p class="eyebrow">Ada yang bikin bingung?</p><h2>Tanya aja di sini</h2><p class="panel-description">Kita bahas dari materi yang lagi kamu buka.</p><div class="chat-messages" id="chat-messages" aria-live="polite"><div class="chat-answer"><span class="chat-author">RUANG BELAJAR</span><p>Bagian mana yang belum kebayang? Pilih contoh pertanyaan di bawah, atau tulis sendiri.</p></div></div><div class="chat-prompts"><button data-prompt="Jelaskan konsep utamanya dengan contoh sehari-hari.">Jelaskan dengan contoh</button><button data-prompt="Apa tiga poin paling penting dari materi ini?">Apa poin pentingnya?</button></div><form class="chat-input" id="chat-form"><label class="sr-only" for="chat-question">Pertanyaan tentang materi</label><input id="chat-question" autocomplete="off" placeholder="Bagian mana yang bikin bingung?" required><button class="icon-button primary" aria-label="Kirim pertanyaan"><span data-icon="arrow-up"></span></button></form><p class="demo-caption">Contoh interaksi desain. Jawaban di sini belum terhubung ke AI.</p></section>
+
+              <section class="study-panel" id="panel-quiz" hidden role="tabpanel" aria-labelledby="tab-quiz"><p class="eyebrow">Coba sejauh mana kamu paham</p><h2>Latihan soal</h2><p class="panel-description">Pilih jawabanmu. Kalau belum tepat, ada penjelasannya.</p><div class="quiz-meta"><span>Soal contoh</span><span>Pilihan ganda</span></div><h3 class="quiz-question" id="quiz-question">Di bagian mana pertukaran oksigen dan karbon dioksida terjadi?</h3><div class="quiz-options" role="group" aria-label="Pilihan jawaban"><button data-answer="0"><span>A</span><span class="answer-label">Trakea</span></button><button data-answer="1"><span>B</span><span class="answer-label">Alveolus</span></button><button data-answer="2"><span>C</span><span class="answer-label">Laring</span></button><button data-answer="3"><span>D</span><span class="answer-label">Hidung</span></button></div><div id="quiz-result" class="quiz-result" hidden role="status"></div><button class="button button-primary" id="check-answer" disabled>Cek jawaban<span data-icon="arrow-right"></span></button></section>
+
+              <section class="study-panel" id="panel-cards" hidden role="tabpanel" aria-labelledby="tab-cards"><p class="eyebrow">Biar makin nempel</p><h2>Kartu belajar</h2><p class="panel-description">Coba jawab dulu, baru intip balik kartunya.</p><div class="card-counter"><span id="card-counter">Kartu 1 / 6</span><span>Ketuk buat membalik</span></div><button class="flashcard" id="flashcard" aria-label="Balik kartu belajar"><span class="eyebrow" id="card-side">Pertanyaan</span><span class="card-text" id="card-text">Apa fungsi utama alveolus?</span><span class="flip-hint"><span data-icon="rotate"></span>Lihat jawaban</span></button><div class="card-controls"><button class="button button-secondary" id="previous-card"><span data-icon="arrow-left"></span>Sebelumnya</button><button class="button button-primary" id="next-card">Berikutnya<span data-icon="arrow-right"></span></button></div></section>
+            </div>
+
+            <aside class="study-aside"><section class="study-context"><p class="eyebrow">Kita lagi bahas ini</p><div class="context-file"><span data-icon="file"></span><div><strong id="context-filename">Sistem Pernapasan.pdf</strong><span id="context-filemeta">24 halaman / 2,4 MB</span></div></div><div class="context-status"><span data-icon="check"></span>Materi siap dipelajari</div></section><section class="personal-notes"><div class="section-heading"><h2>Catatanmu</h2><span data-icon="edit"></span></div><p>Catat versi kamu, biar gampang ingat.</p><label class="sr-only" for="personal-note">Catatan pribadi</label><textarea id="personal-note" placeholder="Oh, ternyata... apa yang baru kamu pahami?">Alveolus itu seperti tempat tukar: oksigen masuk ke darah, karbon dioksida keluar.</textarea><button class="text-link" id="save-note">Simpan catatan<span data-icon="check"></span></button><span id="note-status" class="demo-caption" aria-live="polite">Contoh catatan pribadi</span></section><a href="#rooms" class="study-together"><span data-icon="users"></span><span><strong>Bahas bareng teman</strong><span>Ajak teman ke ruang belajar</span></span><span data-icon="arrow-up-right"></span></a></aside>
+          </div>
+          <footer class="page-footer"><span>Ringkasan contoh. Cocokkan kembali dengan materi asli.</span><span>Data contoh untuk review desain</span></footer>
+        </section>
+
+        <section class="screen" id="screen-history" hidden aria-labelledby="history-title"><div class="page-heading"><div><p class="eyebrow">Kemarin sampai mana?</p><h1 id="history-title">Riwayat belajar</h1><p class="subtitle">Ringkasan, obrolan, dan latihanmu ada di sini.</p></div></div><div class="history-list"><a href="#study" class="history-row"><span data-icon="align-left"></span><div><strong>Ringkasan Sistem Pernapasan Manusia</strong><p>Hari ini, 14.20 / Ringkasan</p></div><span data-icon="arrow-right"></span></a><a href="#study?material=ekonomi&tab=quiz" class="history-row"><span data-icon="check-square"></span><div><strong>Latihan Pengantar Ekonomi Mikro</strong><p>Kemarin, 19.45 / 10 soal dikerjakan</p></div><span data-icon="arrow-right"></span></a><a href="#study?tab=chat" class="history-row"><span data-icon="message"></span><div><strong>Mengenal fungsi alveolus</strong><p>Kemarin, 15.10 / Tanya AI</p></div><span data-icon="arrow-right"></span></a></div></section>
+
+        <section class="screen" id="screen-rooms" hidden aria-labelledby="rooms-title">
+          <div class="page-heading rooms-heading"><div><h1 id="rooms-title">Belajar bareng</h1><p class="subtitle">Kadang, penjelasan teman bikin semuanya lebih masuk akal.</p></div><span class="rooms-heading-note"><span data-icon="book-open"></span>Bawa materi. Bagi cara paham.</span></div>
+
+          <div class="rooms-lounge">
+            <section class="room-story" aria-labelledby="room-story-title">
+              <div class="room-story-copy"><h2 id="room-story-title">Satu meja.<br>Banyak cara paham.</h2><p>Ada yang jago jelasin, ada yang berani nanya. <br>Ketemu di sini, belajar bareng.</p></div>
+              <div class="room-illustration" data-motion-scene aria-hidden="true">
+                <svg class="garden-art room-art" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 300" fill="none">
+                  <path d="M0 220c103-45 183-31 282-7 113-42 239-41 378-4v91H0Z" fill="#cdddc3"/>
+                  <path d="M0 273c147-25 257-19 343-3 117-19 219-16 317 4v26H0Z" fill="#bdcfb0"/>
+                  <g class="garden-cloud" transform="translate(450 45)"><path d="M0 15c7-9 17-10 26-7 2-17 25-20 33-6 16-5 29 3 29 14 13-2 23 2 26 7H0Z" fill="#f7f9ee"/></g>
+                  <path d="m608 183-3-96 16-2 2 97 9 10c-17 4-26 3-36-1Z" fill="#b6b28e" stroke="#6d866a" stroke-width="1.6"/>
+                  <g class="garden-canopy"><path d="M614 18c-14-14-36-7-39 10-20-6-38 9-33 25-21 5-28 28-13 40-13 24 8 42 28 36 10 21 35 24 50 10 18 12 40 6 46-11 22-2 32-23 20-40 11-19 1-39-18-43-5-22-23-31-41-27Z" fill="#a4bf9f" stroke="#698668" stroke-width="1.8"/><path d="M546 86c12 8 21 6 29-1 10 13 25 14 36 5 12 10 28 8 35-1m-75-30 7-2m35-12 7 2m-36 60 8 2m30 3 6-2" stroke="#80a17b" stroke-width="1.8" stroke-linecap="round"/></g>
+                  <g class="garden-plant" transform="translate(77 209)"><path d="M0 28 3-27M1 12-17-4m19 0 19-23" stroke="#6b8d65" stroke-width="2"/><path d="M0 11c-28-1-35-19-27-29 18 3 27 16 27 29Zm2-12c3-22 19-35 31-31 1 22-10 33-31 31Zm1-14C-12-26-13-42-3-50 11-38 12-26 3-15Z" fill="#9db78d" stroke="#739369" stroke-width="1.5"/></g>
+                  <ellipse cx="339" cy="255" rx="175" ry="20" fill="#aabc9a" opacity=".4"/>
+                  <g class="reader-breathe">
+                    <path d="m210 202-12 42m42-41 13 42" stroke="#7f9174" stroke-width="7" stroke-linecap="round"/>
+                    <path d="M182 182c-9-20-14-58 0-64 15-7 37 24 40 42l10 27Z" fill="#c1cba9" stroke="#6c8566" stroke-width="1.8"/>
+                    <path d="M208 156c12-11 40-7 47 10l10 37-55 8-20-15Z" fill="#829eac" stroke="#5b786f" stroke-width="1.8"/>
+                    <path d="m215 202-4 37 17 4 13-41m-29 37-8 7c-4 6 13 9 23 2l1-5m13-5 9 8c8 5 22-1 14-7l-12-5" fill="#faf4df" stroke="#667d63" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M203 105c-19-27-18-59-6-60 14-1 19 34 19 54m13-1c-2-34 10-60 20-54 12 8-2 39-9 59" fill="#fbf5e3" stroke="#667e65" stroke-width="1.8"/>
+                    <path d="M204 88c-10-23-11-32-8-32 5-1 10 18 12 31m26 0c2-18 8-32 10-30 4 2-2 19-6 30" stroke="#d1b6a0" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M187 126c-2-31 53-46 69-15 10 20 2 42-18 48-21 7-49-8-51-33Z" fill="#fbf5e3" stroke="#667e65" stroke-width="1.8"/>
+                    <g class="reader-eyes" fill="#4f6853"><ellipse cx="215" cy="124" rx="2.4" ry="3.3"/><ellipse cx="239" cy="122" rx="2.4" ry="3.3"/></g>
+                    <path d="m225 133 3 2 3-3m-3 3v4m0 0c-4 4-7 3-9 1m9-1c4 3 7 2 8-1" stroke="#7b8163" stroke-width="1.3" stroke-linecap="round"/>
+                    <ellipse cx="203" cy="136" rx="6" ry="3" fill="#ddbd9e" opacity=".6"/>
+                    <path d="M248 165c14 2 21 9 33 10l5 10c-17 6-37 0-45-8" fill="#fbf5e3" stroke="#667e65" stroke-width="1.8" stroke-linecap="round"/>
+                  </g>
+                  <g class="room-friend">
+                    <path d="m427 202-9 39m45-39 9 39" stroke="#7f9174" stroke-width="7" stroke-linecap="round"/>
+                    <path d="M475 188c20-21 28-48 16-58-16-12-38 12-46 29l-6 29Z" fill="#c1cba9" stroke="#6c8566" stroke-width="1.8"/>
+                    <path d="M422 160c13-9 36-2 44 14l10 28-59 9-12-28Z" fill="#b1b78c" stroke="#6d8161" stroke-width="1.8"/>
+                    <path d="m424 203-14 31c-21-1-22 9-5 12l18-4 17-34m16-2 4 32c16-1 23 9 5 11l-15-4-12-36" fill="#e0c8a1" stroke="#7c8362" stroke-width="1.8" stroke-linejoin="round"/>
+                    <circle cx="410" cy="102" r="15" fill="#dfc7a1" stroke="#788260" stroke-width="1.8"/><circle cx="458" cy="100" r="15" fill="#dfc7a1" stroke="#788260" stroke-width="1.8"/>
+                    <circle cx="409" cy="103" r="7" fill="#c3a983"/><circle cx="458" cy="101" r="7" fill="#c3a983"/>
+                    <path d="M403 126c-4-29 47-44 65-16 14 22 1 45-21 49-23 4-42-11-44-33Z" fill="#e2cca9" stroke="#788260" stroke-width="1.8"/>
+                    <ellipse cx="433" cy="139" rx="17" ry="12" fill="#f2e5c9"/>
+                    <g fill="#4f6853"><circle cx="419" cy="125" r="2.2"/><circle cx="445" cy="123" r="2.2"/></g>
+                    <g stroke="#5e795f" stroke-width="1.5"><circle cx="419" cy="125" r="9"/><circle cx="445" cy="123" r="9"/><path d="m428 124 8-1m-26 0-9-2"/></g>
+                    <path d="m429 136 4 3 4-4m-4 4v4m0 0c-4 4-7 2-8 1m8-1c3 4 7 3 9 1" stroke="#7e8160" stroke-width="1.3" stroke-linecap="round"/>
+                    <path d="M415 168c-14 4-24 12-38 10l-2 10c19 8 33 0 43-7" fill="#e2cca9" stroke="#788260" stroke-width="1.8"/>
+                  </g>
+                  <path d="m285 188-9 65m110-65 9 65" stroke="#8c9775" stroke-width="8" stroke-linecap="round"/>
+                  <path d="m286 214 101 0" stroke="#a2aa87" stroke-width="5"/>
+                  <ellipse cx="334" cy="183" rx="97" ry="25" fill="#a7af87" stroke="#6f8564" stroke-width="1.8"/>
+                  <ellipse cx="334" cy="177" rx="97" ry="25" fill="#e2dfbb" stroke="#6f8564" stroke-width="1.8"/>
+                  <path d="m292 174 31-6 23 7 27-2-8 17-26 4-22-9-31 3Z" fill="#fff9e5" stroke="#889577" stroke-width="1.3" stroke-linejoin="round"/><path class="book-page" d="m340 175 26-3-8 14-23 5Z" fill="#f6f0d8" stroke="#a6b08c"/><path d="m324 169 12 22m-35-14 17-3m-19 8 17-3" stroke="#bec3a4" stroke-width="1.2"/>
+                  <g transform="translate(383 154)"><path d="M0 0h13v16c-4 3-10 3-13 0Z" fill="#fcf7e5" stroke="#7d9471" stroke-width="1.4"/><path d="M13 3c12-2 12 12 0 10" stroke="#7d9471" stroke-width="1.4"/><g class="garden-steam" stroke="#9faf8d" stroke-width="1.2" stroke-linecap="round"><path d="M4-4c-5-5 4-7 0-13m6 13c-4-4 3-6 1-10"/></g></g>
+                  <path d="m268 166 10-16" stroke="#68899a" stroke-width="3" stroke-linecap="round"/><path d="m267 168 1-3" stroke="#7d8062" stroke-width="2" stroke-linecap="round"/>
+                  <g transform="translate(118 244) rotate(-7)"><path d="M0 0h43v9H0Z" fill="#8fa9b2" stroke="#71836a" stroke-width="1.3"/><path d="M4-9h36v9H4Z" fill="#e3d5a5" stroke="#7e896b" stroke-width="1.3"/><path d="M7-5h30M4 5h35" stroke="#f5efdb" stroke-width="2"/></g>
+                  <g stroke="#7e9a6f" stroke-width="1.5" stroke-linecap="round"><path d="m61 260-2-10m2 10 7-6m-7 6-7-3m472-7-2-10m2 10 7-6m-7 6-7-3M566 222l-2-9m2 9 7-5"/></g>
+                  <g class="room-speech"><path d="M282 54c0-10 9-17 20-17h33c13 0 21 7 21 17s-8 18-21 18h-20l-13 9 2-9h-2c-11 0-20-7-20-18Z" fill="#fafbef" stroke="#a6b99a" stroke-width="1.3"/><path d="m306 53 8 8 17-17" stroke="#84a075" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+                </svg>
+              </div>
+              <button class="motion-toggle" type="button" data-motion-toggle aria-pressed="false" aria-label="Jeda animasi"><span data-icon="pause"></span></button>
+            </section>
+
+            <section class="room-join" aria-labelledby="room-join-title">
+              <span class="room-invite-icon" data-icon="mail"></span><p class="eyebrow">Sudah diajak teman?</p><h2 id="room-join-title">Masuk pakai kode.</h2><p class="room-join-description">Minta kode ruangnya, lalu tulis di bawah.</p>
+              <form id="join-form" novalidate><label for="room-code">Kode ruang</label><input id="room-code" name="room_code" class="room-input" placeholder="482913" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" spellcheck="false" required aria-describedby="room-code-hint room-code-error"><span id="room-code-hint" class="room-code-hint">6 angka dari temanmu.</span><p class="room-code-error" id="room-code-error" role="alert" hidden></p><button class="button button-primary" type="submit">Gabung ruang<span data-icon="arrow-right"></span></button></form>
+              <div class="room-join-footer"><span data-icon="users"></span><p>Belum punya kode?<br><button class="text-link" type="button" data-create-room>Bikin ruang sendiri</button></p></div>
+            </section>
+          </div>
+
+          <section class="room-materials" aria-labelledby="room-materials-title"><div class="section-heading"><div><h2 id="room-materials-title">Atau, kamu yang ajak duluan.</h2><p>Pilih bahan obrolannya. Kode ruang menyusul.</p></div><button type="button" class="text-link" data-create-room>Lihat pilihan materi<span data-icon="arrow-right"></span></button></div><div class="room-material-list">
+            <button type="button" class="room-material" data-create-room="biologi"><span class="room-book" aria-hidden="true"><span>Biologi</span><span data-icon="book-open"></span><span>24 halaman</span></span><span class="room-material-copy"><small>PDF / Biologi</small><strong>Sistem Pernapasan <br>Manusia</strong><span>Bikin ruang<span data-icon="arrow-up-right"></span></span></span></button>
+            <button type="button" class="room-material" data-create-room="ekonomi"><span class="room-book room-book-folder" aria-hidden="true"><span>Ekonomi</span><span data-icon="folder"></span><span>3 file</span></span><span class="room-material-copy"><small>Folder / Ekonomi</small><strong>Pengantar Ekonomi <br>Mikro</strong><span>Bikin ruang<span data-icon="arrow-up-right"></span></span></span></button>
+            <button type="button" class="room-material" data-create-room="statistika"><span class="room-book" aria-hidden="true"><span>Matematika</span><span data-icon="book-open"></span><span>18 slide</span></span><span class="room-material-copy"><small>PPTX / Matematika</small><strong>Statistika <br>Dasar</strong><span>Bikin ruang<span data-icon="arrow-up-right"></span></span></span></button>
+          </div></section>
+          <footer class="rooms-footer"><span data-icon="info"></span>Preview desain. Ruang dan undangan belum aktif.</footer>
+        </section>
+
+        <section class="screen" id="screen-guide" hidden aria-labelledby="guide-title"><div class="page-heading"><div><p class="eyebrow">Baru pertama kali?</p><h1 id="guide-title">Cari cara belajar yang pas buatmu.</h1><p class="subtitle">Upload materi, buka filenya, terus pilih mau dibantu apa.</p></div></div><div class="guide-list"><article><span>01</span><div><h2>Ringkasan</h2><p>Ambil inti materinya dulu. Cocok buat mulai atau mengingat lagi.</p></div></article><article><span>02</span><div><h2>Tanya AI</h2><p>Masih ada yang bikin bingung? Tanya langsung dari materi yang kamu buka.</p></div></article><article><span>03</span><div><h2>Latihan soal</h2><p>Cek seberapa paham kamu. Kalau salah, ada penjelasannya.</p></div></article><article><span>04</span><div><h2>Kartu belajar</h2><p>Biar nggak cepat lupa, ulangi lewat kartu tanya jawab singkat.</p></div></article></div><button class="button button-primary" data-upload>Upload materi pertama<span data-icon="arrow-right"></span></button></section>
+      </main>
+    </div>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Navigasi ponsel"><a href="#home" data-nav="home"><span data-icon="home"></span>Beranda</a><a href="#library" data-nav="library"><span data-icon="folder"></span>Materi</a><a href="#history" data-nav="history"><span data-icon="history"></span>Riwayat</a><a href="#rooms" data-nav="rooms"><span data-icon="users"></span>Bareng</a></nav>
+
+  <dialog id="upload-dialog" aria-labelledby="upload-title"><div class="dialog-heading"><div><p class="eyebrow">Punya materi baru?</p><h2 id="upload-title">Bawa materinya ke sini.</h2></div><button class="icon-button" data-close-dialog aria-label="Tutup"><span data-icon="close"></span></button></div><p>Pilih file PDF, Word, PowerPoint, atau gambar catatan.</p><label class="upload-zone" for="upload-input"><span data-icon="upload"></span><strong id="upload-filename">Pilih file kamu</strong><span>Maksimal 20 MB per file</span><input id="upload-input" type="file" accept=".pdf,.docx,.pptx,.jpg,.jpeg,.png,.gif,.webp" multiple></label><label class="folder-option"><input type="checkbox" id="combine-files"><span>Gabungkan beberapa file dalam satu folder</span></label><p class="demo-caption">Prototipe desain: file hanya dipilih di perangkat, tidak diunggah.</p><button class="button button-primary" id="upload-demo" disabled>Lihat contoh hasil<span data-icon="arrow-right"></span></button></dialog>
+  <dialog id="source-dialog" aria-labelledby="source-title"><div class="dialog-heading"><h2 id="source-title">Lihat materi aslinya</h2><button class="icon-button" data-close-dialog aria-label="Tutup"><span data-icon="close"></span></button></div><p>Area ini akan menampilkan file asli agar bisa dibaca berdampingan dengan hasil belajar.</p><div class="source-placeholder"><span data-icon="file"></span><strong id="source-filename">Sistem Pernapasan.pdf</strong><span>File contoh untuk review desain</span></div><button class="button button-secondary" data-close-dialog>Kembali belajar</button></dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <dialog id="create-room-dialog" class="room-dialog" aria-labelledby="create-room-title"><div class="dialog-heading"><div><p class="eyebrow">Kamu yang mulai</p><h2 id="create-room-title">Mau bahas materi apa?</h2></div><button type="button" class="icon-button" data-close-dialog aria-label="Tutup"><span data-icon="close"></span></button></div><p>Pilih satu materi untuk ruang belajarmu.</p><form id="create-room-form"><fieldset class="room-material-picker"><legend class="sr-only">Materi untuk dibahas bersama</legend><label><input type="radio" name="material" value="biologi" checked><span data-icon="file"></span><span><strong>Sistem Pernapasan Manusia</strong><small>Biologi / PDF, 24 halaman</small></span></label><label><input type="radio" name="material" value="ekonomi"><span data-icon="folder"></span><span><strong>Pengantar Ekonomi Mikro</strong><small>Ekonomi / Folder, 3 file</small></span></label><label><input type="radio" name="material" value="statistika"><span data-icon="file"></span><span><strong>Statistika Dasar</strong><small>Matematika / PPTX, 18 slide</small></span></label></fieldset><button class="button button-primary" type="submit">Lihat ruang contoh<span data-icon="arrow-right"></span></button></form><p class="demo-caption">Simulasi desain. Belum membuat ruang sungguhan.</p></dialog>
+  <dialog id="room-preview-dialog" class="room-dialog" aria-labelledby="room-preview-title"><div class="dialog-heading"><div><p class="eyebrow">Contoh ruang belajar</p><h2 id="room-preview-title">Tempat ngobrolnya siap.</h2></div><button type="button" class="icon-button" data-close-dialog aria-label="Tutup"><span data-icon="close"></span></button></div><div class="room-preview-material"><span data-icon="book-open"></span><div><span>Bahan yang dibahas</span><strong id="room-preview-material">Sistem Pernapasan Manusia</strong></div></div><div class="room-preview-code"><span id="room-preview-code-label">Kode contoh</span><strong id="room-preview-code">482913</strong><p>Di aplikasi nanti, bagikan kode ini ke temanmu.</p></div><a class="button button-primary" id="room-preview-link" href="#study?material=biologi&tab=chat">Coba bahas materinya<span data-icon="arrow-right"></span></a><p class="demo-caption">Ini simulasi. Kode belum bisa dipakai mengundang atau menghubungkan pengguna.</p></dialog>
+</body>
+</html>

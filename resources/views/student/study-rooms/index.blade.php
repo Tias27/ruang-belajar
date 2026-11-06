@@ -1,472 +1,142 @@
-<x-app-layout title="Belajar Bareng" subtitle="Kolaborasi belajar real-time bersama teman dan AI">
-    <div class="space-y-8 min-w-0" x-data="{ 
-        activeTab: 'choose-existing',
-        uploading: false,
-        files: [],
-        folderSelection: '',
-        progress: 0,
-        statusText: '',
-        errorMessage: '',
-        handleFileSelect(e) {
-            const newFiles = Array.from(e.target.files);
-            if (newFiles.length > 0) {
-                this.files = newFiles;
-            }
-        },
-        getFilesLabel() {
-            if (this.files.length === 0) return '';
-            if (this.files.length === 1) return this.files[0].name;
-            return this.files.length + ' file terpilih';
-        },
-        submitForm(e) {
-            if (this.files.length === 0) return;
-            this.uploading = true;
-            this.progress = 0;
-            this.statusText = 'Menghubungkan ke server...';
-            this.errorMessage = '';
+<x-app-layout title="Belajar bareng">
+    @push('styles')
+        <link rel="stylesheet" href="{{ asset('ui/rooms-live.css') }}?v={{ filemtime(public_path('ui/rooms-live.css')) }}">
+    @endpush
+    @push('scripts')
+        <script src="{{ asset('ui/rooms-live.js') }}?v={{ filemtime(public_path('ui/rooms-live.js')) }}" defer></script>
+    @endpush
 
-            const form = e.target;
-            const formData = new FormData(form);
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', form.action);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-
-            // Progress listener
-            xhr.upload.addEventListener('progress', (event) => {
-                if (event.lengthComputable) {
-                    const percent = Math.round((event.loaded / event.total) * 100);
-                    this.progress = percent;
-                    if (percent < 100) {
-                        this.statusText = `Mengunggah file... ${percent}%`;
-                    } else {
-                        this.statusText = 'Upload selesai. Sedang membaca isi materi...';
-                    }
-                }
-            });
-
-            // Completion listener
-            xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    this.statusText = 'Selesai! Mengalihkan halaman...';
-                    window.location.href = xhr.responseURL || '{{ route('study-rooms.index') }}';
-                } else {
-                    this.uploading = false;
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        if (response.errors) {
-                            const firstErrKey = Object.keys(response.errors)[0];
-                            this.errorMessage = response.errors[firstErrKey][0];
-                        } else {
-                            this.errorMessage = response.message || 'Gagal mengunggah file. Silakan coba lagi.';
-                        }
-                    } catch (err) {
-                        this.errorMessage = 'Gagal mengunggah file. Silakan periksa ukuran file atau coba lagi.';
-                    }
-                }
-            };
-
-            xhr.onerror = () => {
-                this.uploading = false;
-                this.errorMessage = 'Koneksi ke server terputus. Harap periksa jaringan internet Anda.';
-            };
-
-            xhr.send(formData);
-        }
-    }">
-        
-        <!-- Header Banner -->
-        <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-campus-600 via-campus-700 to-accent-700 p-6 sm:p-8 text-white shadow-lg">
-            <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none transform rotate-12">
-                <i data-lucide="users" class="w-64 h-64"></i>
-            </div>
-            <div class="relative z-10 max-w-3xl">
-                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Multiplayer Social Learning
-                </span>
-                <h1 class="mt-4 text-3xl font-black tracking-tight sm:text-4xl leading-tight">
-                    Ruang Belajar Bareng
-                </h1>
-                <p class="mt-2 text-sm sm:text-base text-campus-100/90 leading-relaxed">
-                    Diskusikan materi kuliah secara real-time bersama teman-temanmu. Tanyakan bagian yang sulit, 
-                    dan biarkan asisten AI RuangBelajar membantu memberikan penjelasan terbaik secara langsung di dalam room.
-                </p>
-            </div>
+    <div class="rooms-live">
+        <div class="page-heading rooms-heading">
+            <div><h1>Belajar bareng</h1><p class="subtitle">Kadang, penjelasan teman bikin semuanya lebih masuk akal.</p></div>
+            <span class="rooms-heading-note"><span data-icon="book-open"></span>Bawa materi. Bagi cara paham.</span>
         </div>
 
-        <!-- Upper Grid: Join Room & Active Rooms -->
-        <div class="grid gap-6 grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] w-full min-w-0">
-            
-            <!-- Left: Join Room Card -->
-            <div class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm flex flex-col justify-between min-w-0 w-full">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                        <i data-lucide="key-round" class="h-5 w-5 text-accent-500"></i>
-                        Gabung Sesi Teman
-                    </h2>
-                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                        Masukkan 4 digit PIN yang dibagikan oleh pembuat room untuk masuk ke ruang diskusi.
-                    </p>
+        <div class="rooms-lounge">
+            <section class="room-story" aria-labelledby="room-story-title">
+                <div class="room-story-copy"><h2 id="room-story-title">Satu meja<br>Banyak cara paham</h2><p>Ada yang jago jelasin, ada yang berani nanya.<br>Ketemu di sini, belajar bareng.</p></div>
+                <div class="room-illustration" data-motion-scene aria-hidden="true">
+                    <svg class="garden-art room-art" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 300" fill="none">
+                  <path d="M0 220c103-45 183-31 282-7 113-42 239-41 378-4v91H0Z" fill="#cdddc3"/>
+                  <path d="M0 273c147-25 257-19 343-3 117-19 219-16 317 4v26H0Z" fill="#bdcfb0"/>
+                  <g class="garden-cloud" transform="translate(450 45)"><path d="M0 15c7-9 17-10 26-7 2-17 25-20 33-6 16-5 29 3 29 14 13-2 23 2 26 7H0Z" fill="#f7f9ee"/></g>
+                  <path d="m608 183-3-96 16-2 2 97 9 10c-17 4-26 3-36-1Z" fill="#b6b28e" stroke="#6d866a" stroke-width="1.6"/>
+                  <g class="garden-canopy"><path d="M614 18c-14-14-36-7-39 10-20-6-38 9-33 25-21 5-28 28-13 40-13 24 8 42 28 36 10 21 35 24 50 10 18 12 40 6 46-11 22-2 32-23 20-40 11-19 1-39-18-43-5-22-23-31-41-27Z" fill="#a4bf9f" stroke="#698668" stroke-width="1.8"/><path d="M546 86c12 8 21 6 29-1 10 13 25 14 36 5 12 10 28 8 35-1m-75-30 7-2m35-12 7 2m-36 60 8 2m30 3 6-2" stroke="#80a17b" stroke-width="1.8" stroke-linecap="round"/></g>
+                  <g class="garden-plant" transform="translate(77 209)"><path d="M0 28 3-27M1 12-17-4m19 0 19-23" stroke="#6b8d65" stroke-width="2"/><path d="M0 11c-28-1-35-19-27-29 18 3 27 16 27 29Zm2-12c3-22 19-35 31-31 1 22-10 33-31 31Zm1-14C-12-26-13-42-3-50 11-38 12-26 3-15Z" fill="#9db78d" stroke="#739369" stroke-width="1.5"/></g>
+                  <ellipse cx="339" cy="255" rx="175" ry="20" fill="#aabc9a" opacity=".4"/>
+                  <g class="reader-breathe">
+                    <path d="m210 202-12 42m42-41 13 42" stroke="#7f9174" stroke-width="7" stroke-linecap="round"/>
+                    <path d="M182 182c-9-20-14-58 0-64 15-7 37 24 40 42l10 27Z" fill="#c1cba9" stroke="#6c8566" stroke-width="1.8"/>
+                    <path d="M208 156c12-11 40-7 47 10l10 37-55 8-20-15Z" fill="#829eac" stroke="#5b786f" stroke-width="1.8"/>
+                    <path d="m215 202-4 37 17 4 13-41m-29 37-8 7c-4 6 13 9 23 2l1-5m13-5 9 8c8 5 22-1 14-7l-12-5" fill="#faf4df" stroke="#667d63" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M203 105c-19-27-18-59-6-60 14-1 19 34 19 54m13-1c-2-34 10-60 20-54 12 8-2 39-9 59" fill="#fbf5e3" stroke="#667e65" stroke-width="1.8"/>
+                    <path d="M204 88c-10-23-11-32-8-32 5-1 10 18 12 31m26 0c2-18 8-32 10-30 4 2-2 19-6 30" stroke="#d1b6a0" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M187 126c-2-31 53-46 69-15 10 20 2 42-18 48-21 7-49-8-51-33Z" fill="#fbf5e3" stroke="#667e65" stroke-width="1.8"/>
+                    <g class="reader-eyes" fill="#4f6853"><ellipse cx="215" cy="124" rx="2.4" ry="3.3"/><ellipse cx="239" cy="122" rx="2.4" ry="3.3"/></g>
+                    <path d="m225 133 3 2 3-3m-3 3v4m0 0c-4 4-7 3-9 1m9-1c4 3 7 2 8-1" stroke="#7b8163" stroke-width="1.3" stroke-linecap="round"/>
+                    <ellipse cx="203" cy="136" rx="6" ry="3" fill="#ddbd9e" opacity=".6"/>
+                    <path d="M248 165c14 2 21 9 33 10l5 10c-17 6-37 0-45-8" fill="#fbf5e3" stroke="#667e65" stroke-width="1.8" stroke-linecap="round"/>
+                  </g>
+                  <g class="room-friend">
+                    <path d="m427 202-9 39m45-39 9 39" stroke="#7f9174" stroke-width="7" stroke-linecap="round"/>
+                    <path d="M475 188c20-21 28-48 16-58-16-12-38 12-46 29l-6 29Z" fill="#c1cba9" stroke="#6c8566" stroke-width="1.8"/>
+                    <path d="M422 160c13-9 36-2 44 14l10 28-59 9-12-28Z" fill="#b1b78c" stroke="#6d8161" stroke-width="1.8"/>
+                    <path d="m424 203-14 31c-21-1-22 9-5 12l18-4 17-34m16-2 4 32c16-1 23 9 5 11l-15-4-12-36" fill="#e0c8a1" stroke="#7c8362" stroke-width="1.8" stroke-linejoin="round"/>
+                    <circle cx="410" cy="102" r="15" fill="#dfc7a1" stroke="#788260" stroke-width="1.8"/><circle cx="458" cy="100" r="15" fill="#dfc7a1" stroke="#788260" stroke-width="1.8"/>
+                    <circle cx="409" cy="103" r="7" fill="#c3a983"/><circle cx="458" cy="101" r="7" fill="#c3a983"/>
+                    <path d="M403 126c-4-29 47-44 65-16 14 22 1 45-21 49-23 4-42-11-44-33Z" fill="#e2cca9" stroke="#788260" stroke-width="1.8"/>
+                    <ellipse cx="433" cy="139" rx="17" ry="12" fill="#f2e5c9"/>
+                    <g fill="#4f6853"><circle cx="419" cy="125" r="2.2"/><circle cx="445" cy="123" r="2.2"/></g>
+                    <g stroke="#5e795f" stroke-width="1.5"><circle cx="419" cy="125" r="9"/><circle cx="445" cy="123" r="9"/><path d="m428 124 8-1m-26 0-9-2"/></g>
+                    <path d="m429 136 4 3 4-4m-4 4v4m0 0c-4 4-7 2-8 1m8-1c3 4 7 3 9 1" stroke="#7e8160" stroke-width="1.3" stroke-linecap="round"/>
+                    <path d="M415 168c-14 4-24 12-38 10l-2 10c19 8 33 0 43-7" fill="#e2cca9" stroke="#788260" stroke-width="1.8"/>
+                  </g>
+                  <path d="m285 188-9 65m110-65 9 65" stroke="#8c9775" stroke-width="8" stroke-linecap="round"/>
+                  <path d="m286 214 101 0" stroke="#a2aa87" stroke-width="5"/>
+                  <ellipse cx="334" cy="183" rx="97" ry="25" fill="#a7af87" stroke="#6f8564" stroke-width="1.8"/>
+                  <ellipse cx="334" cy="177" rx="97" ry="25" fill="#e2dfbb" stroke="#6f8564" stroke-width="1.8"/>
+                  <path d="m292 174 31-6 23 7 27-2-8 17-26 4-22-9-31 3Z" fill="#fff9e5" stroke="#889577" stroke-width="1.3" stroke-linejoin="round"/><path class="book-page" d="m340 175 26-3-8 14-23 5Z" fill="#f6f0d8" stroke="#a6b08c"/><path d="m324 169 12 22m-35-14 17-3m-19 8 17-3" stroke="#bec3a4" stroke-width="1.2"/>
+                  <g transform="translate(383 154)"><path d="M0 0h13v16c-4 3-10 3-13 0Z" fill="#fcf7e5" stroke="#7d9471" stroke-width="1.4"/><path d="M13 3c12-2 12 12 0 10" stroke="#7d9471" stroke-width="1.4"/><g class="garden-steam" stroke="#9faf8d" stroke-width="1.2" stroke-linecap="round"><path d="M4-4c-5-5 4-7 0-13m6 13c-4-4 3-6 1-10"/></g></g>
+                  <path d="m268 166 10-16" stroke="#68899a" stroke-width="3" stroke-linecap="round"/><path d="m267 168 1-3" stroke="#7d8062" stroke-width="2" stroke-linecap="round"/>
+                  <g transform="translate(118 244) rotate(-7)"><path d="M0 0h43v9H0Z" fill="#8fa9b2" stroke="#71836a" stroke-width="1.3"/><path d="M4-9h36v9H4Z" fill="#e3d5a5" stroke="#7e896b" stroke-width="1.3"/><path d="M7-5h30M4 5h35" stroke="#f5efdb" stroke-width="2"/></g>
+                  <g stroke="#7e9a6f" stroke-width="1.5" stroke-linecap="round"><path d="m61 260-2-10m2 10 7-6m-7 6-7-3m472-7-2-10m2 10 7-6m-7 6-7-3M566 222l-2-9m2 9 7-5"/></g>
+                  <g class="room-speech"><path d="M282 54c0-10 9-17 20-17h33c13 0 21 7 21 17s-8 18-21 18h-20l-13 9 2-9h-2c-11 0-20-7-20-18Z" fill="#fafbef" stroke="#a6b99a" stroke-width="1.3"/><path d="m306 53 8 8 17-17" stroke="#84a075" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+                </svg>
                 </div>
-                
-                <form method="POST" action="{{ route('study-rooms.join') }}" class="mt-6">
+                <button class="motion-toggle" type="button" data-motion-toggle aria-pressed="false" aria-label="Jeda animasi"><span data-icon="pause"></span></button>
+            </section>
+
+            <section class="room-join" aria-labelledby="room-join-title">
+                <span class="room-invite-icon" data-icon="mail"></span>
+                <p class="eyebrow">Sudah diajak teman?</p>
+                <h2 id="room-join-title">Masuk pakai kode</h2>
+                <p class="room-join-description">Minta PIN ruangnya, lalu tulis di bawah.</p>
+                <form method="POST" action="{{ route('study-rooms.join') }}" data-room-join>
                     @csrf
-                    <div class="space-y-4">
-                        <div class="relative">
-                            <input type="text" name="pin" id="pin_code" maxlength="4" placeholder="Contoh: 1234" required
-                                   class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-lg font-black tracking-widest text-center focus:bg-white focus:border-campus-500 focus:ring-2 focus:ring-campus-100 outline-none transition-all">
-                        </div>
-                        <button type="submit" class="w-full bg-campus-700 hover:bg-campus-850 text-white rounded-2xl py-3.5 text-sm font-bold shadow-md transition flex items-center justify-center gap-2">
-                            <i data-lucide="arrow-right-left" class="h-4 w-4"></i>
-                            Gabung Sekarang
-                        </button>
-                    </div>
+                    <label for="room-pin">PIN ruang</label>
+                    <input id="room-pin" name="pin" class="room-input" value="{{ old('pin') }}" placeholder="1234" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" spellcheck="false" required aria-describedby="room-pin-hint{{ $errors->has('pin') ? ' room-pin-error' : '' }}" aria-invalid="{{ $errors->has('pin') ? 'true' : 'false' }}">
+                    <span id="room-pin-hint" class="room-code-hint">4 angka dari temanmu.</span>
+                    @error('pin')<p class="room-code-error" id="room-pin-error" role="alert">{{ $message }}</p>@enderror
+                    <button class="button button-primary" type="submit">Gabung ruang<span data-icon="arrow-right"></span></button>
                 </form>
-            </div>
-
-            <!-- Right: Active Rooms List -->
-            <div class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm flex flex-col min-w-0 w-full">
-                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <i data-lucide="door-open" class="h-5 w-5 text-campus-650"></i>
-                    Sesi Belajar Aktif Anda
-                </h2>
-                <p class="text-xs text-slate-500 mt-1">
-                    Daftar room diskusi aktif yang kamu buat atau yang telah kamu ikuti.
-                </p>
-
-                <div class="mt-6 flex-1 overflow-y-auto max-h-[190px] pr-1 space-y-3 min-w-0 w-full">
-                    @php
-                        $hasActiveRooms = $myActiveRooms->isNotEmpty() || $joinedActiveRooms->isNotEmpty();
-                    @endphp
-
-                    @if(!$hasActiveRooms)
-                        <div class="flex flex-col items-center justify-center py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200/80">
-                            <i data-lucide="message-square-dashed" class="h-8 w-8 text-slate-400"></i>
-                            <span class="block text-xs font-semibold text-slate-700 mt-2">Belum ada room aktif</span>
-                            <span class="block text-[11px] text-slate-400 mt-0.5">Mulai buat room baru di bawah ini.</span>
-                        </div>
-                    @else
-                        <!-- Hosted Rooms -->
-                        @foreach($myActiveRooms as $room)
-                            <div class="flex items-center justify-between p-3 rounded-2xl border border-campus-100 bg-campus-50/20 hover:bg-campus-50/40 transition min-w-0 w-full">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="shrink-0 p-2 rounded-xl bg-campus-100 text-campus-700">
-                                        <i data-lucide="{{ ($room->target && $room->target instanceof \App\Models\DocumentFolder) ? 'folder' : 'file-text' }}" class="h-4.5 w-4.5"></i>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="inline-flex items-center rounded bg-campus-100 px-1 py-0.5 text-[9px] font-bold text-campus-700 uppercase">Host</span>
-                                            <span class="text-xs font-bold text-slate-800 truncate">{{ $room->target ? ($room->target->name ?? $room->target->title) : 'Materi Terhapus' }}</span>
-                                        </div>
-                                        <span class="block text-[10px] text-slate-500 mt-0.5">PIN: {{ $room->pin }} • {{ $room->users->count() + 1 }} Anggota</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <a href="{{ route('study-rooms.show', $room) }}" class="inline-flex h-8 items-center justify-center rounded-xl bg-campus-700 px-3 text-xs font-bold text-white hover:bg-campus-850 transition shadow-sm">
-                                        Masuk
-                                    </a>
-                                </div>
-                            </div>
-                        @endforeach
-
-                        <!-- Joined Rooms -->
-                        @foreach($joinedActiveRooms as $room)
-                            <div class="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-white hover:bg-slate-50 transition min-w-0 w-full">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="shrink-0 p-2 rounded-xl bg-slate-100 text-slate-650">
-                                        <i data-lucide="{{ ($room->target && $room->target instanceof \App\Models\DocumentFolder) ? 'folder' : 'file-text' }}" class="h-4.5 w-4.5"></i>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="inline-flex items-center rounded bg-slate-100 px-1 py-0.5 text-[9px] font-semibold text-slate-600 uppercase">Teman</span>
-                                            <span class="text-xs font-bold text-slate-700 truncate">{{ $room->target ? ($room->target->name ?? $room->target->title) : 'Materi Terhapus' }}</span>
-                                        </div>
-                                        <span class="block text-[10px] text-slate-500 mt-0.5">PIN: {{ $room->pin }} • Host: {{ $room->host->name }}</span>
-                                    </div>
-                                </div>
-                                <a href="{{ route('study-rooms.show', $room) }}" class="inline-flex h-8 items-center justify-center rounded-xl bg-slate-100 px-3 text-xs font-bold text-slate-700 hover:bg-slate-200 transition">
-                                    Masuk
-                                </a>
-                            </div>
-                        @endforeach
-                    @endif
-                </div>
-            </div>
-
+                <div class="room-join-footer"><span data-icon="users"></span><p>Belum punya PIN?<br><a class="text-link" href="#room-materials">Bikin ruang sendiri</a></p></div>
+            </section>
         </div>
 
-        <!-- Lower Section: Create a Study Room -->
-        <div class="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm min-w-0 w-full">
-            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <i data-lucide="plus-circle" class="h-5 w-5 text-emerald-500"></i>
-                Buat Room Belajar Baru
-            </h2>
-            <p class="text-xs text-slate-500 mt-1">
-                Pilih salah satu materi yang sudah diunggah sebelumnya atau langsung unggah file baru untuk segera membuat ruang diskusi.
-            </p>
-
-            <!-- Nav Tabs -->
-            <div class="mt-6 flex border-b border-slate-100">
-                <button @click="activeTab = 'choose-existing'" 
-                        :class="activeTab === 'choose-existing' ? 'border-campus-600 text-campus-700 font-bold' : 'border-transparent text-slate-400 hover:text-slate-600 font-medium'"
-                        class="border-b-2 px-4 py-2.5 text-sm transition-all focus:outline-none flex items-center gap-1.5">
-                    <i data-lucide="library" class="h-4 w-4"></i>
-                    Pilih Materi Saya
-                </button>
-                <button @click="activeTab = 'upload-new'" 
-                        :class="activeTab === 'upload-new' ? 'border-campus-600 text-campus-700 font-bold' : 'border-transparent text-slate-400 hover:text-slate-600 font-medium'"
-                        class="border-b-2 px-4 py-2.5 text-sm transition-all focus:outline-none flex items-center gap-1.5">
-                    <i data-lucide="upload-cloud" class="h-4 w-4"></i>
-                    Upload Baru
-                </button>
-            </div>
-
-            <!-- Tab Contents -->
-            <div class="mt-6 min-w-0 w-full">
-                
-                <!-- Tab 1: Choose Existing Materials -->
-                <div x-show="activeTab === 'choose-existing'" class="space-y-6 min-w-0 w-full">
-                    @if($documents->isEmpty() && $folders->isEmpty())
-                        <div class="flex flex-col items-center justify-center py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                            <i data-lucide="library" class="h-10 w-10 text-slate-300"></i>
-                            <h4 class="mt-4 text-sm font-bold text-slate-700">Materi belum tersedia</h4>
-                            <p class="mt-1.5 text-xs text-slate-500 max-w-sm">
-                                Kamu belum memiliki folder atau dokumen yang diunggah. Silakan klik tab "Upload Baru" untuk mengunggah materi pertamamu.
-                            </p>
-                        </div>
-                    @else
-                        <!-- Folders List -->
-                        @if($folders->isNotEmpty())
-                            <div>
-                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                                    <i data-lucide="folder" class="h-3.5 w-3.5"></i>
-                                    Folder Materi Saya
-                                </h3>
-                                <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-full min-w-0">
-                                    @foreach($folders as $folder)
-                                        <div class="rounded-2xl border border-slate-200/80 p-4 hover:border-campus-200 hover:shadow-sm transition flex flex-col justify-between min-w-0 w-full">
-                                            <div class="flex items-start gap-3">
-                                                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-50 text-accent-700">
-                                                    <i data-lucide="folder" class="h-5 w-5"></i>
-                                                </span>
-                                                <div class="min-w-0">
-                                                    <span class="block text-sm font-bold text-slate-800 truncate leading-snug">{{ $folder->name }}</span>
-                                                    <span class="block text-[11px] text-slate-500 mt-1">{{ $folder->documents()->count() }} Dokumen</span>
-                                                </div>
-                                            </div>
-                                            <form method="POST" action="{{ route('study-rooms.store') }}" class="mt-4">
-                                                @csrf
-                                                <input type="hidden" name="source_type" value="folder">
-                                                <input type="hidden" name="folder_id" value="{{ $folder->id }}">
-                                                <button type="submit" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-campus-50 text-xs font-bold text-campus-700 border border-campus-100 hover:bg-campus-100 transition">
-                                                    <i data-lucide="plus" class="h-3.5 w-3.5"></i>
-                                                    Buat Room
-                                                </button>
-                                            </form>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-
-                        <!-- Documents List -->
-                        @if($documents->isNotEmpty())
-                            <div class="pt-4 border-t border-slate-100">
-                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                                    <i data-lucide="file-text" class="h-3.5 w-3.5"></i>
-                                    Dokumen Mandiri Saya
-                                </h3>
-                                <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-full min-w-0">
-                                    @foreach($documents as $doc)
-                                        <div class="rounded-2xl border border-slate-200/80 p-4 hover:border-campus-200 hover:shadow-sm transition flex flex-col justify-between min-w-0 w-full">
-                                            <div class="flex items-start gap-3">
-                                                <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-campus-50 text-campus-700">
-                                                    <i data-lucide="file-text" class="h-5 w-5"></i>
-                                                </span>
-                                                <div class="min-w-0">
-                                                    <span class="block text-sm font-bold text-slate-800 truncate leading-snug" title="{{ $doc->title }}">{{ $doc->title }}</span>
-                                                    <span class="block text-[11px] text-slate-500 mt-1">{{ strtoupper($doc->extension) }} • {{ number_format($doc->size / 1024 / 1024, 2) }} MB</span>
-                                                </div>
-                                            </div>
-                                            <form method="POST" action="{{ route('study-rooms.store') }}" class="mt-4">
-                                                @csrf
-                                                <input type="hidden" name="source_type" value="document">
-                                                <input type="hidden" name="document_id" value="{{ $doc->id }}">
-                                                <button type="submit" class="w-full inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-campus-50 text-xs font-bold text-campus-700 border border-campus-100 hover:bg-campus-100 transition">
-                                                    <i data-lucide="plus" class="h-3.5 w-3.5"></i>
-                                                    Buat Room
-                                                </button>
-                                            </form>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-                    @endif
+        @if($activeRooms->total() > 0)
+            <section class="rooms-active" data-pagination-region="rooms_page" aria-labelledby="rooms-active-title">
+                <div class="section-heading"><div><h2 id="rooms-active-title">Obrolannya masih lanjut</h2><p>Ruang aktif yang kamu buat atau ikuti.</p></div></div>
+                <div class="rooms-active-list">
+                    @foreach($activeRooms as $room)
+                        <a class="rooms-active-item" href="{{ route('study-rooms.show', $room) }}">
+                            <span class="rooms-active-symbol" data-icon="users"></span>
+                            <span class="rooms-active-copy"><strong>{{ $room->target ? ($room->target->name ?? $room->target->title) : 'Materi sudah dihapus' }}</strong><span>{{ $room->host_id === auth()->id() ? 'Ruangmu' : 'Dibuat '.$room->host->name }} <span aria-hidden="true">/</span> PIN {{ $room->pin }} <span aria-hidden="true">/</span> {{ $room->users->count() + 1 }} anggota</span></span>
+                            <span class="rooms-active-link">Lanjut<span data-icon="arrow-right"></span></span>
+                        </a>
+                    @endforeach
                 </div>
+                {{ $activeRooms->links() }}
+            </section>
+        @endif
 
-                <!-- Tab 2: Upload New Material -->
-                <div x-show="activeTab === 'upload-new'" class="max-w-2xl">
-                    <form method="POST" action="{{ route('study-rooms.store') }}" enctype="multipart/form-data" @submit.prevent="submitForm($event)">
-                        @csrf
-                        <input type="hidden" name="source_type" value="upload">
-                        
-                        <div class="space-y-6">
-                            <!-- Premium Drag Drop Area -->
-                            <div class="relative rounded-2xl border-2 border-dashed border-slate-350 hover:border-campus-500 bg-slate-50/50 hover:bg-campus-50/10 p-8 text-center transition group">
-                                <input type="file" name="files[]" id="file_upload" required multiple @change="handleFileSelect"
-                                       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                                
-                                <div class="flex flex-col items-center justify-center space-y-3">
-                                    <div class="p-3 rounded-2xl bg-white shadow-sm text-slate-500 group-hover:text-campus-600 transition duration-200">
-                                        <i data-lucide="upload-cloud" class="h-7 w-7"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-bold text-slate-800">
-                                            Seret file atau klik untuk memilih dokumen
-                                        </p>
-                                        <p class="text-xs text-slate-500 mt-1">
-                                            Mendukung PDF, DOCX, PPTX, atau Gambar (Bisa pilih banyak sekaligus, maks. 20 MB/file)
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <!-- Selected File Label -->
-                                <template x-if="files.length > 0">
-                                    <div class="mt-4 flex flex-col gap-2 w-fit mx-auto">
-                                        <div class="flex items-center justify-center gap-2 text-xs font-bold text-campus-700 bg-white border border-campus-200 rounded-xl px-3.5 py-2 shadow-sm">
-                                            <i data-lucide="file-check" class="h-4 w-4 text-emerald-500"></i>
-                                            <span x-text="getFilesLabel()"></span>
-                                        </div>
-                                        
-                                        <!-- Mini list of files -->
-                                        <div class="max-h-24 overflow-y-auto space-y-1 text-[10px] text-slate-500 text-left bg-white/95 p-2.5 rounded-xl border border-slate-200/60 shadow-inner">
-                                            <template x-for="file in files" :key="file.name">
-                                                <div class="flex items-center gap-1.5">
-                                                    <span class="h-1 w-1 bg-campus-500 rounded-full"></span>
-                                                    <span class="truncate max-w-[200px]" x-text="file.name"></span>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-
-                            <!-- Beautiful Folder Selection Dropdown -->
-                            <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/50 p-5" x-data="{ dropdownOpen: false, selectedFolderText: '-- Tanpa Folder (Dokumen Mandiri) --' }">
-                                <div class="flex items-center gap-2 text-slate-700">
-                                    <i data-lucide="folder" class="h-4.5 w-4.5 text-slate-500"></i>
-                                    <span class="text-sm font-bold">Simpan ke Folder (Opsional)</span>
-                                </div>
-                                
-                                <!-- Hidden select input to submit value -->
-                                <input type="hidden" name="folder_id" :value="folderSelection">
-
-                                <!-- Custom Select Trigger -->
-                                <div class="relative">
-                                    <button type="button" @click="dropdownOpen = !dropdownOpen" @click.outside="dropdownOpen = false"
-                                            class="flex w-full items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-campus-100 focus:border-campus-500 transition shadow-sm">
-                                        <span class="truncate" x-text="selectedFolderText"></span>
-                                        <i data-lucide="chevron-down" class="h-4 w-4 text-slate-400 transition-transform" :class="dropdownOpen ? 'rotate-180' : ''"></i>
-                                    </button>
-
-                                    <!-- Dropdown Options List -->
-                                    <div x-show="dropdownOpen" x-cloak
-                                         x-transition:enter="transition ease-out duration-100"
-                                         x-transition:enter-start="transform opacity-0 scale-95"
-                                         x-transition:enter-end="transform opacity-100 scale-100"
-                                         x-transition:leave="transition ease-in duration-75"
-                                         x-transition:leave-start="transform opacity-100 scale-100"
-                                         x-transition:leave-end="transform opacity-0 scale-95"
-                                         class="absolute z-20 mt-1.5 w-full max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg outline-none">
-                                        
-                                        <!-- Option 1: None -->
-                                        <button type="button" @click="folderSelection = ''; selectedFolderText = '-- Tanpa Folder (Dokumen Mandiri) --'; dropdownOpen = false"
-                                                class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-left transition hover:bg-slate-50 text-slate-700 font-medium"
-                                                :class="folderSelection === '' ? 'bg-campus-50/60 text-campus-700 font-bold' : ''">
-                                            <i data-lucide="file" class="h-4 w-4 text-slate-400"></i>
-                                            <span>Tanpa Folder (Dokumen Mandiri)</span>
-                                        </button>
-                                        
-                                        <!-- Option 2: New Folder -->
-                                        <button type="button" @click="folderSelection = 'new'; selectedFolderText = '+ Buat Folder Baru...'; dropdownOpen = false"
-                                                class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-left transition hover:bg-emerald-50 text-emerald-700 font-bold border-t border-slate-100"
-                                                :class="folderSelection === 'new' ? 'bg-emerald-50 text-emerald-700' : ''">
-                                            <i data-lucide="folder-plus" class="h-4 w-4 text-emerald-500"></i>
-                                            <span>Buat Folder Baru...</span>
-                                        </button>
-
-                                        <!-- Divider -->
-                                        <div class="h-px bg-slate-100 my-1"></div>
-
-                                        <!-- Existing Folders -->
-                                        @foreach($folders as $folder)
-                                            <button type="button" @click="folderSelection = '{{ $folder->id }}'; selectedFolderText = '{{ addslashes($folder->name) }}'; dropdownOpen = false"
-                                                    class="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-left transition hover:bg-slate-50 text-slate-700"
-                                                    :class="folderSelection === '{{ $folder->id }}' ? 'bg-campus-50/60 text-campus-700 font-bold' : ''">
-                                                <i data-lucide="folder" class="h-4 w-4 text-slate-400"></i>
-                                                <span class="truncate">{{ $folder->name }}</span>
-                                            </button>
-                                        @endforeach
-                                    </div>
-                                </div>
-
-                                <!-- New Folder Name Input -->
-                                <div x-show="folderSelection === 'new'" x-cloak class="mt-3.5 space-y-2">
-                                    <label for="new_folder_name" class="block text-xs font-bold text-slate-500">Nama Folder Baru</label>
-                                    <input type="text" name="new_folder_name" id="new_folder_name" :required="folderSelection === 'new'" placeholder="Contoh: Matematika - Bab 3" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-campus-500 focus:ring-1 focus:ring-campus-500 outline-none transition shadow-sm">
-                                </div>
-                            </div>
-
-                            <!-- Error Alert -->
-                            <div x-show="errorMessage" x-cloak class="p-4 mb-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-sm flex gap-3 text-left">
-                                <i data-lucide="alert-circle" class="h-5 w-5 shrink-0 mt-0.5"></i>
-                                <div>
-                                    <span class="font-bold">Gagal mengunggah:</span>
-                                    <p class="mt-1" x-text="errorMessage"></p>
-                                </div>
-                            </div>
-
-                            <!-- Submit Button -->
-                            <div class="flex justify-end">
-                                <button type="submit" :disabled="uploading"
-                                        class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-campus-700 px-6 text-sm font-bold text-white shadow-md hover:bg-campus-850 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <i data-lucide="sparkles" class="h-4 w-4"></i>
-                                    <span>Mulai Belajar Bareng</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+        <section class="room-materials" data-pagination-region="materials_page" id="room-materials" aria-labelledby="room-materials-title">
+            <div class="section-heading"><div><h2 id="room-materials-title">Atau, kamu yang ajak duluan</h2><p>Pilih bahan obrolannya. PIN ruang menyusul.</p></div><button type="button" class="text-link" data-room-upload-open>Upload materi baru<span data-icon="upload"></span></button></div>
+            @if($myActiveRooms->isNotEmpty())
+                <p class="rooms-create-note"><span data-icon="info"></span>Membuat ruang baru akan menutup ruang yang sedang kamu kelola.</p>
+            @endif
+            @if($materials->total() === 0)
+                <div class="rooms-empty"><span data-icon="book-open"></span><h3>Bahan obrolannya belum ada</h3><p>Upload catatan atau materi kuliahmu, lalu ajak teman belajar.</p><button type="button" class="button button-primary" data-room-upload-open>Upload materi<span data-icon="arrow-right"></span></button></div>
+            @else
+                <div class="room-material-list">
+                    @foreach($materials as $material)
+                        <form method="POST" action="{{ route('study-rooms.store') }}" data-room-create>
+                            @csrf
+                            <input type="hidden" name="source_type" value="{{ $material['type'] }}">
+                            <input type="hidden" name="{{ $material['type'] === 'folder' ? 'folder_id' : 'document_id' }}" value="{{ $material['id'] }}">
+                            <button type="submit" class="room-material" aria-label="Bikin ruang untuk {{ $material['title'] }}"><span class="room-book {{ $material['type'] === 'folder' ? 'room-book-folder' : '' }}" aria-hidden="true"><span>{{ $material['type'] === 'folder' ? 'Folder' : 'File' }}</span><span data-icon="{{ $material['type'] === 'folder' ? 'folder' : 'file' }}"></span><span>Materi bersama</span></span><span class="room-material-copy"><small>{{ $material['meta'] }}</small><strong>{{ $material['title'] }}</strong><span>Bikin ruang<span data-icon="arrow-up-right"></span></span></span></button>
+                        </form>
+                    @endforeach
                 </div>
+                {{ $materials->links() }}
+            @endif
+        </section>
 
-            </div>
-
-        </div>
-
-        <!-- Progress Overlay Modal -->
-        <div x-show="uploading" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <div class="w-full max-w-md transform overflow-hidden rounded-[1.75rem] bg-white p-6 shadow-2xl border border-slate-100 text-center">
-                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-campus-50 text-campus-700 shadow-inner mb-4">
-                    <i data-lucide="upload-cloud" class="h-7 w-7 animate-bounce"></i>
-                </div>
-
-                <h3 class="text-lg font-bold text-slate-800 tracking-tight" x-text="statusText">Mengunggah file...</h3>
-                
-                <!-- Progress Bar -->
-                <div class="mt-4 w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner border border-slate-200/50">
-                    <div class="bg-gradient-to-r from-campus-500 to-campus-700 h-full rounded-full transition-all duration-300 ease-out" :style="`width: ${progress}%`"></div>
-                </div>
-
-                <!-- Progress Percentage -->
-                <div class="mt-2 text-sm font-bold text-campus-700" x-text="`${progress}%`">0%</div>
-
-                <p class="text-xs text-slate-500 mt-4 leading-relaxed">
-                    Proses upload tergantung cepat atau lambatnya jaringan internet Anda.<br>
-                    Harap tunggu dan jangan menutup halaman ini.
-                </p>
-            </div>
-        </div>
-
+        <dialog id="room-upload-dialog" class="room-upload-dialog" aria-labelledby="room-upload-title" data-reopen="{{ old('source_type') === 'upload' ? 'true' : 'false' }}">
+            <div class="dialog-heading"><div><p class="eyebrow">Kamu yang mulai</p><h2 id="room-upload-title">Bawa bahan obrolannya</h2></div><button type="button" class="icon-button" data-room-upload-close aria-label="Tutup upload"><span data-icon="close"></span></button></div>
+            <p>Upload materi, lalu bagikan PIN ruangnya ke teman.</p>
+            <form method="POST" action="{{ route('study-rooms.store') }}" enctype="multipart/form-data" data-room-upload>
+                @csrf
+                <input type="hidden" name="source_type" value="upload">
+                <label class="room-upload-zone" for="room-files"><span data-icon="upload"></span><strong>Pilih file atau seret ke sini</strong><span>PDF, Word, PowerPoint, atau gambar. Maks. 20 MB per file.</span><input id="room-files" type="file" name="files[]" accept=".pdf,.docx,.pptx,.jpg,.jpeg,.png,.gif,.webp" multiple required></label>
+                <ul class="room-upload-files" data-room-files aria-live="polite"></ul>
+                <label for="room-folder">Simpan ke folder</label>
+                <select id="room-folder" name="folder_id"><option value="">Tanpa folder</option><option value="new" @selected(old('folder_id') === 'new')>Buat folder baru</option>@foreach($allFolders as $folder)<option value="{{ $folder->id }}" @selected((string) old('folder_id') === (string) $folder->id)>{{ $folder->name }}</option>@endforeach</select>
+                <div class="room-folder-name" data-room-folder-name @if(old('folder_id') !== 'new') hidden @endif><label for="room-new-folder">Nama folder baru</label><input id="room-new-folder" type="text" name="new_folder_name" value="{{ old('new_folder_name') }}" maxlength="250" placeholder="Contoh: Catatan biologi" @required(old('folder_id') === 'new')></div>
+                @if($myActiveRooms->isNotEmpty())<p class="rooms-create-note">Ruang yang sedang kamu kelola akan ditutup saat ruang baru dibuat.</p>@endif
+                <p class="room-upload-error" data-room-upload-error role="alert" hidden></p>
+                <div class="room-upload-progress" data-room-upload-progress hidden><progress max="100" value="0" aria-label="Progres upload materi"></progress><p role="status">Mengunggah materi...</p></div>
+                <button class="button button-primary" type="submit">Upload &amp; bikin ruang<span data-icon="arrow-right"></span></button>
+            </form>
+        </dialog>
     </div>
 </x-app-layout>

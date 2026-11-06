@@ -10,6 +10,18 @@ class Document extends Model
 {
     use HasFactory, HasPublicId;
 
+    protected static function booted(): void
+    {
+        static::created(fn (Document $document) => app(\App\Services\SummaryReuse::class)->invalidateLegacy($document, contentChanged: false));
+        static::updated(function (Document $document) {
+            $contentChanged = $document->wasChanged(['title', 'file_path', 'extension', 'extracted_text']);
+            if ($contentChanged || $document->wasChanged('folder_id')) {
+                app(\App\Services\SummaryReuse::class)->invalidateLegacy($document, $document->getOriginal('folder_id'), $contentChanged);
+            }
+        });
+        static::deleting(fn (Document $document) => app(\App\Services\SummaryReuse::class)->invalidateLegacy($document, contentChanged: false));
+    }
+
     protected $fillable = [
         'user_id',
         'folder_id',

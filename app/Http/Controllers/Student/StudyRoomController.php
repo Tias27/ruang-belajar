@@ -12,6 +12,7 @@ use App\Services\LearningSourceService;
 use App\Events\StudyRoomMessageSent;
 use App\Services\ActivityLogger;
 use App\Services\DocumentTextExtractor;
+use App\Services\MaterialShelf;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ use Throwable;
 
 class StudyRoomController extends Controller
 {
-    public function index()
+    public function index(MaterialShelf $shelf)
     {
         $userId = Auth::id();
 
@@ -42,27 +43,22 @@ class StudyRoomController extends Controller
             $myActiveRooms = $allActiveRooms;
         }
 
-        // Active rooms joined by the user (where they are not the host)
-        $joinedActiveRooms = StudyRoom::with(['target', 'host', 'users'])
+        // Hosted and joined rooms share a single pager.
+        $activeRooms = StudyRoom::with(['target', 'host', 'users'])
             ->where('status', 'active')
-            ->whereHas('users', function ($query) use ($userId) {
-                $query->where('users.id', $userId);
-            })
-            ->latest()
-            ->get();
+            ->where(fn ($query) => $query->where('host_id', $userId)
+                ->orWhereHas('users', fn ($members) => $members->where('users.id', $userId)))
+            ->latest()->orderByDesc('id')->paginate(5, ['*'], 'rooms_page')
+            ->withQueryString()->fragment('rooms-active-title');
 
-        // User's folders
-        $folders = Auth::user()->documentFolders()
+        // The upload selector must include folders beyond the current shelf page.
+        $allFolders = Auth::user()->documentFolders()
             ->latest()
-            ->get();
+            ->get(['id', 'name']);
 
-        // User's documents (not in a folder)
-        $documents = Auth::user()->documents()
-            ->whereNull('folder_id')
-            ->latest()
-            ->get();
+        $materials = $shelf->paginate(Auth::user(), 5, 'materials_page')->fragment('room-materials');
 
-        return view('student.study-rooms.index', compact('myActiveRooms', 'joinedActiveRooms', 'folders', 'documents'));
+        return view('student.study-rooms.index', compact('myActiveRooms', 'activeRooms', 'allFolders', 'materials'));
     }
 
     public function store(Request $request, DocumentTextExtractor $extractor, ActivityLogger $logger)
@@ -401,6 +397,10 @@ class StudyRoomController extends Controller
 
         if ($request->header('Accept') === 'text/event-stream') {
             return response()->stream(function () use ($room, $gemini, $sources, $messageText, $history, $absoluteImagePath, $userMessage, $userId) {
+                @ini_set('zlib.output_compression', '0');
+                echo ": connected\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
                 $tempMsgId = 'ai-stream-' . time() . '-' . rand(1000, 9999);
 
                 $fullAnswer = '';
@@ -452,13 +452,13 @@ class StudyRoomController extends Controller
                 if (ob_get_level() > 0) ob_flush();
                 flush();
 
-                \App\Jobs\ConsolidateAiMemoryJob::dispatchSync($room->target, auth()->user(), [
+                \App\Jobs\ConsolidateAiMemoryJob::enqueue($room->target, auth()->user(), [
                     ['is_ai' => false, 'message' => $userMessage->message],
                     ['is_ai' => true, 'message' => $aiMessage->message],
                 ]);
             }, 200, [
                 'Content-Type' => 'text/event-stream',
-                'Cache-Control' => 'no-cache',
+                'Cache-Control' => 'no-cache, no-transform',
                 'X-Accel-Buffering' => 'no',
             ]);
         }
@@ -484,7 +484,7 @@ class StudyRoomController extends Controller
 
         $this->broadcastRoomEvent(new StudyRoomMessageSent($aiMessage));
 
-        \App\Jobs\ConsolidateAiMemoryJob::dispatchSync($target, auth()->user(), [
+        \App\Jobs\ConsolidateAiMemoryJob::enqueue($target, auth()->user(), [
             ['is_ai' => false, 'message' => $userMessage->message],
             ['is_ai' => true, 'message' => $aiMessage->message],
         ]);

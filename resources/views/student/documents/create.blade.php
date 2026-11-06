@@ -1,5 +1,5 @@
 <x-app-layout title="Upload Materi">
-    <div class="mx-auto max-w-5xl min-w-0 overflow-x-hidden" x-data="{ 
+    <div class="learning-live live-upload mx-auto max-w-5xl min-w-0 overflow-x-hidden" x-data="{ 
         mode: '{{ old('upload_mode', 'files') }}', 
         files: [],
         uploading: false,
@@ -134,13 +134,13 @@
             xhr.onerror = () => {
                 this.stopProcessingSimulation();
                 this.uploading = false;
-                this.errorMessage = 'Koneksi ke server terputus. Harap periksa jaringan internet Anda.';
+                this.errorMessage = 'Koneksi ke server terputus. Harap periksa jaringan internet kamu.';
             };
 
             xhr.send(formData);
         }
     }">
-        <section class="overflow-hidden rounded-[1.75rem] bg-campus-50 p-5 sm:p-7">
+        <section class="live-page-heading overflow-hidden rounded-[1.75rem] bg-campus-50 p-5 sm:p-7">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <span class="inline-flex rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-campus-700 shadow-sm">Upload Materi</span>
@@ -226,7 +226,7 @@
                                 <i data-lucide="upload-cloud" class="h-6 w-6"></i>
                             </span>
                             <span class="mt-4 text-sm font-semibold text-slate-900">Klik untuk pilih file</span>
-                            <span class="mt-1 text-xs leading-5 text-slate-500" x-text="mode === 'folder' ? 'Pilih beberapa file sekaligus (tahan Ctrl/Shift). Anda juga bisa klik lagi untuk menambahkan file lain.' : 'Pilih satu file materi.'"></span>
+                            <span class="mt-1 text-xs leading-5 text-slate-500" x-text="mode === 'folder' ? 'Pilih beberapa file sekaligus (tahan Ctrl/Shift). kamu juga bisa klik lagi untuk menambahkan file lain.' : 'Pilih satu file materi.'"></span>
                             <input x-ref="fileInput" name="files[]" type="file" accept=".pdf,.docx,.pptx,.jpg,.jpeg,.png,.gif,.webp" x-bind:multiple="mode === 'folder'" required class="sr-only" x-on:change="handleFileSelect($event)">
                         </label>
                     </div>
@@ -287,7 +287,7 @@
                 <div class="mt-2 text-sm font-bold text-campus-700" x-text="`${progress}%`">0%</div>
 
                 <p class="text-xs text-slate-500 mt-4 leading-relaxed">
-                    Proses upload tergantung cepat atau lambatnya jaringan internet Anda.<br>
+                    Proses upload tergantung cepat atau lambatnya jaringan internet kamu.<br>
                     Harap tunggu dan jangan menutup halaman ini.
                 </p>
             </div>

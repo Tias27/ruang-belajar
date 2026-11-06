@@ -15,7 +15,7 @@
     </div>
 
     <!-- Stats Cards Grid -->
-    <div class="mt-6 grid grid-cols-3 gap-4 lg:gap-5">
+    <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3 lg:gap-5">
         <!-- Card 1: Total Revenue -->
         <div class="flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex items-center justify-between">
@@ -169,10 +169,11 @@
         </div>
     </div>
 
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Local chart asset. -->
+    <script src="{{ asset('ui/vendor/chart.umd.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            Chart.defaults.font.family = 'Plus Jakarta Sans';
             const ctxBreakdown = document.getElementById('breakdownChart').getContext('2d');
             
             new Chart(ctxBreakdown, {
@@ -181,7 +182,7 @@
                     labels: ['Langganan', 'Iklan & Sponsor'],
                     datasets: [{
                         data: [{{ $breakdown['subscriptions'] }}, {{ $breakdown['ads'] }}],
-                        backgroundColor: ['#10b981', '#3b82f6'],
+                        backgroundColor: ['#799675', '#416f94'],
                         borderWidth: 2,
                         borderColor: '#ffffff',
                         hoverOffset: 4
@@ -195,14 +196,14 @@
                             position: 'bottom',
                             labels: {
                                 boxWidth: 12,
-                                font: { size: 11 },
-                                color: '#64748b'
+                                font: { size: 10 },
+                                color: '#666666'
                             }
                         },
                         tooltip: {
-                            backgroundColor: '#0f172a',
-                            titleFont: { size: 11, weight: '600' },
-                            bodyFont: { size: 12 },
+                            backgroundColor: '#262626',
+                            titleFont: { size: 10, weight: '600' },
+                            bodyFont: { size: 11 },
                             padding: 10,
                             borderRadius: 8,
                             callbacks: {

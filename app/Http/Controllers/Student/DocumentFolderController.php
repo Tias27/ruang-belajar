@@ -34,11 +34,11 @@ class DocumentFolderController extends Controller
                 ])
                 ->load([
                     'documents' => fn ($query) => $query->oldest(),
-                    'summaries' => fn ($query) => $query->latest()->take(5),
-                    'quizzes' => fn ($query) => $query->whereNull('study_room_id')->latest()->take(5),
-                    'chatSessions' => fn ($query) => $query->latest()->take(5),
                     'notes' => fn ($query) => $query->where('user_id', auth()->id())->latest()->take(1),
                 ]),
+            'summaryHistory' => $folder->summaries()->latest()->orderByDesc('id')->paginate(5, ['*'], 'summary_page')->withQueryString()->fragment('learning-history'),
+            'quizHistory' => $folder->quizzes()->whereNull('study_room_id')->latest()->orderByDesc('id')->paginate(5, ['*'], 'quiz_page')->withQueryString()->fragment('learning-history'),
+            'chatHistory' => $folder->chatSessions()->latest()->orderByDesc('id')->paginate(5, ['*'], 'chat_page')->withQueryString()->fragment('learning-history'),
             'allFolders' => $allFolders,
         ]);
     }

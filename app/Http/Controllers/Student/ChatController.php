@@ -7,6 +7,7 @@ use App\Models\ChatSession;
 use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Services\ActivityLogger;
+use App\Services\ChatMaterials;
 use App\Services\GeminiService;
 use App\Services\LearningSourceService;
 use Illuminate\Http\Request;
@@ -37,9 +38,27 @@ class ChatController extends Controller
         }
 
         return view('student.chat.index', [
-            'sessions' => $sessions->latest()->paginate(12)->withQueryString(),
+            'sessions' => $sessions->latest()->orderByDesc('id')->paginate(5)->withQueryString()->fragment('conversation-list'),
             'search' => $search,
         ]);
+    }
+
+    public function general()
+    {
+        $session = new ChatSession(['title' => 'Tanya AI']);
+        $session->setRelation('messages', collect());
+        return view('student.chat.show', ['session' => $session]);
+    }
+
+    public function storeGeneral(Request $request, GeminiService $gemini, ActivityLogger $logger, LearningSourceService $sources)
+    {
+        $request->validate([
+            'question' => ['required', 'string', 'max:2000'],
+            'image' => ['nullable', 'image', 'max:5120', 'mimes:jpeg,png,jpg,webp,gif'],
+        ]);
+        app(ChatMaterials::class)->fromRequest($request);
+        $session = auth()->user()->chatSessions()->create(['title' => 'Tanya AI']);
+        return $this->store($request, $session, $gemini, $logger, $sources);
     }
 
     public function create(Document $document)
@@ -104,15 +123,20 @@ class ChatController extends Controller
             'image' => ['nullable', 'image', 'max:5120', 'mimes:jpeg,png,jpg,webp,gif'],
         ]);
 
+        $materials = app(ChatMaterials::class)->fromRequest($request, $session);
         $imagePath = null;
-        $dbMetadata = null;
+        $contextMaterials = app(ChatMaterials::class)->describe($materials);
+        $dbMetadata = [
+            'materials' => $request->filled('material_ids') ? $contextMaterials : [],
+            'context_materials' => $contextMaterials,
+        ];
 
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $fileName = (string) Str::uuid() . '.' . $file->getClientOriginalExtension();
             $file->move(storage_path('app/public/chat_images'), $fileName);
             $imagePath = 'chat_images/' . $fileName;
-            $dbMetadata = ['image_path' => 'storage/' . $imagePath];
+            $dbMetadata['image_path'] = 'storage/' . $imagePath;
         }
 
         $absoluteImagePath = $imagePath ? storage_path('app/public/' . $imagePath) : null;
@@ -138,7 +162,11 @@ class ChatController extends Controller
         $source = $session->folder ?: $session->document;
 
         if ($request->header('Accept') === 'text/event-stream' || $request->expectsJson()) {
-            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history, $absoluteImagePath) {
+            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history, $absoluteImagePath, $materials) {
+                @ini_set('zlib.output_compression', '0');
+                echo ": connected\n\n";
+                if (ob_get_level() > 0) ob_flush();
+                flush();
                 $session->update(['title' => Str::limit($data['question'], 70)]);
                 $logger->log('chat_document', $session, ['document_id' => $session->document_id, 'folder_id' => $session->folder_id]);
 
@@ -146,7 +174,7 @@ class ChatController extends Controller
                 $sourceSnippets = [];
 
                 try {
-                    $stream = $gemini->streamChat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath);
+                    $stream = $gemini->streamChat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath, $materials->all(), richResponses: true);
                     foreach ($stream as $chunk) {
                         $fullAnswer .= $chunk;
                         echo "data: " . json_encode(['chunk' => $chunk]) . "\n\n";
@@ -155,17 +183,20 @@ class ChatController extends Controller
                         flush();
                     }
 
-                    $sourceSnippets = $sources->snippetsFor($source, $data['question'] . ' ' . $fullAnswer);
+                    $sourceSnippets = ($source ? $sources->snippetsFor($source, $data['question'] . ' ' . $fullAnswer) : []);
                 } catch (Throwable $exception) {
                     report($exception);
-                    $fullAnswer = $sources->fallbackAnswer($source, $data['question'], $exception->getMessage());
-                    $sourceSnippets = $sources->snippetsFor($source, $data['question']);
+                    $fullAnswer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage()) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
+                    $sourceSnippets = ($source ? $sources->snippetsFor($source, $data['question']) : []);
                     echo "data: " . json_encode(['chunk' => $fullAnswer]) . "\n\n";
                     if (ob_get_level() > 0)
                         ob_flush();
                     flush();
                 }
 
+                $sourceSnippets = collect($sourceSnippets)
+                    ->concat(app(ChatMaterials::class)->snippets($materials, $data['question']))
+                    ->unique(fn ($snippet) => $snippet['document_id'].'|'.$snippet['snippet'])->values()->all();
                 $assistantMessage = $session->messages()->create([
                     'role' => 'assistant',
                     'content' => $fullAnswer,
@@ -174,13 +205,15 @@ class ChatController extends Controller
                     ],
                 ]);
 
-                \App\Jobs\ConsolidateAiMemoryJob::dispatchSync($source, auth()->user(), [
+                if ($source && $materials->isEmpty()) \App\Jobs\ConsolidateAiMemoryJob::enqueue($source, auth()->user(), [
                     ['is_ai' => false, 'message' => $data['question']],
                     ['is_ai' => true, 'message' => $fullAnswer],
                 ]);
 
                 echo "data: " . json_encode([
                     'done' => true,
+                    'session_url' => route('chat.show', $session),
+                    'store_url' => route('chat.store', $session),
                     'title' => $session->title,
                     'message' => [
                         'id' => $assistantMessage->id,
@@ -193,7 +226,7 @@ class ChatController extends Controller
                     ob_flush();
                 flush();
             }, 200, [
-                'Cache-Control' => 'no-cache',
+                'Cache-Control' => 'no-cache, no-transform',
                 'Content-Type' => 'text/event-stream',
                 'X-Accel-Buffering' => 'no',
             ]);
@@ -201,13 +234,16 @@ class ChatController extends Controller
 
         // Fallback for non-AJAX / non-streaming requests
         try {
-            $answer = $gemini->chat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath);
-            $sourceSnippets = $sources->snippetsFor($source, $data['question'] . ' ' . $answer);
+            $answer = $gemini->chat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath, $materials->all(), richResponses: true);
+            $sourceSnippets = ($source ? $sources->snippetsFor($source, $data['question'] . ' ' . $answer) : []);
         } catch (Throwable $exception) {
             report($exception);
-            $answer = $sources->fallbackAnswer($source, $data['question'], $exception->getMessage());
-            $sourceSnippets = $sources->snippetsFor($source, $data['question']);
+            $answer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage()) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
+            $sourceSnippets = ($source ? $sources->snippetsFor($source, $data['question']) : []);
         }
+        $sourceSnippets = collect($sourceSnippets)
+            ->concat(app(ChatMaterials::class)->snippets($materials, $data['question']))
+            ->unique(fn ($snippet) => $snippet['document_id'].'|'.$snippet['snippet'])->values()->all();
         $session->messages()->create([
             'role' => 'assistant',
             'content' => $answer,
@@ -218,7 +254,7 @@ class ChatController extends Controller
         $session->update(['title' => Str::limit($data['question'], 70)]);
         $logger->log('chat_document', $session, ['document_id' => $session->document_id, 'folder_id' => $session->folder_id]);
 
-        \App\Jobs\ConsolidateAiMemoryJob::dispatchSync($source, auth()->user(), [
+        if ($source && $materials->isEmpty()) \App\Jobs\ConsolidateAiMemoryJob::enqueue($source, auth()->user(), [
             ['is_ai' => false, 'message' => $data['question']],
             ['is_ai' => true, 'message' => $answer],
         ]);

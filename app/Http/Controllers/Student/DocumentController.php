@@ -45,8 +45,8 @@ class DocumentController extends Controller
         $allFolders = auth()->user()->documentFolders()->latest()->get();
 
         return view('student.documents.index', [
-            'documents' => $documents->latest()->paginate(10)->withQueryString(),
-            'folders' => $folders->latest()->paginate(9, ['*'], 'folders_page')->withQueryString(),
+            'documents' => $documents->latest()->orderByDesc('id')->paginate(5)->withQueryString()->fragment('document-list'),
+            'folders' => $folders->latest()->orderByDesc('id')->paginate(5, ['*'], 'folders_page')->withQueryString()->fragment('folder-list'),
             'allFolders' => $allFolders,
             'search' => $query,
         ]);
@@ -176,11 +176,11 @@ class DocumentController extends Controller
                     'chatSessions'
                 ])
                 ->load([
-                    'summaries' => fn ($query) => $query->latest()->take(5),
-                    'quizzes' => fn ($query) => $query->whereNull('study_room_id')->latest()->take(5),
-                    'chatSessions' => fn ($query) => $query->latest()->take(5),
                     'notes' => fn ($query) => $query->where('user_id', auth()->id())->latest()->take(1),
                 ]),
+            'summaryHistory' => $document->summaries()->latest()->orderByDesc('id')->paginate(5, ['*'], 'summary_page')->withQueryString()->fragment('learning-history'),
+            'quizHistory' => $document->quizzes()->whereNull('study_room_id')->latest()->orderByDesc('id')->paginate(5, ['*'], 'quiz_page')->withQueryString()->fragment('learning-history'),
+            'chatHistory' => $document->chatSessions()->latest()->orderByDesc('id')->paginate(5, ['*'], 'chat_page')->withQueryString()->fragment('learning-history'),
         ]);
     }
     public function download(Document $document)

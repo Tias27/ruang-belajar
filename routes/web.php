@@ -31,6 +31,9 @@ Route::middleware('guest')->group(function () {
     Route::post('register', [RegisteredUserController::class, 'store']);
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::get('captcha/refresh', function () {
+        return response()->json(\App\Services\MathCaptchaService::generate());
+    })->name('captcha.refresh');
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
@@ -62,6 +65,10 @@ Route::middleware(['auth', 'role:mahasiswa'])->group(function () {
     Route::get('summaries/{summary}', [SummaryController::class, 'show'])->name('summaries.show');
     Route::redirect('riwayat-tanya-ai', '/riwayat');
     Route::get('riwayat', [ChatController::class, 'index'])->name('chat.index');
+    Route::get('tanya-ai', [ChatController::class, 'general'])->name('chat.general');
+    Route::get('tanya-ai/materi', [\App\Http\Controllers\Student\ChatMaterialController::class, 'index'])->name('chat.materials.index');
+    Route::post('tanya-ai/materi', [\App\Http\Controllers\Student\ChatMaterialController::class, 'store'])->name('chat.materials.store');
+    Route::post('tanya-ai', [ChatController::class, 'storeGeneral'])->name('chat.general.store');
     Route::delete('riwayat-selected', [ChatController::class, 'bulkDestroy'])->name('chat.bulk-destroy');
     Route::post('documents/{document}/tanya', [ChatController::class, 'create'])->name('chat.create');
     Route::post('folders/{folder}/tanya', [ChatController::class, 'createFolder'])->name('folders.chat.create');

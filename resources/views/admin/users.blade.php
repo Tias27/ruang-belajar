@@ -4,6 +4,7 @@
         <h1 class="mt-2 text-2xl font-semibold tracking-tight text-campus-900">Kelola Pengguna</h1>
         <p class="mt-1 text-sm text-slate-500">Lihat akun pembelajar dan ubah peran bila diperlukan.</p>
     </section>
+    <section data-pagination-region="page">
     <div class="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <table class="min-w-full divide-y divide-slate-200 text-sm">
             <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
@@ -34,4 +35,5 @@
         </table>
     </div>
     <div class="mt-4">{{ $users->links() }}</div>
+    </section>
 </x-app-layout>

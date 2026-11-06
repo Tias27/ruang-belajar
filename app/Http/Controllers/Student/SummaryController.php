@@ -7,50 +7,47 @@ use App\Jobs\GenerateSummaryJob;
 use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Models\Summary;
+use App\Services\SummaryReuse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class SummaryController extends Controller
 {
-    public function store(Document $document)
+    public function store(Document $document, SummaryReuse $reuse)
     {
         abort_if($document->user_id !== auth()->id(), 403);
 
-        $summary = Summary::create([
-            'document_id' => $document->id,
-            'user_id' => auth()->id(),
-            'short_summary' => 'Ringkasan sedang dibuat.',
-            'full_summary' => 'AI sedang membaca materi dan menyusun ringkasan. Halaman ini bisa kamu refresh beberapa saat lagi.',
-            'key_points' => [],
-            'conclusion' => null,
-            'raw_response' => [],
-            'status' => 'processing',
-        ]);
+        [$summary, $generate] = $reuse->resolve($document);
+        if ($generate) GenerateSummaryJob::dispatchSync($summary->id);
 
-        GenerateSummaryJob::dispatchSync($summary->id);
-
-        return redirect()->route('summaries.show', $summary)->with('status', 'Ringkasan selesai diproses.');
+        return $this->openResult($summary, $generate);
     }
 
-    public function storeFolder(\Illuminate\Http\Request $request, DocumentFolder $folder)
+    public function storeFolder(Request $request, DocumentFolder $folder, SummaryReuse $reuse)
     {
         abort_if($folder->user_id !== auth()->id(), 403);
 
-        $selectedDocIds = $request->input('document_ids');
-
-        $summary = Summary::create([
-            'folder_id' => $folder->id,
-            'user_id' => auth()->id(),
-            'short_summary' => 'Ringkasan folder sedang dibuat.',
-            'full_summary' => 'AI sedang membaca semua materi dalam folder dan menyusun ringkasan. Halaman ini bisa kamu refresh beberapa saat lagi.',
-            'key_points' => [],
-            'conclusion' => null,
-            'raw_response' => [],
-            'status' => 'processing',
-            'selected_document_ids' => $selectedDocIds,
+        $data = $request->validate([
+            'document_ids' => ['nullable', 'array'],
+            'document_ids.*' => ['required', 'string', 'max:40', 'distinct'],
         ]);
+        $selectedDocIds = filled($data['document_ids'] ?? null) ? array_values($data['document_ids']) : null;
+        if ($selectedDocIds && $folder->documents()->where('user_id', auth()->id())->whereIn('public_id', $selectedDocIds)->count() !== count($selectedDocIds)) {
+            throw ValidationException::withMessages(['document_ids' => 'Pilih file yang masih tersedia dalam folder ini']);
+        }
 
-        GenerateSummaryJob::dispatchSync($summary->id, $selectedDocIds);
+        [$summary, $generate] = $reuse->resolve($folder, $selectedDocIds);
+        if ($generate) GenerateSummaryJob::dispatchSync($summary->id, $selectedDocIds);
 
-        return redirect()->route('summaries.show', $summary)->with('status', 'Ringkasan folder selesai diproses.');
+        return $this->openResult($summary, $generate);
+    }
+
+    private function openResult(Summary $summary, bool $generated)
+    {
+        $response = redirect()->route('summaries.show', $summary);
+        return $summary->refresh()->status === 'completed'
+            ? $response->with('status', $generated ? 'Ringkasan siap dibaca' : 'Ringkasan sebelumnya dibuka')
+            : $response;
     }
 
     public function show(Summary $summary)
