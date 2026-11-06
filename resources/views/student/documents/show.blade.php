@@ -61,13 +61,14 @@
             </div>
 
             <div class="live-study-actions">
-                <form id="learn-summary" method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
+                <form id="learn-summary" method="POST" action="{{ route('summaries.store', $document) }}" x-data="summaryRequest()" x-on:submit.prevent="if (!aiBusy) submit($el)" class="min-w-0">
                     @csrf
                     <button x-bind:disabled="aiBusy || loading" class="flex h-full w-full min-w-0 items-center gap-3 rounded-[1.25rem] bg-white p-4 text-left shadow-sm hover:bg-campus-100 disabled:cursor-wait disabled:opacity-75">
                         <span x-show="!loading" class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-campus-50 text-campus-700"><i data-lucide="notebook-tabs" class="h-5 w-5"></i></span>
                         <span x-show="loading" x-cloak class="h-10 w-10 shrink-0 animate-spin rounded-full border-2 border-campus-100 border-t-campus-700"></span>
-                        <span class="min-w-0"><span class="block truncate text-sm font-semibold text-slate-900" x-text="loading ? 'Menyiapkan ringkasan...' : 'Ringkasan'"></span><span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'Memeriksa hasil tersimpan dan isi materi' : 'Inti, poin penting, kesimpulan.'"></span></span>
+                        <span class="min-w-0"><span class="block truncate text-sm font-semibold text-slate-900" x-text="loading ? 'Menyiapkan ringkasan...' : 'Ringkasan'"></span><span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'Menunggu hasil ringkasan siap' : 'Inti, poin penting, kesimpulan'"></span></span>
                     </button>
+                    <p x-cloak x-show="error" x-text="error" role="alert" class="mt-2 text-xs text-rose-700"></p>
                 </form>
                 <form id="learn-chat" method="POST" action="{{ route('chat.create', $document) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true)" class="min-w-0">
                     @csrf
@@ -110,7 +111,7 @@
         @if($document->processing_notes)
             <div class="mt-5 flex min-w-0 gap-3 rounded-[1.25rem] bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <i data-lucide="info" class="mt-0.5 h-4 w-4 shrink-0"></i>
-                <span class="min-w-0 break-words">{{ $document->processing_notes }}</span>
+                <span class="min-w-0 break-words">{{ \App\Models\Document::TEXT_UNAVAILABLE_MESSAGE }}</span>
             </div>
         @endif
 
@@ -140,13 +141,11 @@
                 </details>
             @endforeach
 
-            <section class="min-w-0 overflow-hidden rounded-[1.25rem] bg-white p-5 shadow-sm">
+            <a href="{{ route('flashcards.index', $document) }}" class="live-history-link" aria-label="Buka kartu belajar, {{ $document->flashcards_count }} kartu">
                 <h2 class="font-semibold text-slate-900">Kartu belajar</h2>
-                <a href="{{ route('flashcards.index', $document) }}" class="mt-4 flex min-w-0 items-center justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm font-medium text-campus-700 hover:bg-campus-50">
-                    <span class="min-w-0 truncate">{{ $document->flashcards_count }} kartu tersedia</span>
-                    <i data-lucide="arrow-right" class="h-4 w-4 shrink-0"></i>
-                </a>
-            </section>
+                <span class="live-history-total">{{ $document->flashcards_count }}</span>
+                <i data-lucide="arrow-right" class="h-4 w-4 shrink-0" aria-hidden="true"></i>
+            </a>
             <details class="live-history-disclosure min-w-0 rounded-[1.25rem] bg-white p-5 shadow-sm">
                 <summary>
                     <h2 class="font-semibold text-slate-900">Riwayat tanya</h2>

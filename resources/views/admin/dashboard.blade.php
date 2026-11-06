@@ -21,7 +21,7 @@
             <div class="flex flex-col justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
                 <div class="flex items-center justify-between gap-2">
                     <span class="grid h-7 w-7 place-items-center rounded-lg bg-campus-50 text-campus-700 sm:h-9 sm:w-9"><i data-lucide="{{ $item['icon'] }}" class="h-3.5 w-3.5 sm:h-4 sm:w-4"></i></span>
-                    <p class="text-[9px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs" title="{{ $item['key'] === 'total_revenue' ? 'Total Pendapatan dari Website dan Iklan' : $item['label'] }}">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 sm:text-xs" title="{{ $item['key'] === 'total_revenue' ? 'Total Pendapatan dari Website dan Iklan' : $item['label'] }}">
                         {{ $item['label'] }}
                     </p>
                 </div>
@@ -148,12 +148,12 @@
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { font: { size: 9 }, color: '#666666' }
+                            ticks: { font: { size: 10 }, color: '#666666' }
                         },
                         y: {
                             grid: { color: '#e7e8e4' },
                             ticks: { 
-                                font: { size: 9 }, 
+                                font: { size: 10 }, 
                                 color: '#666666',
                                 callback: function(value) { return '$' + value; }
                             }
@@ -210,11 +210,11 @@
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { font: { size: 9 }, color: '#666666' }
+                            ticks: { font: { size: 10 }, color: '#666666' }
                         },
                         y: {
                             grid: { color: '#e7e8e4' },
-                            ticks: { font: { size: 9 }, color: '#666666' }
+                            ticks: { font: { size: 10 }, color: '#666666' }
                         }
                     }
                 }
@@ -302,8 +302,8 @@
                     <div class="flex items-center gap-3">
                         <span class="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700"><i data-lucide="cpu" class="h-4 w-4"></i></span>
                         <div>
-                            <p class="text-sm font-semibold text-slate-800">Gemini 1.5 Pro API</p>
-                            <p class="text-xs text-slate-500">Model kecerdasan buatan utama</p>
+                            <p class="text-sm font-semibold text-slate-800">Asisten belajar AI</p>
+                            <p class="text-xs text-slate-500">Membantu memahami materi</p>
                         </div>
                     </div>
                     <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">

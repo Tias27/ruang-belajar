@@ -8,7 +8,7 @@ const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.
 const testingRoot = path.join(project, 'storage/framework/testing');
 await fs.mkdir(testingRoot, { recursive: true });
 const fixture = await fs.mkdtemp(path.join(testingRoot, 'pagination-'));
-const env = { ...process.env, PAGINATION_FIXTURE_DIR: fixture, CHAT_MATERIAL_FIXTURE: process.argv.includes('--chat-materials') ? '1' : '' };
+const env = { ...process.env, PAGINATION_FIXTURE_DIR: fixture, CHAT_MATERIAL_FIXTURE: process.argv.includes('--chat-materials') || process.argv.includes('--attachment-preview') ? '1' : '', WEB_CHAT_FIXTURE: process.argv.includes('--web-chat') ? '1' : '', ATTACHMENT_FIXTURE: process.argv.includes('--attachment-preview') ? '1' : '', SUMMARY_FIXTURE: process.argv.includes('--summary-wait') ? '1' : '' };
 const phpArgs = ['-d', 'extension=pdo_sqlite', '-d', 'extension=sqlite3'];
 const fixtureScript = 'tests/Browser/pagination-fixture.php';
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -79,7 +79,16 @@ try {
     }
 
     await cdp('Page.enable'); await cdp('Runtime.enable'); await cdp('Network.enable');
-    if (process.argv.includes('--flashcard-deck')) {
+    if (process.argv.includes('--web-chat')) {
+        const { checkWebChat } = await import('./web-chat-checks.mjs');
+        await checkWebChat({ cdp, evaluate, until, go, check, testingRoot });
+    } else if (process.argv.includes('--attachment-preview')) {
+        const { checkAttachmentPreview } = await import('./chat-attachment-checks.mjs');
+        await checkAttachmentPreview({ cdp, evaluate, until, go, check, testingRoot });
+    } else if (process.argv.includes('--summary-wait')) {
+        const { checkSummaryWait } = await import('./summary-wait-checks.mjs');
+        await checkSummaryWait({ cdp, evaluate, until, go, check, fixture });
+    } else if (process.argv.includes('--flashcard-deck')) {
         const { checkFlashcardDeck } = await import('./flashcard-deck-checks.mjs');
         await checkFlashcardDeck({ cdp, evaluate, until, go, check, fixture });
     } else if (process.argv.includes('--library-layout')) {

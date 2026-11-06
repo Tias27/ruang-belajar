@@ -114,8 +114,10 @@ class DocumentFolderController extends Controller
             $document->update([
                 'extracted_text' => $text,
                 'status' => filled($text) ? 'processed' : 'uploaded',
-                'processing_notes' => filled($text) ? null : ($processingNotes ?: 'Teks belum dapat diekstrak otomatis. AI tetap dapat digunakan setelah extractor server dilengkapi.'),
+                'processing_notes' => filled($text) ? null : Document::TEXT_UNAVAILABLE_MESSAGE,
             ]);
+
+            app(\App\Services\AutomaticSummary::class)->schedule($document);
 
             $logger->log('add_document_to_folder', $document, [
                 'folder_id' => $folder->id,

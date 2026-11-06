@@ -65,7 +65,7 @@ class SummaryReuseTest extends TestCase
             'user_id' => $user->id,
             $source instanceof Document ? 'document_id' : 'folder_id' => $source->id,
             'short_summary' => 'Inti materi lama', 'full_summary' => 'Ringkasan lama yang sudah tersedia',
-            'key_points' => ['Poin lama'], 'raw_response' => [], 'status' => 'completed',
+            'key_points' => ['Poin lama'], 'raw_response' => ['_summary_policy' => \App\Services\SummaryLength::POLICY], 'status' => 'completed',
         ], $attributes));
     }
 
@@ -322,16 +322,21 @@ class SummaryReuseTest extends TestCase
         $this->assertDatabaseCount('summaries', 2);
     }
 
-    public function test_legacy_null_raw_response_is_adopted_without_erasing_summary_content(): void
+    public function test_legacy_summary_without_length_policy_is_replaced_once_without_erasing_history(): void
     {
         $user = User::factory()->create(['role' => 'mahasiswa']);
         $document = $this->document($user);
         $this->travel(1)->minutes();
         $old = $this->legacySummary($user, $document, ['raw_response' => null]);
-        $this->actingAs($user)->post(route('summaries.store', $document))
-            ->assertRedirect(route('summaries.show', $old));
+        $url = route('summaries.store', $document);
+        $this->actingAs($user)->post($url)->assertRedirect();
+        $updated = Summary::latest('id')->firstOrFail();
+        $this->assertNotSame($old->id, $updated->id);
         $this->assertSame('Ringkasan lama yang sudah tersedia', $old->fresh()->full_summary);
-        $this->assertNotEmpty($old->fresh()->raw_response['_source_snapshot']);
-        $this->assertCount(0, $this->generationCalls);
+        $this->assertNull($old->fresh()->raw_response);
+        $this->assertSame(\App\Services\SummaryLength::POLICY, $updated->raw_response['_summary_policy']);
+        $this->post($url)->assertRedirect(route('summaries.show', $updated));
+        $this->assertDatabaseCount('summaries', 2);
+        $this->assertCount(1, $this->generationCalls);
     }
 }

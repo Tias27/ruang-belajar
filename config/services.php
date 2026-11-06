@@ -51,6 +51,13 @@ return [
         'fallback_provider' => env('AI_FALLBACK_PROVIDER', 'gemini'),
     ],
 
+    'tavily' => [
+        'enabled' => env('WEB_SEARCH_ENABLED', false),
+        'api_key' => env('TAVILY_API_KEY'),
+        'timeout' => (int) env('TAVILY_TIMEOUT', 15),
+        'ca_bundle' => env('TAVILY_CA_BUNDLE'),
+    ],
+
     'nine_router' => [
         'api_key' => env('NINE_ROUTER_API_KEY'),
         'base_url' => env('NINE_ROUTER_BASE_URL'),

@@ -46,11 +46,11 @@ class ChatMaterials
         ])->values()->all();
     }
 
-    public function snippets(Collection $documents, string $question): array
+    public function snippets(Collection $documents, string $question, string $answer = ''): array
     {
         $sources = app(LearningSourceService::class);
 
-        return $documents->flatMap(fn (Document $document) => $sources->snippetsFor($document, $question, 1))->all();
+        return $documents->flatMap(fn (Document $document) => $sources->chatSnippetsFor($document, $question, $answer, 1))->all();
     }
 
     private function ownedDocuments(int $userId, array $ids): Collection

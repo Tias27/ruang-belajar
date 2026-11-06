@@ -137,6 +137,42 @@ class NineRouterTest extends TestCase
         }
     }
 
+    public function test_chat_time_is_refreshed_in_jakarta_across_midnight_for_each_request(): void
+    {
+        Auth::shouldReceive('check')->andReturn(false);
+        Http::fake(['router.test/*' => fn ($request) => $request['stream']
+            ? Http::response('data: {"choices":[{"delta":{"content":"Tanggal"},"finish_reason":"stop"}]}'."\n\n")
+            : Http::response(['choices' => [['message' => ['content' => 'Tanggal']]]])]);
+        $service = app(GeminiService::class);
+        $material = new Document(['title' => 'Catatan lama', 'extracted_text' => 'Kejadian tahun 2019.']);
+        $history = [['role' => 'assistant', 'content' => '2026 adalah tahun yang belum terjadi.']];
+
+        try {
+            foreach (['2026-11-05 16:59:59', '2026-11-05 17:00:01'] as $instant) {
+                $this->travelTo(\Illuminate\Support\Carbon::parse($instant, 'UTC'));
+                foreach ([null, $material] as $source) {
+                    $service->chat($source, 'Tanggal berapa sekarang? Jelaskan perbedaan WIB dan UTC.', $history);
+                    iterator_to_array($service->streamChat($source, 'Tanggal berapa sekarang? Jelaskan perbedaan WIB dan UTC.', $history));
+                }
+            }
+            $requests = Http::recorded();
+            $this->assertCount(8, $requests);
+            foreach ($requests as $index => [$request]) {
+                $expected = $index < 4 ? '2026-11-05 23:59:59 +07:00' : '2026-11-06 00:00:01 +07:00';
+                $prompt = $request['messages'][1]['content'][0]['text'];
+                foreach ([$request['messages'][0]['content'], $prompt] as $instructions) {
+                    $this->assertStringContainsString($expected, $instructions);
+                    $this->assertStringContainsString('Asia/Jakarta', $instructions);
+                    $this->assertStringContainsString('belum terverifikasi', $instructions);
+                }
+                $this->assertStringContainsString('2026 adalah tahun yang belum terjadi.', $prompt);
+                if ($index % 4 >= 2) $this->assertStringContainsString('Kejadian tahun 2019.', $prompt);
+            }
+        } finally {
+            $this->travelBack();
+        }
+    }
+
     public function test_visual_capable_chat_selects_formats_automatically_without_changing_model_or_streaming(): void
     {
         Auth::shouldReceive('check')->andReturn(false);
@@ -153,9 +189,12 @@ class NineRouterTest extends TestCase
         Http::assertSentCount(4);
         foreach (Http::recorded() as [$request]) {
             $prompt = $request['messages'][1]['content'][0]['text'];
-            $this->assertStringContainsString('Pilih sendiri bentuk penjelasan', $prompt);
+            $this->assertStringContainsString('Default jawaban adalah paragraf alami', $prompt);
+            $this->assertStringContainsString('tidak harus menunggu pengguna memintanya', $request['messages'][0]['content']);
+            $this->assertStringContainsString('Jika paragraf atau daftar sudah menjelaskan dengan sama baiknya, jangan tambahkan visual', $request['messages'][0]['content']);
             $this->assertStringContainsString('Jangan memaksakan tabel, diagram, atau grafik pada setiap jawaban', $prompt);
-            $this->assertStringContainsString('jawaban singkat, teks saja', $prompt);
+            $this->assertStringContainsString('Jika manfaatnya tidak jelas, pilih teks saja', $prompt);
+            $this->assertStringContainsString('Hormati permintaan teks saja atau format tertentu', $prompt);
             $this->assertStringContainsString('blok kode berlabel mermaid', $prompt);
             $this->assertStringContainsString('blok kode berlabel chart berisi JSON valid', $prompt);
             $this->assertStringContainsString('"datasets":[{"label":"Nama seri","data":[10,20]}]', $prompt);

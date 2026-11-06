@@ -2,7 +2,13 @@
 
 Tombol Ringkasan membuka hasil completed yang sesuai dengan sumber saat ini.
 Tidak membuat baris riwayat baru dan tidak memanggil AI jika hasil masih cocok.
-Pembuatan pertama tetap sinkron dengan alur halaman yang sudah ada.
+Kecocokan juga memeriksa raw_response._summary_policy. Kebijakan saat ini
+menargetkan 45-48% jumlah kata konteks sumber untuk seluruh bagian jawaban.
+Hasil dari kebijakan lama disimpan sebagai riwayat, lalu diganti satu kali saat
+Ringkas diklik. Hasil baru dipakai ulang seperti biasa.
+File baru disiapkan otomatis setelah upload; lihat automatic-summaries.md.
+Pembuatan folder atau file lama tetap dimulai saat diminta, dengan halaman
+menunggu sampai hasil lengkap siap.
 
 SummaryReuse menyimpan fingerprint dalam raw_response._source_snapshot,
 tanpa perubahan schema database. Fingerprint mencakup judul sumber, ID file,
@@ -22,8 +28,9 @@ format data lama tidak menyimpan daftar lengkap isi folder saat pembuatan.
 
 Hanya hasil berisi teks yang selesai dapat dipakai ulang. Hasil failed/kosong
 bisa dibuat ulang. Reservasi dibuat dalam transaksi dengan lock sumber singkat;
-request lain dengan fingerprint yang sama memakai proses processing terbaru.
-Proses yang tertinggal lebih dari enam menit dapat dicoba ulang. Panggilan AI
+request lain dengan fingerprint yang sama memakai queued/processing terbaru.
+Waktu menunggu antrean tidak dianggap proses macet. Processing yang tertinggal
+lebih dari enam menit dapat dicoba ulang. Panggilan AI
 berlangsung di luar transaksi. Perubahan sumber selama pembuatan membuat hasil
 tersebut tidak dipakai ulang pada klik berikutnya.
 

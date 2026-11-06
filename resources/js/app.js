@@ -5,10 +5,14 @@ import { initPagination } from './pagination';
 import { initMaterialMenus } from './material-menu';
 import { flashcardDeck } from './flashcard-deck';
 import { chatMaterials } from './chat-materials';
+import { chatAttachmentPreview } from './chat-attachment-preview';
+import { summaryRequest } from './summary-request';
 
 window.Alpine = Alpine;
 window.flashcardDeck = flashcardDeck;
 window.chatMaterials = chatMaterials;
+window.chatAttachmentPreview = chatAttachmentPreview;
+window.summaryRequest = summaryRequest;
 window.lucide = { createIcons: renderLucideIcons };
 let chatContentModule;
 Alpine.directive('chat-content', (element, { expression }, { effect, evaluateLater, cleanup }) => {

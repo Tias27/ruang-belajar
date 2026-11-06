@@ -42,6 +42,8 @@ class ChatMaterialController extends Controller
             throw $exception;
         }
 
+        app(\App\Services\AutomaticSummary::class)->schedule($document);
+
         return response()->json(['material' => $materials->describe(collect([$document]))[0]], 201);
     }
 

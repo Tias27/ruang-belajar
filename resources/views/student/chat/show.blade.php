@@ -2,17 +2,18 @@
     @php
         $source = $session->folder ?: $session->document;
         $storeUrl = $session->exists ? route('chat.store', $session) : route('chat.general.store');
-        $initialMessages = $session->messages->map(fn($message) => [
-            'id' => $message->id,
-            'role' => $message->role,
-            'content' => $message->content,
-            'metadata' => $message->metadata,
-        ])->values();
+        $lastQuestion = '';
+        $initialMessages = $session->messages->map(function ($message) use ($session, &$lastQuestion) {
+            $message->setRelation('session', $session);
+            if ($message->role === 'user') $lastQuestion = $message->content;
+            return $message->forChat($lastQuestion);
+        })->values();
     @endphp
 
     <script>
         window.chatSessionPage = function () {
             return {
+                ...window.chatAttachmentPreview({ documentUrl: @js(route('chat.attachments.document', '__DOCUMENT__')) }),
                 ...window.chatMaterials({
                     materials: [],
                     listUrl: @js(route('chat.materials.index')),
@@ -24,6 +25,12 @@
                 question: '',
                 sending: false,
                 messages: @js($initialMessages),
+                webSourceUrl(value) {
+                    try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : null; } catch { return null; }
+                },
+                webSourceHost(value) {
+                    try { return new URL(value).hostname; } catch { return ''; }
+                },
                 imageFile: null,
                 imagePreview: null,
                 triggerSelectImage() {
@@ -162,7 +169,21 @@
 
                                     try {
                                         const parsed = JSON.parse(dataStr);
-                                        if (parsed.chunk) {
+                                        if (parsed.user_message) {
+                                            const localMessage = this.messages.findIndex(message => message.id === localId);
+                                            if (localMessage !== -1) this.messages[localMessage] = parsed.user_message;
+                                            if (parsed.store_url) this.storeUrl = parsed.store_url;
+                                            if (parsed.session_url) history.replaceState(history.state, '', parsed.session_url);
+                                        } else if (parsed.status) {
+                                            this.messages[assistantIndex].searchStatus = ({searching: 'Mencari sumber...', reading: 'Membaca sumber...'})[parsed.status] || '';
+                                            this.messages[assistantIndex].searchPhase = ['searching', 'reading', 'answering'].includes(parsed.status) ? parsed.status : '';
+                                        } else if (parsed.web_sources) {
+                                            this.messages[assistantIndex].metadata = { ...(this.messages[assistantIndex].metadata || {}), web_sources: parsed.web_sources };
+                                        } else if (parsed.chunk) {
+                                            if (this.messages[assistantIndex].searchPhase) {
+                                                this.messages[assistantIndex].searchStatus = '';
+                                                this.messages[assistantIndex].searchPhase = 'answering';
+                                            }
                                             this.messages[assistantIndex].content += parsed.chunk;
                                             this.$nextTick(() => {
                                                 if (window.lucide) window.lucide.createIcons();
@@ -224,12 +245,12 @@
                 <div class="min-w-0">
                     <div class="flex items-center gap-2 mb-0.5">
                         <span
-                            class="inline-flex items-center rounded bg-campus-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-campus-700">
+                            class="inline-flex items-center rounded bg-campus-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-campus-700">
                             {{ $source ? ($session->folder ? 'Folder' : 'Materi') : 'Chat bebas' }}
                         </span>
                         <p class="line-clamp-1 text-xs font-semibold text-slate-500">{{ $source?->title ?? 'Bahas apa saja tanpa upload materi' }}</p>
                     </div>
-                    <h1 class="truncate text-[14px] font-bold tracking-tight text-campus-950" x-text="title" :title="title"></h1>
+                    <h1 class="truncate text-[15px] font-bold tracking-tight text-campus-950" x-text="title" :title="title"></h1>
                 </div>
             </div>
         </section>
@@ -290,19 +311,18 @@
 
                             <!-- User Message -->
                             <template x-if="message.role === 'user'">
-                                <div
-                                    class="max-w-[85%] rounded-3xl bg-slate-100 px-5 py-3.5 text-[12px] leading-relaxed text-slate-800 flex flex-col gap-2">
+                                <div class="live-chat-user-content">
                                     <template x-if="message.metadata?.image_path">
-                                        <div class="my-1 max-w-sm overflow-hidden rounded-2xl border border-slate-200 shadow-sm bg-white p-1">
-                                            <img :src="message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path" class="max-h-60 w-full object-contain rounded-xl hover:scale-[1.02] transition cursor-pointer" @click="window.open(message.metadata.image_path.startsWith('data:') || message.metadata.image_path.startsWith('http') ? message.metadata.image_path : '/' + message.metadata.image_path, '_blank')">
-                                        </div>
+                                        <button type="button" class="live-chat-user-image" aria-label="Buka gambar ukuran penuh" @click="openImagePreview(message.metadata.image_path)">
+                                            <img :src="imageUrl(message.metadata.image_path)" alt="Gambar yang dikirim" loading="lazy" @load="scrollToBottom()">
+                                        </button>
                                     </template>
                                     <div class="chat-message-materials" x-show="message.metadata?.materials?.length">
                                         <template x-for="material in (message.metadata?.materials || [])" :key="material.id">
-                                            <span class="chat-message-material" :title="material.title"><i data-lucide="file-text" aria-hidden="true"></i><span x-text="material.title"></span></span>
+                                            <button type="button" class="chat-message-material" :title="material.title" @click="openFilePreview(material)"><i data-lucide="file-text" aria-hidden="true"></i><span x-text="material.title"></span></button>
                                         </template>
                                     </div>
-                                    <div x-show="message.content !== 'Mengirim gambar...' && message.content !== 'Jelaskan gambar ini'" x-text="message.content" class="whitespace-pre-wrap"></div>
+                                    <div x-show="message.content && message.content !== 'Mengirim gambar...' && message.content !== 'Jelaskan gambar ini'" x-text="message.content" class="live-chat-user-bubble"></div>
                                 </div>
                             </template>
 
@@ -316,10 +336,23 @@
                                         </div>
                                     </div>
                                     <div x-data="{ showSources: false }"
-                                        class="min-w-0 flex-1 text-[12px] leading-relaxed text-slate-800 pt-1">
+                                        class="min-w-0 flex-1 text-[13px] leading-relaxed text-slate-800 pt-1">
 
                                         <!-- Typing indicator inside empty assistant message -->
-                                        <template x-if="!message.content.trim()">
+                                        <template x-if="message.streaming && message.searchPhase">
+                                            <div class="chat-web-status" :data-phase="message.searchPhase" role="status" aria-live="polite" aria-atomic="true" :aria-label="message.searchPhase === 'answering' ? 'Jawaban sedang ditampilkan' : null">
+                                                <span class="chat-web-status-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                                        <g x-show="message.searchPhase === 'searching'"><circle cx="12" cy="12" r="8"/><ellipse cx="12" cy="12" rx="3.5" ry="8"/><path d="M4 12h16"/></g>
+                                                        <g x-show="message.searchPhase === 'reading'"><path d="M12 6v14M12 6C9 4 6 4 3 5v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Z"/><path d="m6 9 3 1m-3 3 3 1m6-4 3-1m-3 5 3-1"/></g>
+                                                        <g x-show="message.searchPhase === 'answering'"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/></g>
+                                                    </svg>
+                                                </span>
+                                                <span class="chat-web-status-label" x-show="message.searchStatus" x-text="message.searchStatus"></span>
+                                                <span class="chat-web-status-steps" aria-hidden="true"><i></i><i></i><i></i></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="!message.content.trim() && !message.searchPhase">
                                             <div class="flex items-center gap-1.5 pt-2.5">
                                                 <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_0ms]"></span>
                                                 <span class="h-2 w-2 rounded-full bg-slate-400 animate-[bounce_1s_infinite_200ms]"></span>
@@ -329,6 +362,22 @@
 
                                         <template x-if="message.content.trim()">
                                             <div x-chat-content="[message.content, message.streaming]"></div>
+                                        </template>
+
+                                        <template x-if="message.metadata?.web_sources?.length">
+                                            <details class="chat-web-sources">
+                                                <summary>Sumber web <span x-text="'(' + message.metadata.web_sources.length + ')'"></span></summary>
+                                                <div class="chat-web-source-list">
+                                                    <template x-for="source in message.metadata.web_sources" :key="source.url">
+                                                        <a :href="webSourceUrl(source.url)" target="_blank" rel="noopener noreferrer">
+                                                            <strong x-text="source.title"></strong>
+                                                            <span x-text="webSourceHost(source.url)"></span>
+                                                            <small x-show="source.published_at" x-text="'Terbit: ' + source.published_at"></small>
+                                                            <small x-text="source.read ? 'Isi halaman dibaca' : 'Cuplikan pencarian'"></small>
+                                                        </a>
+                                                    </template>
+                                                </div>
+                                            </details>
                                         </template>
 
                                         <!-- Source Snippets Toggle -->
@@ -356,7 +405,7 @@
                                                         <template x-for="snippet in message.metadata.source_snippets"
                                                             :key="snippet.document_id + snippet.snippet">
                                                             <div
-                                                                class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[12px] leading-5 text-slate-600 shadow-sm">
+                                                                class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[13px] leading-5 text-slate-600 shadow-sm">
                                                                 <div
                                                                     class="mb-1.5 flex items-center gap-1.5 font-semibold text-campus-800">
                                                                     <i data-lucide="file-text"
@@ -391,7 +440,7 @@
                         <template x-for="material in materials" :key="material.id">
                             <span class="chat-material-chip">
                                 <i data-lucide="file-text" aria-hidden="true"></i>
-                                <span x-text="material.title" :title="material.title"></span>
+                                <button type="button" class="chat-material-preview-label" x-text="material.title" :title="material.title" @click="openFilePreview(material)"></button>
                                 <button type="button" @click="toggleMaterial(material)" :disabled="sending || materialUploading" :aria-label="'Lepas materi ' + material.title"><i data-lucide="x" aria-hidden="true"></i></button>
                             </span>
                         </template>
@@ -400,7 +449,7 @@
                     <!-- Image Preview -->
                     <template x-if="imagePreview">
                         <div class="relative ml-5 mb-3 inline-flex self-start">
-                            <img :src="imagePreview" class="h-20 w-20 object-cover rounded-2xl border-2 border-white shadow-md">
+                            <button type="button" @click="openImagePreview(imagePreview)" aria-label="Lihat gambar sebelum dikirim"><img :src="imagePreview" alt="Gambar yang akan dikirim" class="h-20 w-20 object-cover rounded-2xl border-2 border-white shadow-md"></button>
                             <button type="button" @click="clearImage()" class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800 shadow-md transition-all active:scale-90">
                                 <i data-lucide="x" class="h-3.5 w-3.5"></i>
                             </button>
@@ -423,7 +472,7 @@
 
                         <textarea aria-label="Pertanyaan untuk AI" x-ref="textarea" x-model="question" name="question" rows="1" maxlength="2000"
                             @paste="onPaste($event)"
-                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[14px] focus:ring-0 focus:outline-none"
+                            class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[15px] focus:ring-0 focus:outline-none"
                             placeholder="{{ $source ? 'Tanya tentang materi...' : 'Tanya apa saja...' }}"
                             @keydown.enter="if (!$event.shiftKey && !$event.isComposing) { $event.preventDefault(); sendQuestion(); }"
                             @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
@@ -440,5 +489,6 @@
             </div>
         </div>
         <x-chat-material-picker />
+        <x-chat-attachment-preview />
     </div>
 </x-app-layout>

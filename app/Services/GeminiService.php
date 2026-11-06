@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\AiServiceException;
 use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Models\Quiz;
@@ -13,32 +14,71 @@ use RuntimeException;
 class GeminiService
 {
     private const CHAT_MAX_OUTPUT_TOKENS = 8192;
+    private array $webMetadata = [];
+
+    public function webMetadata(): array
+    {
+        return $this->webMetadata;
+    }
+
+    private function webEnabled(): bool
+    {
+        return config('services.ai.provider') === '9router' && app(TavilyClient::class)->enabled();
+    }
+
+    private function streamWithWeb(array $payload, ?callable $onEvent): \Generator
+    {
+        $web = app(ChatWebTools::class);
+        try {
+            yield from app(NineRouterClient::class)->streamWeb($payload, self::CHAT_MAX_OUTPUT_TOKENS, $web, $onEvent);
+        } finally {
+            $this->webMetadata = $web->metadata();
+        }
+    }
 
     public function summarize(Document|DocumentFolder $document, ?array $selectedDocIds = null): array
     {
         $isFolder = $document instanceof DocumentFolder;
         $typeLabel = $isFolder ? 'seluruh materi dari kumpulan file dalam folder ini' : 'materi ini';
+        $length = SummaryLength::target($this->generationContext($document, 'summary', $selectedDocIds));
+        $totalWords = $length['min_words'];
+        $bodyWords = (int) floor($totalWords * 0.80);
+        $pointWords = (int) floor($totalWords * 0.15);
+        $conclusionWords = $totalWords - $bodyWords - $pointWords;
 
         $scope = $isFolder
             ? 'Gabungkan materi semua file yang diberikan ke dalam pembahasan utuh per topik. Hubungkan konsep antarfile, jangan sekadar mengulang ringkasan masing-masing file.'
             : 'Bahas seluruh bab dan konsep penting dari materi yang diberikan secara runtut.';
-        $prompt = "Buat ringkasan belajar yang lengkap, mendalam, dan mudah dipahami dari {$typeLabel}. {$scope}
-Jelaskan definisi, cara kerja, hubungan sebab-akibat, langkah, rumus, dan contoh yang relevan dengan isi materi. Pertahankan detail penting dan semua subtopik; jangan memotong materi hanya untuk mempercepat jawaban. Gunakan paragraf yang berkembang dengan bahasa jelas. Gabungkan informasi yang berulang, abaikan sampul/identitas/daftar isi, dan hindari mengulang penjelasan yang sama. Panjang mengikuti keluasan materi, bukan mengejar jumlah kata tertentu.
+        $prompt = "Buat ringkasan belajar yang padat, jelas, dan mudah dipahami dari {$typeLabel}. {$scope}
+TARGET PANJANG: sekitar 45-48% dari jumlah kata konteks sumber. Konteks sumber berisi {$length['source_words']} kata; target TOTAL jawaban {$length['min_words']}-{$length['max_words']} kata, termasuk Ringkasan lengkap, Poin penting, dan Kesimpulan. Ini panjang hasil akhir, bukan persentase yang dihapus. Jangan menyebut perhitungan atau target ini di jawaban.
+ANGGARAN PENULISAN: sekitar {$bodyWords} kata untuk Ringkasan lengkap, {$pointWords} kata untuk SELURUH Poin penting, dan {$conclusionWords} kata untuk Kesimpulan. Semua subjudul dan teks tabel ikut dihitung. Jangan memakai jatah total sebagai jatah masing-masing bagian. Susun langsung dalam anggaran ini; sebelum selesai, padatkan kalimat jika total melebihi {$length['max_words']} kata. Jangan menambah pembuka, contoh tambahan, atau penjelasan ulang. Bidik {$totalWords} kata untuk seluruh jawaban; sisa rentang hanya ruang untuk menjaga kejelasan fakta penting.
+Pertahankan gagasan utama setiap topik serta definisi, sebab-akibat, langkah, rumus, angka, dan batasan yang esensial untuk memahaminya. Pilih informasi inti, bukan seluruh rincian sumber: sederhanakan daftar atribut dan contoh menjadi kategori yang mewakili; rincian sekunder boleh dihilangkan. Padatkan penjelasan menjadi kalimat utuh yang jelas, bukan potongan kata. Gabungkan informasi berulang dan abaikan sampul/identitas/daftar isi. Jangan menambah contoh atau uraian baru. Alokasikan sebagian besar kata untuk Ringkasan lengkap; Poin penting dan Kesimpulan harus singkat. Jika materi sangat pendek, berulang, atau target melebihi kapasitas jawaban, utamakan fakta penting dan penyelesaian seluruh bagian tanpa memaksa jumlah kata atau memutus kalimat.
 
 Gunakan Markdown biasa dengan tepat tiga bagian utama berikut. Jangan membungkus jawaban dalam JSON atau satu blok kode.
 ## Ringkasan lengkap
-Pembahasan lengkap dengan subjudul ### untuk setiap topik. Gunakan tabel, daftar, atau rumus bila membantu. Seluruh konsep penting harus terbahas dan tersambung secara logis.
+MAKSIMAL {$bodyWords} KATA untuk bagian ini, termasuk subjudul. Pembahasan padat yang mencakup konsep penting. Gabungkan topik terkait dalam paragraf; gunakan subjudul ### seperlunya agar jatah kata digunakan untuk isi. Tabel atau rumus hanya bila lebih hemat dan jelas.
 ## Poin penting
-Daftar poin utama dalam bentuk bullet, mencakup konsep penting dari seluruh materi tanpa mengulang paragraf panjang.
+MAKSIMAL {$pointWords} KATA untuk seluruh daftar, bukan per bullet. Gunakan poin pendek yang mencakup konsep penting tanpa mengulang paragraf.
 ## Kesimpulan
-Kesimpulan yang menyatukan pemahaman materi. Selesaikan semua bagian, jangan menambahkan pengulangan atau penutup percakapan.";
+MAKSIMAL {$conclusionWords} KATA. Satu simpulan yang menyatukan materi. Jangan menambahkan penutup percakapan.
+Pemeriksaan akhir sebelum mengirim: batas {$length['max_words']} kata adalah gabungan KETIGA bagian, bukan hanya Ringkasan lengkap. Jangan menuliskan instruksi batas kata di hasil.";
 
         $text = $this->textPrompt($document, $prompt, null, 8192, null, 'summary', [], $selectedDocIds);
-        return app(SummaryResponseParser::class)->parse($text);
+        $result = app(SummaryResponseParser::class)->parse($text);
+        $outputWords = SummaryLength::words(implode("\n", [
+            $result['full_summary'], implode("\n", $result['key_points']), $result['conclusion'] ?? '',
+        ]));
+        $result['_length'] = $length + ['output_words' => $outputWords,
+            'ratio_percent' => $length['source_words'] > 0 ? round($outputWords / $length['source_words'] * 100, 2) : null];
+        return $result;
     }
 
     public function chat(Document|DocumentFolder|null $document, string $question, array $history = [], ?array $selectedDocIds = null, ?string $imagePath = null, array $materials = [], bool $richResponses = false): string
     {
+        $this->webMetadata = [];
+        $quickReply = QuickChatReply::answer($question, $imagePath, $materials);
+        if ($quickReply !== null) return $quickReply;
+
         $prompt = $this->chatPrompt($question, $document !== null || $materials !== [], $richResponses);
         $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history, $selectedDocIds);
         $builtPrompt .= $this->attachedMaterialContext($materials, $question);
@@ -54,11 +94,16 @@ Kesimpulan yang menyatukan pemahaman materi. Selesaikan semua bagian, jangan men
             ];
         }
 
+        if ($this->webEnabled()) return implode('', iterator_to_array($this->streamWithWeb($payload, null)));
         return $this->sendText($payload, self::CHAT_MAX_OUTPUT_TOKENS, null, 'chat');
     }
 
-    public function streamChat(Document|DocumentFolder|null $document, string $question, array $history = [], ?array $selectedDocIds = null, ?string $imagePath = null, array $materials = [], bool $richResponses = false): \Generator
+    public function streamChat(Document|DocumentFolder|null $document, string $question, array $history = [], ?array $selectedDocIds = null, ?string $imagePath = null, array $materials = [], bool $richResponses = false, ?callable $onEvent = null): \Generator
     {
+        $this->webMetadata = [];
+        $quickReply = QuickChatReply::answer($question, $imagePath, $materials);
+        if ($quickReply !== null) return QuickChatReply::stream($quickReply);
+
         $this->extendExecutionTime();
         $prompt = $this->chatPrompt($question, $document !== null || $materials !== [], $richResponses);
         $builtPrompt = $this->buildPrompt($document, $prompt, $question, 'chat', $history, $selectedDocIds);
@@ -76,6 +121,7 @@ Kesimpulan yang menyatukan pemahaman materi. Selesaikan semua bagian, jangan men
         }
 
         if (config('services.ai.provider') === '9router') {
+            if ($this->webEnabled()) return $this->streamWithWeb($payload, $onEvent);
             return app(NineRouterClient::class)->stream($payload, self::CHAT_MAX_OUTPUT_TOKENS);
         }
 
@@ -104,8 +150,11 @@ Kesimpulan yang menyatukan pemahaman materi. Selesaikan semua bagian, jangan men
             : 'Jawab topik yang ditanyakan tanpa mengharuskan materi atau dokumen. Gunakan pengetahuan yang tersedia dan konteks percakapan; jangan membatasi pembahasan pada pelajaran.';
 
         $formatting = $richResponses ? $this->richChatInstructions() : 'Gunakan Markdown seperlunya untuk memudahkan membaca dan tulis rumus sebagai teks yang mudah dibaca.';
+        $timeContext = ChatTimeContext::instructions();
 
-        return "{$scope}
+        return "{$timeContext}
+
+{$scope}
 
 Jawab secara alami, jelas, dan berisi dengan kalimat utuh. Sesuaikan panjang, kedalaman, dan bentuk jawaban dengan pertanyaan serta permintaan pengguna, tanpa patokan jumlah kata, kalimat, atau format wajib.
 Untuk permintaan penjelasan, berikan pembahasan lengkap yang mudah diikuti. Mulai dari pengertian sederhana, kemudian kembangkan bagian penting dan cara kerjanya. Kenalkan istilah teknis bersama artinya saat diperlukan, agar pembaca tidak harus memahami jargon terlebih dahulu.
@@ -120,17 +169,15 @@ Pertanyaan: {$question}";
 
     private function richChatInstructions(): string
     {
-        return <<<'PROMPT'
-Pilih sendiri bentuk penjelasan yang paling membantu, tanpa menunggu pengguna meminta formatnya. Gunakan visual ketika memperjelas hubungan atau data; percakapan biasa tetap dijawab alami. Jangan memaksakan tabel, diagram, atau grafik pada setiap jawaban. Hormati permintaan pengguna untuk jawaban singkat, teks saja, atau format tertentu. Visual melengkapi penjelasan, bukan menggantikan pembahasan: beri konteks dan jelaskan makna atau temuan pentingnya.
-
-Format yang bisa ditampilkan langsung dalam chat:
+        return ChatPresentationPolicy::instructions()."\n\n".<<<'PROMPT'
+Referensi format teknis berikut hanya berlaku JIKA format tersebut dipilih karena membantu. Ini bukan daftar bagian yang harus muncul dalam jawaban:
 - Markdown: paragraf, heading seperlunya, daftar bernomor untuk langkah, kutipan, dan tabel GFM untuk perbandingan beberapa atribut. Hindari tabel lebar bila daftar lebih mudah dibaca.
 - Diagram: pakai blok kode berlabel mermaid untuk alur proses, hubungan konsep, struktur, atau urutan interaksi yang terbantu secara visual. Jenis yang didukung: flowchart/graph, sequenceDiagram, mindmap, stateDiagram-v2, classDiagram, erDiagram, gantt, timeline, pie. Gunakan ID sederhana dan label pendek; apit label flowchart yang memuat tanda baca dengan tanda kutip. Jangan sertakan frontmatter, init/config, click, style, classDef, linkStyle, HTML, atau tautan dalam diagram; aplikasi mengatur tampilan.
 - Grafik angka: pakai blok kode berlabel chart berisi JSON valid dengan struktur {"type":"bar","title":"Judul grafik","labels":["A","B"],"datasets":[{"label":"Nama seri","data":[10,20]}],"xLabel":"Kategori","yLabel":"Nilai (satuan)"}. Angka pada struktur ini hanya contoh. type boleh bar, line, pie, atau doughnut. labels maksimal 50 dan datasets maksimal 6; setiap data harus berisi angka finite sebanyak labels. pie/doughnut memakai satu dataset dengan angka nonnegatif. Jangan tambahkan konfigurasi, fungsi, atau kode lain di JSON. Pilih bar untuk membandingkan, line untuk tren berurutan, pie/doughnut hanya untuk bagian dari keseluruhan yang jelas.
 - Rumus: gunakan LaTeX dalam $...$ atau \(...\) untuk rumus singkat, $$...$$ atau \[...\] untuk persamaan terpisah. Jelaskan simbol, satuan, langkah, dan hasilnya. Jangan taruh rumus dalam blok kode kecuali sedang menjelaskan kode LaTeX.
 - Kode: gunakan blok kode berpagar dengan nama bahasa yang tepat dan pertahankan indentasi. Kode ditampilkan untuk dibaca, tidak dijalankan otomatis.
 
-Gunakan angka dari pertanyaan, materi, atau sumber yang benar-benar tersedia. Jangan mengarang statistik, persentase, tren, atau sumber untuk membuat grafik terlihat lengkap. Jika contoh hipotetis membantu, sebutkan secara jelas sebagai "contoh hipotetis" pada penjelasan dan judul grafik. Jika data faktual belum tersedia, jelaskan kebutuhan datanya atau gunakan diagram konseptual tanpa angka. Tutup setiap blok kode/diagram/grafik dengan pagar penutup agar tampil utuh.
+Gunakan angka dari pertanyaan, materi, atau sumber yang benar-benar tersedia. Jangan mengarang statistik, persentase, tren, atau sumber untuk membuat grafik terlihat lengkap. Jika pengguna meminta ilustrasi hipotetis, sebutkan secara jelas sebagai "contoh hipotetis" pada penjelasan dan judul grafik. Jika data faktual belum tersedia, jelaskan keterbatasannya dengan teks; jangan menggantinya dengan diagram atau angka rekaan. Tutup setiap blok kode/diagram/grafik yang memang diperlukan dengan pagar penutup agar tampil utuh.
 PROMPT;
     }
 
@@ -291,7 +338,7 @@ Balas hanya JSON valid:
 
         $apiKeys = $this->apiKeys();
         if ($apiKeys === []) {
-            throw new RuntimeException('GEMINI_API_KEY atau GEMINI_API_KEYS belum diatur.');
+            throw new AiServiceException('GEMINI_API_KEY atau GEMINI_API_KEYS belum diatur.');
         }
 
         $models = $this->models();
@@ -327,7 +374,7 @@ Balas hanya JSON valid:
                             'generationConfig' => $generationConfig,
                         ]);
                 } catch (ConnectionException $exception) {
-                    throw new RuntimeException('Koneksi ke Gemini gagal. Periksa internet, DNS, firewall, atau koneksi Laragon/PHP ke generativelanguage.googleapis.com.', previous: $exception);
+                    throw new AiServiceException('Koneksi ke Gemini gagal. Periksa internet, DNS, firewall, atau koneksi Laragon/PHP ke generativelanguage.googleapis.com.', previous: $exception);
                 }
 
                 if ($response->successful()) {
@@ -338,12 +385,12 @@ Balas hanya JSON valid:
                 $lastError = 'Gemini model ' . $model . ' / API key #' . ($keyIndex + 1) . ' gagal: ' . $body;
 
                 if (!$this->shouldTryNextGeminiTarget($response->status(), $body)) {
-                    throw new RuntimeException('Gemini API gagal pada model ' . $model . ': ' . $body);
+                    throw new AiServiceException('Gemini API gagal pada model ' . $model . ': ' . $body);
                 }
             }
         }
 
-        throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. ' . $lastError);
+        throw new AiServiceException('Semua model/API key Gemini tidak bisa dipakai. ' . $lastError);
     }
 
     private function sendGeminiStream(string|array $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): \Generator
@@ -352,7 +399,7 @@ Balas hanya JSON valid:
 
         $apiKeys = $this->apiKeys();
         if ($apiKeys === []) {
-            throw new RuntimeException('GEMINI_API_KEY atau GEMINI_API_KEYS belum diatur.');
+            throw new AiServiceException('GEMINI_API_KEY atau GEMINI_API_KEYS belum diatur.');
         }
 
         $models = $this->models();
@@ -391,7 +438,7 @@ Balas hanya JSON valid:
                             'generationConfig' => $generationConfig,
                         ]);
                 } catch (ConnectionException $exception) {
-                    throw new RuntimeException('Koneksi streaming ke Gemini gagal.', previous: $exception);
+                    throw new AiServiceException('Koneksi streaming ke Gemini gagal.', previous: $exception);
                 }
 
                 if ($response->successful()) {
@@ -427,19 +474,19 @@ Balas hanya JSON valid:
                 $lastError = 'Gemini model ' . $model . ' / API key #' . ($keyIndex + 1) . ' gagal: ' . $bodyStr;
 
                 if (!$this->shouldTryNextGeminiTarget($response->status(), $bodyStr)) {
-                    throw new RuntimeException('Gemini API gagal pada model ' . $model . ': ' . $bodyStr);
+                    throw new AiServiceException('Gemini API gagal pada model ' . $model . ': ' . $bodyStr);
                 }
             }
         }
 
-        throw new RuntimeException('Semua model/API key Gemini tidak bisa dipakai. ' . $lastError);
+        throw new AiServiceException('Semua model/API key Gemini tidak bisa dipakai. ' . $lastError);
     }
 
     private function sendKimchi(string|array $prompt, int $maxOutputTokens = 4096, ?string $responseMimeType = null, string $task = 'default'): string
     {
         $apiKey = trim((string) config('services.kimchi.api_key', ''));
         if ($apiKey === '') {
-            throw new RuntimeException('KIMCHI_API_KEY belum diatur.');
+            throw new AiServiceException('KIMCHI_API_KEY belum diatur.');
         }
 
         $baseUrl = rtrim((string) config('services.kimchi.base_url', 'https://llm.cast.ai/openai/v1'), '/');
@@ -494,11 +541,11 @@ Balas hanya JSON valid:
                 ->withOptions(['verify' => config('services.kimchi.verify_ssl')])
                 ->post("{$baseUrl}/chat/completions", $payload);
         } catch (ConnectionException $exception) {
-            throw new RuntimeException('Koneksi ke Kimchi gagal. Periksa endpoint, DNS, firewall, atau koneksi hosting.', previous: $exception);
+            throw new AiServiceException('Koneksi ke Kimchi gagal. Periksa endpoint, DNS, firewall, atau koneksi hosting.', previous: $exception);
         }
 
         if (!$response->successful()) {
-            throw new RuntimeException('Kimchi API gagal: ' . $response->body());
+            throw new AiServiceException('Kimchi API gagal: ' . $response->body());
         }
 
         return (string) data_get($response->json(), 'choices.0.message.content', 'AI belum memberikan jawaban.');
@@ -510,7 +557,7 @@ Balas hanya JSON valid:
 
         $apiKey = trim((string) config('services.kimchi.api_key', ''));
         if ($apiKey === '') {
-            throw new RuntimeException('KIMCHI_API_KEY belum diatur.');
+            throw new AiServiceException('KIMCHI_API_KEY belum diatur.');
         }
 
         $baseUrl = rtrim((string) config('services.kimchi.base_url', 'https://llm.cast.ai/openai/v1'), '/');
@@ -569,11 +616,11 @@ Balas hanya JSON valid:
                 ])
                 ->post("{$baseUrl}/chat/completions", $payload);
         } catch (ConnectionException $exception) {
-            throw new RuntimeException('Koneksi streaming gagal.', previous: $exception);
+            throw new AiServiceException('Koneksi streaming gagal.', previous: $exception);
         }
 
         if (!$response->successful()) {
-            throw new RuntimeException('API gagal (Streaming): ' . $response->body());
+            throw new AiServiceException('API gagal (Streaming): ' . $response->body());
         }
 
         $body = $response->toPsrResponse()->getBody();

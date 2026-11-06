@@ -176,8 +176,10 @@ class StudyRoomController extends Controller
                 $document->update([
                     'extracted_text' => $text,
                     'status' => filled($text) ? 'processed' : 'uploaded',
-                    'processing_notes' => filled($text) ? null : ($processingNotes ?: 'Teks belum dapat diekstrak otomatis.'),
+                    'processing_notes' => filled($text) ? null : Document::TEXT_UNAVAILABLE_MESSAGE,
                 ]);
+
+                app(\App\Services\AutomaticSummary::class)->schedule($document);
 
                 $logger->log('upload_document', $document, ['title' => $document->title]);
 
@@ -418,11 +420,11 @@ class StudyRoomController extends Controller
                         $this->broadcastRoomEvent(new \App\Events\StudyRoomMessageChunkGenerated($room->id, $userId, $chunk, $tempMsgId));
                     }
 
-                    $sourceSnippets = $sources->snippetsFor($room->target, $messageText . ' ' . $fullAnswer);
+                    $sourceSnippets = $sources->chatSnippetsFor($room->target, $messageText, $fullAnswer, selectedDocIds: $room->selected_document_ids);
                 } catch (\Throwable $exception) {
                     report($exception);
-                    $fullAnswer = $sources->fallbackAnswer($room->target, $messageText, $exception->getMessage());
-                    $sourceSnippets = $sources->snippetsFor($room->target, $messageText);
+                    $fullAnswer = $sources->fallbackAnswer($room->target, $messageText, $exception->getMessage(), $room->selected_document_ids);
+                    $sourceSnippets = $sources->chatSnippetsFor($room->target, $messageText, $fullAnswer, selectedDocIds: $room->selected_document_ids);
                     
                     echo "data: " . json_encode(['chunk' => $fullAnswer, 'tempMsgId' => $tempMsgId]) . "\n\n";
                     if (ob_get_level() > 0) ob_flush();
@@ -466,11 +468,11 @@ class StudyRoomController extends Controller
         $aiResponse = '';
         try {
             $aiResponse = $gemini->chat($target, $messageText, $history, $room->selected_document_ids, $absoluteImagePath);
-            $sourceSnippets = $sources->snippetsFor($target, $messageText . ' ' . $aiResponse);
+            $sourceSnippets = $sources->chatSnippetsFor($target, $messageText, $aiResponse, selectedDocIds: $room->selected_document_ids);
         } catch (\Throwable $exception) {
             report($exception);
-            $aiResponse = $sources->fallbackAnswer($target, $messageText, $exception->getMessage());
-            $sourceSnippets = $sources->snippetsFor($target, $messageText);
+            $aiResponse = $sources->fallbackAnswer($target, $messageText, $exception->getMessage(), $room->selected_document_ids);
+            $sourceSnippets = $sources->chatSnippetsFor($target, $messageText, $aiResponse, selectedDocIds: $room->selected_document_ids);
         }
         $aiMessage = StudyRoomMessage::create([
             'study_room_id' => $room->id,

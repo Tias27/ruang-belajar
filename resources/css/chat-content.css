@@ -1,9 +1,9 @@
-.chat-rich-content { min-width: 0; max-width: 100%; font-size: 12px; line-height: 1.85; overflow-wrap: anywhere; }
+.chat-rich-content { min-width: 0; max-width: 100%; font-size: 13px; line-height: 1.85; overflow-wrap: anywhere; }
 .chat-rich-content > :first-child { margin-top: 0; }
 .chat-rich-content > :last-child { margin-bottom: 0; }
 .chat-rich-content p { margin: 0 0 14px; }
-.chat-rich-content :is(h1,h2,h3,h4,h5,h6) { margin: 22px 0 10px; color: var(--study-ink); font-size: 15px; line-height: 1.5; font-weight: 600; letter-spacing: -.2px; }
-.chat-rich-content :is(h4,h5,h6) { font-size: 13px; }
+.chat-rich-content :is(h1,h2,h3,h4,h5,h6) { margin: 22px 0 10px; color: var(--study-ink); font-size: 16px; line-height: 1.5; font-weight: 600; letter-spacing: -.2px; }
+.chat-rich-content :is(h4,h5,h6) { font-size: 14px; }
 .chat-rich-content :is(ul,ol) { margin: 10px 0 16px; padding-left: 22px; }
 .chat-rich-content ul { list-style: disc; }
 .chat-rich-content ol { list-style: decimal; }
@@ -15,19 +15,19 @@
 .chat-rich-content blockquote { margin: 14px 0; padding: 8px 14px; border-left: 3px solid #a4bac9; color: var(--study-body); background: var(--study-soft); border-radius: 0 8px 8px 0; }
 .chat-rich-content blockquote p:last-child { margin-bottom: 0; }
 .chat-rich-content hr { border: 0; border-top: 1px solid var(--study-line); margin: 20px 0; }
-.chat-rich-content :not(pre) > code { padding: 2px 5px; background: #edf0eb; border-radius: 4px; font-family: Consolas, 'Courier New', monospace; font-size: 11px; }
+.chat-rich-content :not(pre) > code { padding: 2px 5px; background: #edf0eb; border-radius: 4px; font-family: Consolas, 'Courier New', monospace; font-size: 12px; }
 .chat-table-scroll, .chat-chart-table-scroll { max-width: 100%; overflow-x: auto; margin: 14px 0; border: 1px solid var(--study-line); border-radius: 10px; }
-.chat-rich-content table { width: 100%; border-collapse: collapse; font-size: 11px; line-height: 1.65; }
+.chat-rich-content table { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.65; }
 .chat-rich-content :is(th,td) { min-width: 90px; padding: 9px 11px; border-bottom: 1px solid var(--study-line); text-align: left; vertical-align: top; }
 .chat-rich-content th { background: var(--study-soft); font-weight: 600; }
 .chat-rich-content tbody tr:last-child > * { border-bottom: 0; }
 .chat-rich-content :is(th,td)[align=right] { text-align: right; }
 .chat-rich-content :is(th,td)[align=center] { text-align: center; }
 .chat-code-block { max-width: 100%; margin: 14px 0; overflow: hidden; border: 1px solid var(--study-line); border-radius: 12px; background: #f5f6f0; }
-.chat-code-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 12px; border-bottom: 1px solid var(--study-line); font-size: 10px; color: var(--study-muted); }
+.chat-code-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 12px; border-bottom: 1px solid var(--study-line); font-size: 11px; color: var(--study-muted); }
 .chat-code-copy { min-height: 32px; padding: 4px 7px; border-radius: 5px; color: var(--study-blue); cursor: pointer; }
 .chat-code-copy:hover { background: #e6edf2; }
-.chat-rich-content pre { max-width: 100%; margin: 0; padding: 12px; overflow: auto; white-space: pre; overflow-wrap: normal; font: 11px/1.8 Consolas, 'Courier New', monospace; tab-size: 4; color: #30332e; }
+.chat-rich-content pre { max-width: 100%; margin: 0; padding: 12px; overflow: auto; white-space: pre; overflow-wrap: normal; font: 12px/1.8 Consolas, 'Courier New', monospace; tab-size: 4; color: #30332e; }
 .chat-rich-content .hljs-comment, .chat-rich-content .hljs-quote { color: #737c6e; font-style: italic; }
 .chat-rich-content .hljs-keyword, .chat-rich-content .hljs-selector-tag, .chat-rich-content .hljs-built_in { color: #315a7c; font-weight: 600; }
 .chat-rich-content .hljs-string, .chat-rich-content .hljs-attr, .chat-rich-content .hljs-regexp { color: #48664c; }
@@ -37,16 +37,16 @@
 .chat-rich-content .katex-display > .katex { text-align: left; }
 .chat-math-fallback { font-family: Consolas, 'Courier New', monospace; white-space: pre-wrap; }
 .chat-visual { min-width: 0; max-width: 100%; margin: 16px 0; border: 1px solid var(--study-line); border-radius: 12px; background: var(--study-paper); overflow: hidden; }
-.chat-visual-heading { padding: 9px 12px; border-bottom: 1px solid var(--study-line); font-size: 10px; font-weight: 600; color: var(--study-muted); }
+.chat-visual-heading { padding: 9px 12px; border-bottom: 1px solid var(--study-line); font-size: 11px; font-weight: 600; color: var(--study-muted); }
 .chat-visual-body { min-width: 0; padding: 12px; }
-.chat-visual-status, .chat-visual-error { margin: 0 !important; font-size: 11px; color: var(--study-muted); }
+.chat-visual-status, .chat-visual-error { margin: 0 !important; font-size: 12px; color: var(--study-muted); }
 .chat-visual-error { color: #9a4343; }
 .chat-diagram-viewport { max-width: 100%; max-height: 440px; overflow: auto; overscroll-behavior: contain; }
 .chat-diagram-viewport svg { display: block; margin-inline: auto; }
-.chat-chart-caption { margin-bottom: 12px; font-size: 12px; font-weight: 600; color: var(--study-ink); }
+.chat-chart-caption { margin-bottom: 12px; font-size: 13px; font-weight: 600; color: var(--study-ink); }
 .chat-chart-plot canvas { max-width: 100%; }
 .chat-chart-data { margin-top: 12px; }
-.chat-rich-content summary { min-height: 32px; padding: 6px 0; color: var(--study-muted); font-size: 10px; cursor: pointer; }
+.chat-rich-content summary { min-height: 32px; padding: 6px 0; color: var(--study-muted); font-size: 11px; cursor: pointer; }
 .chat-visual-source { padding: 0 12px 4px; }
 .chat-visual-source pre { max-height: 240px; border-radius: 8px; background: #f5f6f0; }
 .chat-rich-content :is(button,a,summary,[tabindex]):focus-visible { outline: 2px solid #7898af; outline-offset: -2px; }
@@ -54,5 +54,5 @@
     .chat-rich-content :is(th,td) { padding: 8px; min-width: 80px; }
     .chat-visual-body { padding: 10px; }
     .chat-diagram-viewport { max-height: 340px; }
-    .chat-rich-content :is(h1,h2,h3) { font-size: 14px; }
+    .chat-rich-content :is(h1,h2,h3) { font-size: 15px; }
 }

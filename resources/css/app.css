@@ -7,19 +7,19 @@
 
 @theme {
     --font-sans: 'Plus Jakarta Sans', 'Bahnschrift', sans-serif;
-    --text-xs: calc(0.75rem - 1px);
-    --text-sm: calc(0.875rem - 1px);
-    --text-base: calc(1rem - 1px);
-    --text-lg: calc(1.125rem - 1px);
-    --text-xl: calc(1.25rem - 1px);
-    --text-2xl: calc(1.5rem - 1px);
-    --text-3xl: calc(1.875rem - 1px);
-    --text-4xl: calc(2.25rem - 1px);
-    --text-5xl: calc(3rem - 1px);
-    --text-6xl: calc(3.75rem - 1px);
-    --text-7xl: calc(4.5rem - 1px);
-    --text-8xl: calc(6rem - 1px);
-    --text-9xl: calc(8rem - 1px);
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+    --text-5xl: 3rem;
+    --text-6xl: 3.75rem;
+    --text-7xl: 4.5rem;
+    --text-8xl: 6rem;
+    --text-9xl: 8rem;
     --color-campus-50: #edf2f5;
     --color-campus-100: #dce7ef;
     --color-campus-300: #9db7cc;

@@ -545,7 +545,7 @@
                         <i data-lucide="arrow-left" class="h-4 w-4"></i>
                     </a>
                     <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">
+                        <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">
                             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             Sesi Belajar Bareng
                         </div>
@@ -604,7 +604,7 @@
                                 <div class="w-full flex" :class="message.user_id === userId ? 'justify-end pl-12' : 'justify-start pr-4 sm:pr-12'">
                                     <!-- User Bubble -->
                                     <template x-if="!message.is_ai">
-                                        <div class="max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed shadow-sm flex flex-col gap-2"
+                                        <div class="max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-sm flex flex-col gap-2"
                                              :class="message.user_id === userId ? 'room-self-bubble' : 'room-other-bubble'">
                                             <template x-if="message.metadata?.image_path">
                                                 <div class="my-1 max-w-sm overflow-hidden rounded-2xl border border-slate-200 shadow-sm bg-white p-1">
@@ -623,7 +623,7 @@
                                                     <i data-lucide="bot" class="h-5 w-5"></i>
                                                 </div>
                                             </div>
-                                            <div class="min-w-0 flex-1 text-[13px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[12px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
+                                            <div class="min-w-0 flex-1 text-[14px] leading-relaxed text-slate-800 pt-1 [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:mb-4 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:mb-4 [&_ol]:ml-5 [&_ol]:list-decimal [&_strong]:font-bold [&_strong]:text-slate-900 [&_em]:italic [&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-800 [&_pre]:p-4 [&_pre]:text-[13px] [&_pre]:text-slate-50 [&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:rounded-xl [&_table]:overflow-hidden [&_td]:border [&_td]:border-slate-200 [&_td]:p-3 [&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-50 [&_th]:p-3 [&_th]:text-left">
                                                 <div x-html="formatMessage(message.message)"></div>
 
                                                 <!-- Source Snippets Toggle -->
@@ -651,7 +651,7 @@
                                                                 <template x-for="snippet in message.metadata.source_snippets"
                                                                     :key="snippet.document_id + snippet.snippet">
                                                                     <div
-                                                                        class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[12px] leading-5 text-slate-600 shadow-sm">
+                                                                        class="rounded-xl border border-slate-100 bg-slate-50 p-3 text-[13px] leading-5 text-slate-600 shadow-sm">
                                                                         <div
                                                                             class="mb-1.5 flex items-center gap-1.5 font-semibold text-campus-800">
                                                                             <i data-lucide="file-text"
@@ -722,7 +722,7 @@
                                 x-model="messageText" 
                                 rows="1"
                                 @paste="onPaste($event)"
-                                class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[13px] focus:ring-0 focus:outline-none" 
+                                class="max-h-32 min-h-[44px] w-full resize-none border-0 bg-transparent py-3 pl-2 pr-2 text-[14px] focus:ring-0 focus:outline-none" 
                                 placeholder="Apa yang mau dibahas?" aria-label="Pesan untuk teman dan AI" maxlength="2000"
                                 @keydown.enter="if (!$event.shiftKey && !$event.isComposing) { $event.preventDefault(); sendMessage(); }"
                                 @input="$el.style.height = 'auto'; $el.style.height = ($el.scrollHeight) + 'px';"
@@ -735,7 +735,7 @@
                             </button>
                         </div>
                         <p x-show="messageError" x-text="messageError" x-cloak class="room-message-error" role="alert"></p>
-                        <div class="mt-2 text-center text-[9px] font-medium text-slate-500">
+                        <div class="mt-2 text-center text-[10px] font-medium text-slate-500">
                             Pesan terlihat oleh semua anggota. Shift + Enter untuk baris baru.
                         </div>
                     </form>
@@ -789,7 +789,7 @@
                                 $fcRoute = $isFolder ? route('folders.flashcards.index', $target) : route('flashcards.index', $target);
                                 $fcStoreRoute = $isFolder ? route('folders.flashcards.store', $target) : route('flashcards.store', $target);
                             @endphp
-                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
                                 {{ $fcCount }} Kartu
                             </span>
                         </div>
@@ -832,7 +832,7 @@
                                 $quizCount = $quizzes->count();
                                 $quizStoreRoute = $isFolder ? route('folders.quizzes.store', $target) : route('quizzes.store', $target);
                             @endphp
-                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
                                 {{ $quizCount }} latihan
                             </span>
                         </div>
@@ -841,7 +841,7 @@
                         @if($quizCount > 0)
                             <div class="max-h-28 overflow-y-auto mb-2 space-y-1.5 pr-1 font-sans">
                                 @foreach($quizzes as $quiz)
-                                    <a href="{{ route('quizzes.show', $quiz) }}?room={{ $room->uuid }}" class="block p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[10px] text-slate-700 font-semibold truncate transition">
+                                    <a href="{{ route('quizzes.show', $quiz) }}?room={{ $room->uuid }}" class="block p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[11px] text-slate-700 font-semibold truncate transition">
                                         {{ $quiz->title }}
                                     </a>
                                 @endforeach
@@ -859,12 +859,12 @@
                                 <input type="hidden" name="question_count" x-model="quizCount">
                                 
                                 <div class="grid grid-cols-2 gap-1.5 rounded-full bg-slate-200/60 p-0.5 mb-2">
-                                    <button type="button" @click="quizType='multiple_choice'" class="h-7 rounded-full text-[9px] font-bold transition" :class="quizType === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Pilihan ganda</button>
-                                    <button type="button" @click="quizType='essay'" class="h-7 rounded-full text-[9px] font-bold transition" :class="quizType === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Esai</button>
+                                    <button type="button" @click="quizType='multiple_choice'" class="h-7 rounded-full text-[10px] font-bold transition" :class="quizType === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Pilihan ganda</button>
+                                    <button type="button" @click="quizType='essay'" class="h-7 rounded-full text-[10px] font-bold transition" :class="quizType === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Esai</button>
                                 </div>
 
                                 <div class="flex items-center justify-between gap-2 bg-white px-2 py-1.5 rounded-lg border border-slate-200 mb-2">
-                                    <span class="text-[9px] font-bold text-slate-500 uppercase">Jumlah</span>
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Jumlah</span>
                                     <div class="flex items-center gap-1">
                                         <button type="button" @click="quizCount = Math.max(1, quizCount - 1)" class="grid h-6 w-6 place-items-center rounded-full bg-slate-100 text-slate-600"><i data-lucide="minus" class="h-3 w-3"></i></button>
                                         <span class="w-6 text-center text-xs font-bold text-slate-800" x-text="quizCount">10</span>
@@ -896,7 +896,7 @@
             <div class="rooms-chat-card rounded-2xl border p-4 shrink-0">
                 <div class="flex items-center justify-between mb-3">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Anggota Sesi</h4>
-                    <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
+                    <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
                         <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span x-text="onlineUsers.length">0</span> Online
                     </span>
@@ -912,7 +912,7 @@
                                 <span class="block text-xs font-bold text-slate-700 truncate leading-tight">
                                     {{ $room->host->name }}
                                 </span>
-                                <span class="inline-block text-[8px] font-bold text-campus-700 uppercase tracking-wider">
+                                <span class="inline-block text-[9px] font-bold text-campus-700 uppercase tracking-wider">
                                     Pembuat ruang
                                 </span>
                             </div>
@@ -936,7 +936,7 @@
                                         <span class="block text-xs font-semibold text-slate-700 truncate leading-tight">
                                             {{ $participant->name }}
                                         </span>
-                                        <span class="block text-[8px] text-slate-400 font-medium">
+                                        <span class="block text-[9px] text-slate-400 font-medium">
                                             Siswa
                                         </span>
                                     </div>
@@ -1052,7 +1052,7 @@
                                                         $fcRoute = $isFolder ? route('folders.flashcards.index', $target) : route('flashcards.index', $target);
                                                         $fcStoreRoute = $isFolder ? route('folders.flashcards.store', $target) : route('flashcards.store', $target);
                                                     @endphp
-                                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
+                                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
                                                         {{ $fcCount }} Kartu
                                                     </span>
                                                 </div>
@@ -1095,7 +1095,7 @@
                                                         $quizCount = $quizzes->count();
                                                         $quizStoreRoute = $isFolder ? route('folders.quizzes.store', $target) : route('quizzes.store', $target);
                                                     @endphp
-                                                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
+                                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-campus-50 text-campus-700">
                                                         {{ $quizCount }} latihan
                                                     </span>
                                                 </div>
@@ -1104,7 +1104,7 @@
                                                 @if($quizCount > 0)
                                                     <div class="max-h-28 overflow-y-auto mb-2 space-y-1.5 pr-1 font-sans">
                                                         @foreach($quizzes as $quiz)
-                                                            <a href="{{ route('quizzes.show', $quiz) }}?room={{ $room->uuid }}" class="block p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[10px] text-slate-700 font-semibold truncate transition">
+                                                            <a href="{{ route('quizzes.show', $quiz) }}?room={{ $room->uuid }}" class="block p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[11px] text-slate-700 font-semibold truncate transition">
                                                                 {{ $quiz->title }}
                                                             </a>
                                                         @endforeach
@@ -1124,12 +1124,12 @@
                                                         <input type="hidden" name="question_count" x-model="quizCount">
                                                         
                                                         <div class="grid grid-cols-2 gap-1.5 rounded-full bg-slate-200/60 p-0.5 mb-2">
-                                                            <button type="button" @click="quizType='multiple_choice'" class="h-7 rounded-full text-[9px] font-bold transition" :class="quizType === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Pilihan ganda</button>
-                                                            <button type="button" @click="quizType='essay'" class="h-7 rounded-full text-[9px] font-bold transition" :class="quizType === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Esai</button>
+                                                            <button type="button" @click="quizType='multiple_choice'" class="h-7 rounded-full text-[10px] font-bold transition" :class="quizType === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Pilihan ganda</button>
+                                                            <button type="button" @click="quizType='essay'" class="h-7 rounded-full text-[10px] font-bold transition" :class="quizType === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500'">Esai</button>
                                                         </div>
 
                                                         <div class="flex items-center justify-between gap-2 bg-white px-2 py-1.5 rounded-lg border border-slate-200 mb-2">
-                                                            <span class="text-[9px] font-bold text-slate-500 uppercase">Jumlah</span>
+                                                            <span class="text-[10px] font-bold text-slate-500 uppercase">Jumlah</span>
                                                             <div class="flex items-center gap-1">
                                                                 <button type="button" @click="quizCount = Math.max(1, quizCount - 1)" class="grid h-6 w-6 place-items-center rounded-full bg-slate-100 text-slate-600"><i data-lucide="minus" class="h-3 w-3"></i></button>
                                                                 <span class="w-6 text-center text-xs font-bold text-slate-800" x-text="quizCount">10</span>
@@ -1161,7 +1161,7 @@
                                     <div class="rooms-chat-card rounded-2xl border p-4 flex flex-col gap-3">
                                         <div class="flex items-center justify-between shrink-0">
                                             <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Anggota Sesi</h4>
-                                            <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
+                                            <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
                                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                                 <span x-text="onlineUsers.length">0</span> Online
                                             </span>
@@ -1177,7 +1177,7 @@
                                                         <span class="block text-xs font-bold text-slate-700 truncate leading-tight">
                                                             {{ $room->host->name }}
                                                         </span>
-                                                        <span class="inline-block text-[8px] font-bold text-campus-700 uppercase tracking-wider">
+                                                        <span class="inline-block text-[9px] font-bold text-campus-700 uppercase tracking-wider">
                                                             Pembuat ruang
                                                         </span>
                                                     </div>
@@ -1201,7 +1201,7 @@
                                                                 <span class="block text-xs font-semibold text-slate-700 truncate leading-tight">
                                                                     {{ $participant->name }}
                                                                 </span>
-                                                                <span class="block text-[8px] text-slate-400 font-medium">
+                                                                <span class="block text-[9px] text-slate-400 font-medium">
                                                                     Siswa
                                                                 </span>
                                                             </div>

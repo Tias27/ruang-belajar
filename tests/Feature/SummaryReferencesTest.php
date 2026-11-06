@@ -36,6 +36,18 @@ class SummaryReferencesTest extends TestCase
         ]);
     }
 
+    public function test_chat_references_only_use_selected_folder_files(): void
+    {
+        $user = User::factory()->create(['role' => 'mahasiswa']);
+        $folder = DocumentFolder::create(['user_id' => $user->id, 'name' => 'Sains']);
+        $selected = $this->document($user, $folder, 'Fotosintesis berlangsung di kloroplas. Klorofil menangkap cahaya.', 'Biologi');
+        $other = $this->document($user, $folder, 'Laut mengandung air asin dan garam terlarut.', 'Laut');
+        $service = app(LearningSourceService::class);
+        $this->assertSame([], $service->chatSnippetsFor($folder, 'Apa itu laut?', 'Laut mengandung air asin.', selectedDocIds: [$selected->public_id]));
+        $refs = $service->chatSnippetsFor($folder, 'Apa itu laut?', 'Laut mengandung air asin.', selectedDocIds: [$other->public_id]);
+        $this->assertSame([$other->id], array_column($refs, 'document_id'));
+    }
+
     private function previousAlgorithm(LearningSourceService $service, Collection $documents, string $query, int $limit): array
     {
         $call = fn (string $method, ...$args) => (new \ReflectionMethod($service, $method))->invoke($service, ...$args);

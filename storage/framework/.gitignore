@@ -6,4 +6,6 @@ maintenance.php
 routes.php
 routes.scanned.php
 schedule-*
+summary-worker.lock
+summary-worker.pid
 services.json

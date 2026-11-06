@@ -85,7 +85,7 @@
             </div>
 
             <div class="live-study-actions">
-                <form id="learn-summary" method="POST" action="{{ route('folders.summaries.store', $folder) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true" class="min-w-0">
+                <form id="learn-summary" method="POST" action="{{ route('folders.summaries.store', $folder) }}" x-data="summaryRequest()" x-on:submit.prevent="if (!aiBusy) submit($el)" class="min-w-0">
                     @csrf
                     <template x-for="id in selected" :key="id">
                         <input type="hidden" name="document_ids[]" :value="id">
@@ -98,6 +98,7 @@
                             <span class="mt-1 block text-xs leading-5 text-slate-500" x-text="loading ? 'Memeriksa hasil tersimpan dan file terpilih' : (selected.length > 0 ? 'Ambil inti ' + selected.length + ' file terpilih.' : 'Ambil inti seluruh materi.')"></span>
                         </span>
                     </button>
+                    <p x-cloak x-show="error" x-text="error" role="alert" class="mt-2 text-xs text-rose-700"></p>
                 </form>
 
                 <form id="learn-chat" method="POST" action="{{ route('folders.chat.create', $folder) }}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true)" class="min-w-0">
@@ -487,7 +488,7 @@
                                         </div>
                                         <div class="min-w-0 flex-1">
                                             <span class="block text-sm font-bold text-rose-600 truncate group-hover:text-rose-950 transition">Keluarkan dari Folder</span>
-                                            <span class="block text-[10px] text-slate-400">Jadikan Dokumen Satuan</span>
+                                            <span class="block text-[11px] text-slate-400">Jadikan Dokumen Satuan</span>
                                         </div>
                                         <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 group-hover:text-rose-500 transition-transform group-hover:translate-x-0.5"></i>
                                     </button>
@@ -496,7 +497,7 @@
                                 @if($allFolders->isNotEmpty())
                                     <div class="relative flex py-2 items-center">
                                         <div class="flex-grow border-t border-slate-200"></div>
-                                        <span class="flex-shrink mx-4 text-[9px] font-bold uppercase tracking-wider text-slate-400">Pindahkan ke Folder Lain</span>
+                                        <span class="flex-shrink mx-4 text-[10px] font-bold uppercase tracking-wider text-slate-400">Pindahkan ke Folder Lain</span>
                                         <div class="flex-grow border-t border-slate-200"></div>
                                     </div>
 
@@ -510,7 +511,7 @@
                                                 </div>
                                                 <div class="min-w-0 flex-1">
                                                     <span class="block text-sm font-bold text-slate-700 truncate group-hover:text-campus-900 transition">{{ $f->name }}</span>
-                                                    <span class="block text-[10px] text-slate-400">{{ $f->documents_count ?? $f->documents()->count() }} file</span>
+                                                    <span class="block text-[11px] text-slate-400">{{ $f->documents_count ?? $f->documents()->count() }} file</span>
                                                 </div>
                                                 <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 group-hover:text-campus-500 transition-transform group-hover:translate-x-0.5"></i>
                                             </button>
@@ -520,7 +521,7 @@
                             </div>
                         </div>
                         <div class="bg-slate-50 px-6 py-4 flex justify-end sm:px-8">
-                            <button type="button" @click="showMoveModal = false" class="rounded-xl bg-white px-5 py-2.5 text-[13px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition-all">Batal</button>
+                            <button type="button" @click="showMoveModal = false" class="rounded-xl bg-white px-5 py-2.5 text-[14px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition-all">Batal</button>
                         </div>
                     </div>
                 </div>

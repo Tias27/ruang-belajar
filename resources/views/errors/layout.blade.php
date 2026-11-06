@@ -10,10 +10,10 @@
         body { min-height: 100dvh; display: grid; place-items: center; background: #faf9f4; padding: 24px; }
         main { width: min(100%, 620px); padding: 0; }
         section { background: #fffefb; border: 1px solid #dfe5db; border-radius: 24px; padding: clamp(24px, 5vw, 48px); }
-        .error-brand { font-size: 20px; letter-spacing: -1px; font-weight: 700; }
-        .error-code { font-size: 12px; color: #686d66; margin-top: 42px; }
-        h1 { font-size: calc(clamp(26px, 5vw, 36px) - 1px); font-weight: 600; line-height: 1.3; }
-        .error-message { font-size: 13px; color: #50564e; line-height: 1.8; margin-top: 18px; }
+        .error-brand { font-size: 21px; letter-spacing: -1px; font-weight: 700; }
+        .error-code { font-size: 13px; color: #686d66; margin-top: 42px; }
+        h1 { font-size: clamp(26px, 5vw, 36px); font-weight: 600; line-height: 1.3; }
+        .error-message { font-size: 14px; color: #50564e; line-height: 1.8; margin-top: 18px; }
         .error-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
         .button { border-radius: 24px; }
         .button-primary { background: #416f94; }

@@ -39,34 +39,34 @@
   border: 1px solid #d5e3da;
 }
 .hero-copy { position: relative; z-index: 2; max-width: 690px; margin: auto; text-align: center; }
-.hero-kicker { justify-content: center; color: var(--muted); font-size: 10px; letter-spacing: .3px; }
+.hero-kicker { justify-content: center; color: var(--muted); font-size: 11px; letter-spacing: .3px; }
 .kicker-mark { background: transparent; padding: 0; }
 .kicker-mark svg.icon { width: 16px; height: 16px; }
-.hero-copy h1 { font-size: calc(clamp(40px, 6.5svh, 54px) - 1px); line-height: 1.1; letter-spacing: -2.3px; font-weight: 700; margin: 0 0 14px; }
+.hero-copy h1 { font-size: clamp(40px, 6.5svh, 54px); line-height: 1.1; letter-spacing: -2.3px; font-weight: 700; margin: 0 0 14px; }
 .hero-copy h1>span { color: var(--ink); }
-.hero-description { max-width: 480px; margin: auto; color: var(--text-body); font-size: 11px; line-height: 1.8; }
+.hero-description { max-width: 480px; margin: auto; color: var(--text-body); font-size: 12px; line-height: 1.8; }
 .garden-shortcuts { display: flex; justify-content: center; align-items: center; gap: 27px; margin: 16px auto 0; }
-.garden-shortcuts a { display: flex; align-items: center; gap: 7px; font-size: 9px; color: var(--text-body); }
+.garden-shortcuts a { display: flex; align-items: center; gap: 7px; font-size: 10px; color: var(--text-body); }
 .garden-shortcuts a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 .garden-shortcuts svg.icon { width: 15px; height: 15px; }
 .hero-actions { justify-content: center; gap: 12px; margin-top: 18px; }
-.hero-actions .button { min-height: 44px; font-size: 10px; padding: 12px 22px; gap: 17px; }
-.hero-how-link { background: #f7faf2b3; border: 1px solid #f8fbf6; border-radius: 25px; min-height: 44px; padding: 10px 19px; color: var(--text-body); font-size: 9px; }
+.hero-actions .button { min-height: 44px; font-size: 11px; padding: 12px 22px; gap: 17px; }
+.hero-how-link { background: #f7faf2b3; border: 1px solid #f8fbf6; border-radius: 25px; min-height: 44px; padding: 10px 19px; color: var(--text-body); font-size: 10px; }
 .hero-how-link:hover { background: #f9fcf4; }
-.hero-footnote { margin-top: 10px; color: var(--muted); font-size: 8px; }
+.hero-footnote { margin-top: 10px; color: var(--muted); font-size: 9px; }
 .garden-scene { position: absolute; inset: auto 0 0; width: 100%; z-index: 0; pointer-events: none; overflow: hidden; }
 .garden-art { display: block; width: 100%; height: auto; overflow: visible; }
-.garden-caption { position: absolute; z-index: 2; bottom: 25px; left: 29px; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 8px; }
+.garden-caption { position: absolute; z-index: 2; bottom: 25px; left: 29px; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 9px; }
 .garden-caption svg.icon { width: 14px; height: 14px; }
 .motion-toggle { position: absolute; z-index: 3; bottom: 19px; right: 24px; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 1px solid #fbfdf2ab; background: #f6fbefb8; color: var(--muted); border-radius: 50%; }
 .motion-toggle:hover { background: #fbfff3; }
 .motion-toggle svg.icon { width: 13px; height: 13px; }
 .motion-toggle:disabled { opacity: .75; cursor: default; }
 .garden-demo-section { max-width: 1150px; margin: auto; padding: 82px 0 72px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 105px; align-items: center; }
-.garden-demo-copy .eyebrow { color: var(--muted); font-size: 10px; }
-.garden-demo-copy h2 { font-size: 33px; font-weight: 600; line-height: 1.4; letter-spacing: -1.3px; margin: 15px 0 20px; }
-.garden-demo-copy>p:not(.eyebrow) { max-width: 310px; font-size: 11px; line-height: 2; color: var(--text-body); }
-.garden-example-note { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 9px; line-height: 1.8; margin-top: 25px; }
+.garden-demo-copy .eyebrow { color: var(--muted); font-size: 11px; }
+.garden-demo-copy h2 { font-size: 34px; font-weight: 600; line-height: 1.4; letter-spacing: -1.3px; margin: 15px 0 20px; }
+.garden-demo-copy>p:not(.eyebrow) { max-width: 310px; font-size: 12px; line-height: 2; color: var(--text-body); }
+.garden-example-note { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 10px; line-height: 1.8; margin-top: 25px; }
 .garden-example-note svg.icon { width: 25px; height: 25px; transform: rotate(14deg); }
 .garden-demo-section .hero-example { max-width: 550px; width: 100%; padding: 0; }
 .example-source { background: #fffef8; border-color: #dfe6d9; box-shadow: none; }
@@ -95,8 +95,8 @@
 .auth-view .guest-header { max-width: 1150px; }
 .auth-story { position: relative; padding: 44px 38px 0; min-height: 710px; background: #deebe4; border-radius: 24px; border: 1px solid #d5e3da; }
 .auth-story h2,.auth-story>p { position: relative; z-index: 2; }
-.auth-story h2 { font-size: 33px; line-height: 1.4; letter-spacing: -1.5px; margin-top: 23px; }
-.story-kicker { color: var(--muted); font-size: 9px; }
+.auth-story h2 { font-size: 34px; line-height: 1.4; letter-spacing: -1.5px; margin-top: 23px; }
+.story-kicker { color: var(--muted); font-size: 10px; }
 .auth-story>p:not(.story-kicker):not(.story-signoff) { color: var(--text-body); }
 .auth-story .garden-scene { height: 385px; }
 .auth-story .garden-art { position: absolute; width: 1040px; max-width: none; height: 390px; left: 50%; bottom: 0; transform: translateX(-50%); }
@@ -104,9 +104,9 @@
 .auth-story .garden-trees-right { transform: translateX(-155px); }
 .auth-story .garden-reading-spot,.auth-story .garden-waterway { transform: translateX(109px); }
 .auth-story .motion-toggle { bottom: 18px; right: 18px; }
-.auth-story .garden-caption { bottom: 65px; left: 0; right: 0; justify-content: center; color: var(--muted); font-size: 9px; }
+.auth-story .garden-caption { bottom: 65px; left: 0; right: 0; justify-content: center; color: var(--muted); font-size: 10px; }
 .register-story { min-height: 815px; }
-.register-story h2 { font-size: 37px; }
+.register-story h2 { font-size: 38px; }
 .register-story .garden-scene { height: 420px; }
 .register-story .garden-art { width: 1120px; height: 420px; }
 .auth-intro>.eyebrow { color: var(--muted); }
@@ -162,7 +162,7 @@
   .landing-view .how-section,.landing-view .features-section,.landing-view .guest-footer { margin-left: 35px; margin-right: 35px; }
   .landing-view .landing-invite { margin-left: 35px; margin-right: 35px; }
   .auth-story { padding: 37px 29px 0; min-height: 700px; }
-  .auth-story h2 { font-size: 30px; }
+  .auth-story h2 { font-size: 31px; }
   .register-story { min-height: 805px; }
 }
 @media (max-width: 960px) {
@@ -171,13 +171,13 @@
   .garden-scene { height: 365px; }
   .garden-art { position: absolute; bottom: 0; left: 50%; width: 975px; max-width: none; height: 366px; transform: translateX(-50%); }
   .garden-demo-section { gap: 35px; padding: 50px 25px; grid-template-columns: .9fr 1.1fr; }
-  .garden-demo-copy h2 { font-size: 28px; }
-  .garden-demo-copy>p:not(.eyebrow) { font-size: 10px; }
+  .garden-demo-copy h2 { font-size: 29px; }
+  .garden-demo-copy>p:not(.eyebrow) { font-size: 11px; }
   .auth-story { padding: 33px 24px 0; }
-  .auth-story h2 { font-size: 28px; }
+  .auth-story h2 { font-size: 29px; }
   .auth-story .garden-trees-left { transform: translateX(200px); }
   .auth-story .garden-trees-right { transform: translateX(-200px); }
-  .auth-story .garden-caption { font-size: 8px; }
+  .auth-story .garden-caption { font-size: 9px; }
   .auth-story .garden-art { width: 940px; height: 353px; }
   .register-story .garden-art { width: 1000px; height: 375px; }
 }
@@ -185,7 +185,7 @@
 @media (min-width: 761px) and (max-height: 700px) {
   .landing-view .guest-header { height: 64px; }
   .landing-hero { padding-top: 84px; }
-  .hero-copy h1 { font-size: 39px; margin-bottom: 12px; }
+  .hero-copy h1 { font-size: 40px; margin-bottom: 12px; }
   .garden-shortcuts { margin-top: 12px; }
   .hero-actions { margin-top: 14px; }
   .hero-footnote { margin-top: 8px; }
@@ -193,23 +193,23 @@
 @media (max-width: 760px) {
   .landing-view #screen-landing { padding: 12px 12px 0; }
   .landing-view .guest-header { top: 12px; width: calc(100% - 58px); height: 72px; }
-  .guest-view .guest-brand { font-size: 17px; }
+  .guest-view .guest-brand { font-size: 18px; }
   .guest-view .guest-brand svg.icon { width: 23px; height: 25px; }
-  .guest-view .guest-login-link { border-color: #bdd1c5; border-radius: 20px; padding: 7px 13px; font-size: 9px; }
+  .guest-view .guest-login-link { border-color: #bdd1c5; border-radius: 20px; padding: 7px 13px; font-size: 10px; }
   .landing-hero { min-height: 785px; padding: 116px 17px 310px; border-radius: 20px; }
   .hero-copy { max-width: 420px; }
-  .hero-kicker { font-size: 8px; gap: 6px; letter-spacing: 0; }
+  .hero-kicker { font-size: 9px; gap: 6px; letter-spacing: 0; }
   .kicker-mark svg.icon { width: 13px; height: 13px; }
-  .hero-copy h1 { font-size: 40px; letter-spacing: -1.9px; line-height: 1.15; margin: 0 0 18px; }
-  .hero-description { font-size: 10px; line-height: 1.9; max-width: 280px; }
+  .hero-copy h1 { font-size: 41px; letter-spacing: -1.9px; line-height: 1.15; margin: 0 0 18px; }
+  .hero-description { font-size: 11px; line-height: 1.9; max-width: 280px; }
   .hero-description br { display: none; }
   .garden-shortcuts { gap: 11px; margin-top: 23px; }
-  .garden-shortcuts a { flex-direction: column; gap: 8px; font-size: 7px; min-width: 81px; }
+  .garden-shortcuts a { flex-direction: column; gap: 8px; font-size: 8px; min-width: 81px; }
   .garden-shortcuts svg.icon { width: 17px; height: 17px; }
   .hero-actions { gap: 9px; flex-wrap: wrap; margin-top: 25px; }
-  .hero-actions .button { font-size: 9px; min-height: 42px; padding: 11px 15px; gap: 9px; }
-  .hero-how-link { min-height: 42px; padding: 10px 13px; font-size: 8px; gap: 6px; }
-  .hero-footnote { font-size: 7px; margin-top: 15px; }
+  .hero-actions .button { font-size: 10px; min-height: 42px; padding: 11px 15px; gap: 9px; }
+  .hero-how-link { min-height: 42px; padding: 10px 13px; font-size: 9px; gap: 6px; }
+  .hero-footnote { font-size: 8px; margin-top: 15px; }
   .garden-scene { height: 337px; }
   .garden-art { width: 900px; height: 338px; }
   .garden-trees-left { transform: translateX(240px); }
@@ -219,15 +219,15 @@
   .motion-toggle { bottom: 18px; right: 18px; }
   .garden-demo-section { display: flex; flex-direction: column; gap: 35px; padding: 45px 13px 42px; }
   .garden-demo-copy { width: 100%; }
-  .garden-demo-copy .eyebrow { font-size: 9px; }
-  .garden-demo-copy h2 { font-size: 28px; margin: 12px 0 14px; line-height: 1.4; }
-  .garden-demo-copy>p:not(.eyebrow) { font-size: 10px; max-width: 290px; }
-  .garden-example-note { margin-top: 18px; font-size: 8px; gap: 9px; }
+  .garden-demo-copy .eyebrow { font-size: 10px; }
+  .garden-demo-copy h2 { font-size: 29px; margin: 12px 0 14px; line-height: 1.4; }
+  .garden-demo-copy>p:not(.eyebrow) { font-size: 11px; max-width: 290px; }
+  .garden-example-note { margin-top: 18px; font-size: 9px; gap: 9px; }
   .garden-example-note br { display: none; }
   .garden-example-note svg.icon { width: 18px; height: 18px; }
   .garden-demo-section .hero-example { max-width: 420px; }
   .landing-view .how-section,.landing-view .features-section,.landing-view .landing-invite,.landing-view .guest-footer { margin-left: 13px; margin-right: 13px; }
-  .landing-section-heading h2,.features-intro h2 { font-size: 25px; }
+  .landing-section-heading h2,.features-intro h2 { font-size: 26px; }
   .auth-view .guest-header { width: calc(100% - 44px); }
   .auth-story { display: block; min-height: 190px; height: 190px; margin-bottom: 27px; padding: 0; border-radius: 18px; overflow: hidden; }
   .auth-story h2,.auth-story>.story-kicker,.auth-story>p:not(.garden-caption) { display: none; }
@@ -242,20 +242,20 @@
   .auth-screen { margin-top: 10px; }
   .auth-form-area { padding-top: 0; }
   .auth-screen#screen-register .auth-form-area { padding-top: 0; }
-  .auth-intro h1 { font-size: 27px; }
-  .auth-screen#screen-register .auth-intro h1 { font-size: 25px; }
+  .auth-intro h1 { font-size: 28px; }
+  .auth-screen#screen-register .auth-intro h1 { font-size: 26px; }
 }
 @media (max-width: 370px) {
   .landing-view .guest-header { width: calc(100% - 54px); }
-  .guest-view .guest-brand { font-size: 16px; }
-  .hero-copy h1 { font-size: 36px; }
+  .guest-view .guest-brand { font-size: 17px; }
+  .hero-copy h1 { font-size: 37px; }
   .landing-hero { padding-inline: 13px; }
-  .hero-description { font-size: 9px; max-width: 255px; }
+  .hero-description { font-size: 10px; max-width: 255px; }
   .garden-shortcuts { gap: 7px; }
-  .garden-shortcuts a { font-size: 6px; min-width: 77px; }
+  .garden-shortcuts a { font-size: 7px; min-width: 77px; }
   .hero-actions { gap: 7px; }
-  .hero-actions .button { font-size: 8px; padding-inline: 13px; }
-  .hero-how-link { font-size: 7px; padding-inline: 12px; }
+  .hero-actions .button { font-size: 9px; padding-inline: 13px; }
+  .hero-how-link { font-size: 8px; padding-inline: 12px; }
 }
 
 }

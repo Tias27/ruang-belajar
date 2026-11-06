@@ -10,6 +10,8 @@ class Document extends Model
 {
     use HasFactory, HasPublicId;
 
+    public const TEXT_UNAVAILABLE_MESSAGE = 'Teks file belum bisa dibaca. Coba unggah ulang atau gunakan file lain';
+
     protected static function booted(): void
     {
         static::created(fn (Document $document) => app(\App\Services\SummaryReuse::class)->invalidateLegacy($document, contentChanged: false));

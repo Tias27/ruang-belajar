@@ -196,7 +196,7 @@
                             position: 'bottom',
                             labels: {
                                 boxWidth: 12,
-                                font: { size: 10 },
+                                font: { size: 11 },
                                 color: '#666666'
                             }
                         },

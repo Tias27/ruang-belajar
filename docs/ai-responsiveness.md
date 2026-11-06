@@ -1,5 +1,13 @@
 # Respons AI
 
+Sapaan tunggal dan pertanyaan tanggal/jam sederhana dijawab oleh QuickChatReply
+sebelum persiapan konteks dan permintaan AI. Waktu dihitung setiap pesan dalam
+Asia/Jakarta (WIB), bukan cache jawaban. Pencocokan seluruh pesan mencegah
+pertanyaan tambahan atau zona waktu lain ikut terpotong. Gambar dan lampiran
+materi tetap melalui AI. Jawaban langsung mengikuti penyimpanan riwayat dan
+format streaming yang sama; ini tidak mempercepat waktu respons model untuk
+pertanyaan lain.
+
 Chat tetap memakai streaming 9router. Pembaca SSE meneruskan setiap baris tanpa
 menunggu blok 1024 byte. Respons mengirim header `X-Accel-Buffering: no` dan
 `Cache-Control: no-cache, no-transform`. Reverse proxy/CDN juga harus menonaktifkan
@@ -29,6 +37,19 @@ cache Laravel. Kunci berdasarkan hash isi dan parameter persiapan; perubahan isi
 atau batas konteks otomatis memakai entri baru. Cache tidak menyimpan jawaban AI,
 riwayat chat, atau memori pengguna. Cache gagal tetap menjalankan persiapan biasa.
 
-Model, prompt, batas konteks/output, jumlah soal, serta proses sinkron ringkasan,
-soal, dan flashcard tidak berubah. Streaming mengurangi waktu menunggu tampilan;
-kecepatan menghasilkan jawaban masih bergantung pada provider.
+Model, batas konteks, jumlah soal, serta proses sinkron soal dan flashcard tetap
+dipertahankan. Chat menampilkan hasil secara bertahap.
+Ringkasan menerima streaming di server, lalu menampilkan hasil lengkap setelah
+validasi dan penyimpanan. File baru disiapkan otomatis setelah upload, melalui
+worker terpisah; lihat [automatic-summaries.md](automatic-summaries.md).
+
+Ringkasan memakai Markdown berbagian, bukan JSON panjang. Prompt menargetkan
+45-48% jumlah kata konteks sumber untuk total isi, poin penting, dan kesimpulan.
+Teks sumber tidak diubah; metadata raw_response._length mencatat target dan
+panjang aktual. Persentase merupakan target penulisan, bukan pemotongan teks
+atau jaminan tepat. Materi sangat pendek/berulang dan batas output 8192 token
+bisa membuat hasil berbeda; tidak ada request kedua otomatis untuk mengejar rasio.
+Uji langsung teks sintetis 576 kata menghasilkan 258 kata (44,79%) setelah
+penyesuaian anggaran tiap bagian. Ini satu sampel, bukan jaminan rasio setiap materi.
+Penanganan batas waktu, hasil kosong/terpotong, dan hasil pengukuran dijelaskan
+di [summary-latency.md](summary-latency.md).

@@ -44,7 +44,7 @@ class ChatMaterialsTest extends TestCase
             'services.nine_router.model' => 'ag/gemini-3.8-flash-medium',
         ]);
         Http::fake(['router.test/*' => Http::response(
-            'data: {"choices":[{"delta":{"content":"Jawaban dari lampiran"},"finish_reason":"stop"}]}'."\n\n",
+            'data: {"choices":[{"delta":{"content":"Fotosintesis menggunakan klorofil untuk menangkap energi cahaya dalam kloroplas."},"finish_reason":"stop"}]}'."\n\n",
             200, ['Content-Type' => 'text/event-stream']
         )]);
     }
@@ -56,8 +56,89 @@ class ChatMaterialsTest extends TestCase
             'original_name' => 'biologi.pdf', 'file_name' => 'test.pdf',
             'file_path' => 'documents/test.pdf', 'mime_type' => 'application/pdf',
             'extension' => 'pdf', 'size' => 100, 'status' => 'processed',
-            'extracted_text' => 'Kloroplas mengandung klorofil untuk menangkap energi cahaya.',
+            'extracted_text' => 'Fotosintesis terjadi dalam kloroplas yang mengandung klorofil untuk menangkap energi cahaya.',
         ], $attributes));
+    }
+
+    public function test_uploaded_chat_image_survives_reload_without_public_storage_link(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create(['role' => 'mahasiswa']);
+        $gif = base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
+        $response = $this->actingAs($user)->postJson(route('chat.general.store'), [
+            'question' => 'Jelaskan gambar ini', 'image' => UploadedFile::fake()->createWithContent('gambar.gif', $gif),
+        ])->assertOk();
+        $events = $response->streamedContent();
+        $session = ChatSession::firstOrFail();
+        $message = $session->messages()->where('role', 'user')->firstOrFail();
+        Storage::disk('local')->assertExists($message->metadata['image_path']);
+        $this->assertSame('local', $message->metadata['image_disk']);
+        $this->assertStringContainsString('"user_message"', $events);
+        $url = route('chat.attachments.image', [$session, $message]);
+        $this->get($url)->assertOk()->assertHeader('Content-Type', 'image/gif');
+        $this->get(route('chat.show', $session))->assertOk()->assertViewHas('session',
+            fn ($loaded) => $loaded->messages->firstWhere('id', $message->id)->forChat()['metadata']['image_path'] === $url);
+        $this->actingAs(User::factory()->create(['role' => 'mahasiswa']))->get($url)->assertForbidden();
+    }
+
+    public function test_web_search_progress_and_references_are_saved_in_chat_history(): void
+    {
+        config(['services.tavily.enabled' => true, 'services.tavily.api_key' => 'test-search-key', 'services.tavily.ca_bundle' => null,
+            'services.nine_router.base_url' => 'https://web-fixture.test/v1']);
+        $turn = 0;
+        Http::fake([
+            'web-fixture.test/*' => function () use (&$turn) {
+                $delta = ++$turn === 1 ? ['tool_calls' => [['index' => 0, 'id' => 'lookup', 'type' => 'function',
+                    'function' => ['name' => 'search_web', 'arguments' => '{"query":"berita terbaru"}']]]]
+                    : ['content' => 'Kabar berdasarkan [sumber](https://example.org/news).'];
+                return Http::response('data: '.json_encode(['choices' => [['delta' => $delta, 'finish_reason' => $turn === 1 ? 'tool_calls' : 'stop']]])."\n\n");
+            },
+            'api.tavily.com/search' => Http::response(['results' => [['url' => 'https://example.org/news', 'title' => 'Berita uji', 'content' => 'Isi cuplikan']]]),
+            'api.tavily.com/extract' => Http::response(['results' => [['url' => 'https://example.org/news', 'raw_content' => 'Isi halaman uji']]]),
+        ]);
+        $user = User::factory()->create(['role' => 'mahasiswa']);
+        $response = $this->actingAs($user)->postJson(route('chat.general.store'), ['question' => 'Cari berita terbaru']);
+        $stream = $response->streamedContent();
+        $this->assertStringContainsString('"status":"searching"', $stream);
+        $this->assertStringContainsString('"status":"reading"', $stream);
+        $session = ChatSession::firstOrFail();
+        $reply = $session->messages()->where('role', 'assistant')->firstOrFail();
+        $this->assertTrue($reply->metadata['web_searched']);
+        $this->assertTrue($reply->metadata['web_sources'][0]['read']);
+        $this->assertSame('https://example.org/news', $reply->metadata['web_sources'][0]['url']);
+        $this->get(route('chat.show', $session))->assertOk()->assertSee('Berita uji')->assertSee('Sumber web');
+    }
+
+    public function test_legacy_chat_images_still_open_and_message_scope_is_enforced(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create(['role' => 'mahasiswa']);
+        $session = $user->chatSessions()->create(['title' => 'Foto lama']);
+        Storage::disk('public')->put('chat_images/legacy.gif', base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'));
+        $message = $session->messages()->create(['role' => 'user', 'content' => 'Foto', 'metadata' => ['image_path' => 'storage/chat_images/legacy.gif']]);
+        $this->actingAs($user)->get(route('chat.attachments.image', [$session, $message]))->assertOk();
+        $other = $user->chatSessions()->create(['title' => 'Lain']);
+        $this->get(route('chat.attachments.image', [$other, $message]))->assertNotFound();
+        $message->update(['metadata' => ['image_path' => 'storage/chat_images/../legacy.gif']]);
+        $this->get(route('chat.attachments.image', [$session, $message]))->assertNotFound();
+    }
+
+    public function test_file_previews_are_private_and_return_inline_pdf_or_safe_text(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create(['role' => 'mahasiswa']);
+        $pdf = $this->document($user);
+        Storage::disk('local')->put($pdf->file_path, "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF");
+        $docx = $this->document($user, ['extension' => 'docx', 'extracted_text' => '<script>alert(1)</script> Isi dokumen']);
+        $this->actingAs($user)->getJson(route('chat.attachments.document', $pdf))->assertOk()->assertJsonPath('kind', 'pdf');
+        $this->get(route('chat.attachments.document-file', $pdf))->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertHeader('Content-Disposition', 'inline');
+        $this->getJson(route('chat.attachments.document', $docx))->assertOk()->assertJsonPath('kind', 'text')->assertJsonPath('text', $docx->extracted_text);
+        $this->get(route('chat.attachments.document-file', $docx))->assertNotFound();
+        $this->actingAs(User::factory()->create(['role' => 'mahasiswa']))->getJson(route('chat.attachments.document', $pdf))->assertForbidden();
+        $this->get(route('chat.attachments.document-file', $pdf))->assertForbidden();
+        $this->actingAs($user);
+        Storage::disk('local')->delete($pdf->file_path);
+        $this->getJson(route('chat.attachments.document', $pdf))->assertNotFound();
     }
 
     public function test_picker_lists_only_owned_readable_documents_and_paginates_and_searches(): void

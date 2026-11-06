@@ -144,8 +144,10 @@ class DocumentController extends Controller
             $document->update([
                 'extracted_text' => $text,
                 'status' => filled($text) ? 'processed' : 'uploaded',
-                'processing_notes' => filled($text) ? null : ($processingNotes ?: 'Teks belum dapat diekstrak otomatis. Gemini tetap dapat digunakan setelah extractor server dilengkapi.'),
+                'processing_notes' => filled($text) ? null : Document::TEXT_UNAVAILABLE_MESSAGE,
             ]);
+
+            app(\App\Services\AutomaticSummary::class)->schedule($document);
 
             $logger->log('upload_document', $document, ['title' => $document->title]);
             $documents->push($document);

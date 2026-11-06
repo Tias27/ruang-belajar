@@ -63,11 +63,15 @@ Route::middleware(['auth', 'role:mahasiswa'])->group(function () {
     Route::post('documents/{document}/summaries', [SummaryController::class, 'store'])->name('summaries.store');
     Route::post('folders/{folder}/summaries', [SummaryController::class, 'storeFolder'])->name('folders.summaries.store');
     Route::get('summaries/{summary}', [SummaryController::class, 'show'])->name('summaries.show');
+    Route::get('summaries/{summary}/status', [SummaryController::class, 'status'])->name('summaries.status');
     Route::redirect('riwayat-tanya-ai', '/riwayat');
     Route::get('riwayat', [ChatController::class, 'index'])->name('chat.index');
     Route::get('tanya-ai', [ChatController::class, 'general'])->name('chat.general');
     Route::get('tanya-ai/materi', [\App\Http\Controllers\Student\ChatMaterialController::class, 'index'])->name('chat.materials.index');
     Route::post('tanya-ai/materi', [\App\Http\Controllers\Student\ChatMaterialController::class, 'store'])->name('chat.materials.store');
+    Route::get('tanya-ai/lampiran/{document}', [\App\Http\Controllers\Student\ChatAttachmentController::class, 'document'])->name('chat.attachments.document');
+    Route::get('tanya-ai/lampiran/{document}/file', [\App\Http\Controllers\Student\ChatAttachmentController::class, 'documentFile'])->name('chat.attachments.document-file');
+    Route::get('tanya/{session}/messages/{message}/image', [\App\Http\Controllers\Student\ChatAttachmentController::class, 'image'])->name('chat.attachments.image');
     Route::post('tanya-ai', [ChatController::class, 'storeGeneral'])->name('chat.general.store');
     Route::delete('riwayat-selected', [ChatController::class, 'bulkDestroy'])->name('chat.bulk-destroy');
     Route::post('documents/{document}/tanya', [ChatController::class, 'create'])->name('chat.create');

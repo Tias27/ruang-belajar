@@ -31,6 +31,15 @@ return [
 
     'connections' => [
 
+        'ai_summaries' => [
+            'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'ai-summaries',
+            'retry_after' => 420,
+            'after_commit' => true,
+        ],
+
         'ai_memory' => [
             'driver' => 'database',
             'connection' => env('DB_QUEUE_CONNECTION'),

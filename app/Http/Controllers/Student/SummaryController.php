@@ -18,7 +18,7 @@ class SummaryController extends Controller
         abort_if($document->user_id !== auth()->id(), 403);
 
         [$summary, $generate] = $reuse->resolve($document);
-        if ($generate) GenerateSummaryJob::dispatchSync($summary->id);
+        if ($generate || $summary->status === 'queued') GenerateSummaryJob::dispatchSync($summary->id);
 
         return $this->openResult($summary, $generate);
     }
@@ -44,8 +44,10 @@ class SummaryController extends Controller
 
     private function openResult(Summary $summary, bool $generated)
     {
+        $summary->refresh();
+        if (request()->expectsJson()) return $this->stateResponse($summary);
         $response = redirect()->route('summaries.show', $summary);
-        return $summary->refresh()->status === 'completed'
+        return $summary->status === 'completed'
             ? $response->with('status', $generated ? 'Ringkasan siap dibaca' : 'Ringkasan sebelumnya dibuka')
             : $response;
     }
@@ -54,6 +56,24 @@ class SummaryController extends Controller
     {
         abort_if($summary->user_id !== auth()->id(), 403);
 
+        app(SummaryReuse::class)->expireStalled($summary);
         return view('student.summaries.show', ['summary' => $summary->load('document', 'folder')]);
+    }
+
+    public function status(Summary $summary)
+    {
+        abort_if($summary->user_id !== auth()->id(), 403);
+        app(SummaryReuse::class)->expireStalled($summary);
+        return $this->stateResponse($summary);
+    }
+
+    private function stateResponse(Summary $summary)
+    {
+        return response()->json([
+            'status' => $summary->status,
+            'status_url' => route('summaries.status', $summary),
+            'url' => route('summaries.show', $summary),
+        ], in_array($summary->status, ['queued', 'processing'], true) ? 202 : 200)
+            ->header('Cache-Control', 'private, no-store');
     }
 }

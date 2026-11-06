@@ -56,6 +56,24 @@ try {
     $artifact = $directory.'/summary-provider-sample-latest.json';
     $responses = [];
     $requestMetrics = [];
+    $client = new class extends \App\Services\NineRouterClient {
+        public ?float $firstContentSeconds = null;
+        public ?float $completionSeconds = null;
+
+        public function stream(string|array $prompt, int $maxTokens, string $task = 'chat', bool $json = false): \Generator
+        {
+            $started = hrtime(true);
+            try {
+                foreach (parent::stream($prompt, $maxTokens, $task, $json) as $chunk) {
+                    $this->firstContentSeconds ??= (hrtime(true) - $started) / 1000000000;
+                    yield $chunk;
+                }
+            } finally {
+                $this->completionSeconds = (hrtime(true) - $started) / 1000000000;
+            }
+        }
+    };
+    app()->instance(\App\Services\NineRouterClient::class, $client);
 
     \Illuminate\Support\Facades\Http::globalRequestMiddleware(function (\Psr\Http\Message\RequestInterface $request) use (&$requestMetrics) {
         $body = (string) $request->getBody();
@@ -112,6 +130,8 @@ try {
         'document_count' => $documents->count(),
         'source_chars' => $documents->sum(fn ($document) => strlen($document->extracted_text)),
         'duration_seconds' => round((hrtime(true) - $started) / 1_000_000_000, 2),
+        'provider_first_content_seconds' => $client->firstContentSeconds === null ? null : round($client->firstContentSeconds, 2),
+        'provider_completion_seconds' => $client->completionSeconds === null ? null : round($client->completionSeconds, 2),
         'request_metrics' => $requestMetrics,
         'response_metrics' => array_column($responses, 'metrics'),
         'result_keys' => array_keys($result),

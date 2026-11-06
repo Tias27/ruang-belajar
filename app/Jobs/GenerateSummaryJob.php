@@ -8,6 +8,7 @@ use App\Services\LearningSourceService;
 use App\Services\SummaryReuse;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -15,7 +16,9 @@ class GenerateSummaryJob implements ShouldQueue
 {
     use Queueable;
 
-    public int $tries = 2;
+    public int $tries = 1;
+
+    public bool $failOnTimeout = true;
 
     public int $timeout = 360;
 
@@ -26,10 +29,21 @@ class GenerateSummaryJob implements ShouldQueue
 
     public function handle(GeminiService $gemini, LearningSourceService $sources): void
     {
-        $summary = Summary::with('document', 'folder')->find($this->summaryId);
+        // Upload workers and a user clicking Ringkas can race for the same result.
+        $summary = DB::transaction(function () {
+            $summary = Summary::whereKey($this->summaryId)->lockForUpdate()->first();
+            if (! $summary || ! in_array($summary->status, ['queued', 'processing'], true)
+                || isset($summary->raw_response['_generation_started_at'])) return null;
+            $summary->update([
+                'status' => 'processing',
+                'raw_response' => array_merge($summary->raw_response ?? [], ['_generation_started_at' => now()->toISOString()]),
+            ]);
+            return $summary;
+        });
         if (! $summary) {
             return;
         }
+        $summary->load('document', 'folder');
 
         $source = $summary->folder ?: $summary->document;
         if (! $source) {
@@ -46,6 +60,10 @@ class GenerateSummaryJob implements ShouldQueue
         try {
             $reuse = app(SummaryReuse::class);
             $snapshot = $reuse->snapshot($source, $this->selectedDocIds);
+            $reservedHash = $summary->raw_response['_source_snapshot']['hash'] ?? null;
+            if ($reservedHash && $reservedHash !== $snapshot['hash']) {
+                throw new \RuntimeException('Materi berubah sebelum ringkasan dimulai. Klik Ringkas untuk memakai isi terbaru');
+            }
             $result = $gemini->summarize($source, $this->selectedDocIds);
             if (function_exists('set_time_limit')) @set_time_limit(60);
             if (! is_string($result['full_summary'] ?? null) || blank($result['full_summary'])) {
@@ -64,6 +82,7 @@ class GenerateSummaryJob implements ShouldQueue
                 $snapshot['hash'] = 'source-changed-during-generation';
             }
             $result['_source_snapshot'] = $snapshot;
+            $result['_summary_policy'] = \App\Services\SummaryLength::POLICY;
 
             $summary->update([
                 'short_summary' => $result['short_summary'] ?? 'Ringkasan singkat belum tersedia.',
@@ -81,6 +100,17 @@ class GenerateSummaryJob implements ShouldQueue
                 'status' => 'failed',
                 'generation_error' => Str::limit($exception->getMessage(), 1000, ''),
             ]);
+        } finally {
+            if ($this->job && $this->job->getConnectionName() !== 'sync' && function_exists('set_time_limit')) {
+                @set_time_limit(0);
+            }
         }
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        Summary::whereKey($this->summaryId)->whereIn('status', ['queued', 'processing'])->update([
+            'status' => 'failed', 'generation_error' => 'Proses ringkasan terhenti sebelum selesai. Coba lagi',
+        ]);
     }
 }

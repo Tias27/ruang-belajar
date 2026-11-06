@@ -92,13 +92,13 @@ class LearningSourceService
         return $this->snippetsFor($source, 'konsep definisi karakteristik manfaat langkah tujuan masalah solusi metode proses', $limit);
     }
 
-    public function fallbackAnswer(Document|DocumentFolder $source, string $question, string $reason): string
+    public function fallbackAnswer(Document|DocumentFolder $source, string $question, string $reason, ?array $selectedDocIds = null): string
     {
-        $snippets = $this->snippetsFor($source, $question, 3);
+        $snippets = $this->chatSnippetsFor($source, $question, $question, selectedDocIds: $selectedDocIds);
         $safeReason = $this->safeAiFailureReason($reason);
 
         if ($snippets === []) {
-            return "{$safeReason}\n\nMateri ini juga belum punya teks terbaca yang cukup untuk dibuat jawaban lokal. Cek halaman detail dokumen untuk memastikan PDF/DOCX/PPTX berhasil terbaca.";
+            return "{$safeReason}\n\nBelum ditemukan cuplikan materi yang cukup relevan untuk menjawab pertanyaan ini.";
         }
 
         $points = collect($snippets)
@@ -142,6 +142,56 @@ class LearningSourceService
             ])
             ->values()
             ->all();
+    }
+
+    public function chatSnippetsFor(Document|DocumentFolder $source, string $question, string $answer = '', int $limit = 3, ?array $selectedDocIds = null): array
+    {
+        if (QuickChatReply::answer($question) !== null) return [];
+        $documents = $source instanceof DocumentFolder
+            ? $source->documents()->when($selectedDocIds, fn ($query) => $query->whereIn('public_id', $selectedDocIds))
+                ->oldest()->get(['id', 'title', 'extracted_text'])
+            : collect([$source]);
+        $questionWords = $this->referenceWords($question);
+        $answerWords = $this->referenceWords($answer);
+
+        return $documents->flatMap(fn (Document $document) => collect($this->chunks($document->extracted_text ?? ''))
+            ->map(fn ($chunk) => ['document_id' => $document->id, 'title' => $document->title,
+                'snippet' => $this->completeLimit($chunk, 900)]))
+            ->map(function ($snippet) use ($questionWords, $answerWords) {
+                $snippet['score'] = $this->referenceScore($snippet['snippet'], $questionWords, $answerWords);
+                return $snippet;
+            })->filter(fn ($snippet) => $snippet['score'] > 0)->sortByDesc('score')->take($limit)
+            ->map(fn ($snippet) => array_diff_key($snippet, ['score' => true]))->values()->all();
+    }
+
+    public function relevantChatReferences(array $snippets, string $question, string $answer): array
+    {
+        if (QuickChatReply::answer($question) !== null) return [];
+        $questionWords = $this->referenceWords($question);
+        $answerWords = $this->referenceWords($answer);
+        return array_values(array_filter($snippets, fn ($snippet) => is_array($snippet)
+            && $this->referenceScore((string) ($snippet['snippet'] ?? ''), $questionWords, $answerWords) > 0));
+    }
+
+    private function referenceScore(string $snippet, array $questionWords, array $answerWords): int
+    {
+        $words = $this->referenceWords($snippet);
+        $questionMatches = count(array_intersect($questionWords, $words));
+        $answerMatches = count(array_intersect($answerWords, $words));
+        // Whole topical words avoid matches such as "laut" inside "kelautan" or generic filler.
+        if ($answerWords === []) return 0;
+        if ($questionMatches > 0 && $answerMatches > 0) return $questionMatches * 3 + $answerMatches;
+        // Generic follow-ups can still cite material supported by the actual answer.
+        $minimum = $questionWords === [] ? 2 : 3;
+        return $answerMatches >= max($minimum, (int) ceil(count($answerWords) * 0.2)) ? $answerMatches : 0;
+    }
+
+    private function referenceWords(string $text): array
+    {
+        $text = preg_replace('#https?://\S+#u', '', $text) ?? $text;
+        preg_match_all('/[\pL]{3,}/u', Str::lower($text), $matches);
+        $generic = explode(' ', 'yang dengan untuk dari pada atau adalah dalam merupakan sebagai secara oleh karena sehingga serta juga dan ini itu tersebut ada tidak bukan belum sudah akan bisa dapat harus hanya lebih paling sangat semua setiap antara melalui terhadap tanpa sebuah beberapa punya memiliki menjadi menggunakan digunakan saya aku gua gue kamu anda kita kami mereka apakah apa siapa bagaimana mengapa kenapa kapan dimana berapa tolong jelaskan penjelasan menjelaskan berikan beri buat bikin coba contoh contohnya cara kerja proses langkah fungsi fungsinya manfaat tujuan pengertian definisi jenis bagian tentang terkait mengenai materi dokumen file lampiran sumber referensi jawaban pertanyaan informasi data berikut berdasarkan menurut penting utama umum lengkap jelas singkat detail rinci ringkas ringkasan bahas membahas sebelumnya tadi lanjut lalu lagi halo hai hello terima kasih sekarang hari tanggal bulan tahun jam pukul wib gitu dong kah nah sih saja aja dong');
+        return array_values(array_diff(array_unique($matches[0] ?? []), $generic));
     }
 
     private function documentSnippets(Document $document, array $keywords): Collection

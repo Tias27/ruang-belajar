@@ -34,7 +34,7 @@
                 <h1 class="mt-4 text-3xl font-extrabold tracking-tight text-campus-950 sm:text-4xl">
                     {{ $isSelectionMode ? 'Pilih materi untuk dipelajari' : 'Bahan belajar, satu tempat.' }}
                 </h1>
-                <p class="mt-3 max-w-2xl text-[14px] leading-relaxed text-slate-600">
+                <p class="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-600">
                     {{ $isSelectionMode ? 'Pilih file atau folder yang ingin kamu pelajari.' : 'Buka materi, pilih cara belajar. File yang saling berkaitan bisa kamu satukan dalam folder.' }}
                 </p>
 
@@ -48,7 +48,7 @@
                         <input aria-label="Cari materi atau folder" name="q" value="{{ $search }}" 
                                @input.debounce.700ms="$refs.searchForm.submit()" 
                                placeholder="Cari nama materi atau folder..." 
-                               class="h-12 w-full rounded-full border border-slate-200 bg-white pr-10 text-[14px] shadow-sm transition-all focus:border-campus-400 focus:outline-none focus:ring-4 focus:ring-campus-100/50"
+                               class="h-12 w-full rounded-full border border-slate-200 bg-white pr-10 text-[15px] shadow-sm transition-all focus:border-campus-400 focus:outline-none focus:ring-4 focus:ring-campus-100/50"
                                style="padding-left: 2.75rem;">
                         @if($search !== '')
                             <a href="{{ route('documents.index', $intent ? ['intent' => $intent] : []) }}" class="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors" title="Bersihkan Pencarian">
@@ -60,7 +60,7 @@
             </div>
             @if(! $isSelectionMode)
                 <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:items-start">
-                    <a href="{{ route('documents.create') }}" class="group relative inline-flex w-full sm:w-auto items-center justify-center gap-2 overflow-hidden rounded-full bg-campus-700 px-7 py-3.5 text-[14px] font-bold text-white shadow-lg shadow-campus-700/20 transition-all hover:-translate-y-0.5 hover:bg-campus-800 hover:shadow-campus-700/40">
+                    <a href="{{ route('documents.create') }}" class="group relative inline-flex w-full sm:w-auto items-center justify-center gap-2 overflow-hidden rounded-full bg-campus-700 px-7 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-campus-700/20 transition-all hover:-translate-y-0.5 hover:bg-campus-800 hover:shadow-campus-700/40">
                         <i data-lucide="upload-cloud" class="h-4 w-4 transition-transform group-hover:-translate-y-0.5"></i> 
                         <span>Upload Materi Baru</span>
                     </a>
@@ -122,8 +122,8 @@
                                     
                                     <div class="flex items-center justify-between gap-3 bg-slate-50 p-1.5 rounded-xl">
                                         <div class="flex gap-1 rounded-lg bg-slate-200/50 p-1">
-                                            <button type="button" x-on:click="type='multiple_choice'" class="px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide transition-colors" x-bind:class="type === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">PG</button>
-                                            <button type="button" x-on:click="type='essay'" class="px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide transition-colors" x-bind:class="type === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">Esai</button>
+                                            <button type="button" x-on:click="type='multiple_choice'" class="px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wide transition-colors" x-bind:class="type === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">PG</button>
+                                            <button type="button" x-on:click="type='essay'" class="px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wide transition-colors" x-bind:class="type === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">Esai</button>
                                         </div>
                                         
                                         <div class="flex items-center gap-2 pr-1">
@@ -133,7 +133,7 @@
                                         </div>
                                     </div>
                                     
-                                    <button type="submit" x-bind:disabled="aiBusy || loading" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[12px] font-bold text-white shadow-sm transition-all hover:bg-campus-800 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75 disabled:hover:scale-100">
+                                    <button type="submit" x-bind:disabled="aiBusy || loading" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-campus-800 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75 disabled:hover:scale-100">
                                         <span x-show="!loading"><i data-lucide="list-checks" class="h-4 w-4"></i></span>
                                         <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
                                         <span x-text="loading ? 'Menyusun Soal...' : 'Mulai Latihan'"></span>
@@ -175,7 +175,7 @@
                                     <i data-lucide="folder" class="h-5 w-5"></i>
                                 </div>
                                 <div class="min-w-0 flex-1 pr-8">
-                                    <a href="{{ route('folders.show', $folder) }}" class="block truncate text-[14px] font-bold text-slate-900 hover:text-accent-800 transition-colors">{{ $folder->name }}</a>
+                                    <a href="{{ route('folders.show', $folder) }}" class="block truncate text-[15px] font-bold text-slate-900 hover:text-accent-800 transition-colors">{{ $folder->name }}</a>
                                     <p class="mt-0.5 text-xs text-slate-500">{{ $folder->documents_count }} file dalam folder</p>
                                 </div>
                             </div>
@@ -183,13 +183,13 @@
                             <!-- Action buttons for folder -->
                             <div class="relative mt-4 pt-3 border-t border-slate-50 flex items-center justify-between z-10">
                                 <form method="POST" action="{{ route('folders.study-rooms.store', $folder) }}" x-data="{ loading: false }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true">@csrf
-                                    <button x-bind:disabled="aiBusy || loading" class="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-accent-50 px-3 text-[10px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
+                                    <button x-bind:disabled="aiBusy || loading" class="flex h-8 items-center justify-center gap-1.5 rounded-lg bg-accent-50 px-3 text-[11px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
                                         <i data-lucide="users" class="h-3.5 w-3.5" x-show="!loading"></i>
                                         <span x-show="loading" x-cloak class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-700 border-t-white"></span>
                                         <span>Belajar Bareng</span>
                                     </button>
                                 </form>
-                                <a href="{{ route('folders.show', $folder) }}" class="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-slate-100 px-3 text-[10px] font-bold text-slate-700 hover:bg-slate-200 transition">
+                                <a href="{{ route('folders.show', $folder) }}" class="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-slate-100 px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-200 transition">
                                     Detail <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i>
                                 </a>
                             </div>
@@ -297,8 +297,8 @@
                                     <h3 class="block truncate text-sm font-bold text-slate-900 group-hover:text-campus-700 transition-colors" title="{{ $document->title }}">{{ $document->title }}</h3>
                                     <p class="mt-1 block truncate text-xs text-slate-500" title="{{ $document->original_name }}">{{ $document->original_name }}</p>
                                     <div class="mt-2.5 flex flex-wrap gap-1.5">
-                                        <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 uppercase">{{ $document->extension }}</span>
-                                        <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600">{{ number_format($document->size / 1024 / 1024, 2) }} MB</span>
+                                        <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 uppercase">{{ $document->extension }}</span>
+                                        <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{{ number_format($document->size / 1024 / 1024, 2) }} MB</span>
                                     </div>
                                 </div>
                             </div>
@@ -310,8 +310,8 @@
                                 
                                 <div class="flex items-center justify-between gap-3 bg-slate-50 p-1.5 rounded-xl">
                                     <div class="flex gap-1 rounded-lg bg-slate-200/50 p-1">
-                                        <button type="button" x-on:click="type='multiple_choice'" class="px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide transition-colors" x-bind:class="type === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">PG</button>
-                                        <button type="button" x-on:click="type='essay'" class="px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wide transition-colors" x-bind:class="type === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">Esai</button>
+                                        <button type="button" x-on:click="type='multiple_choice'" class="px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wide transition-colors" x-bind:class="type === 'multiple_choice' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">PG</button>
+                                        <button type="button" x-on:click="type='essay'" class="px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wide transition-colors" x-bind:class="type === 'essay' ? 'bg-white text-campus-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">Esai</button>
                                     </div>
                                     <div class="flex items-center gap-2 pr-1">
                                         <button type="button" x-on:click="count = Math.max(1, Number(count) - 1)" class="flex h-6 w-6 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm hover:bg-slate-100 hover:text-campus-600 transition"><i data-lucide="minus" class="h-3 w-3"></i></button>
@@ -320,7 +320,7 @@
                                     </div>
                                 </div>
                                 
-                                <button type="submit" x-bind:disabled="aiBusy || loading" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[12px] font-bold text-white shadow-sm transition-all hover:bg-campus-800 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75 disabled:hover:scale-100">
+                                <button type="submit" x-bind:disabled="aiBusy || loading" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-campus-700 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-campus-800 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75 disabled:hover:scale-100">
                                     <span x-show="!loading"><i data-lucide="list-checks" class="h-4 w-4"></i></span>
                                     <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
                                     <span x-text="loading ? 'Menyusun...' : 'Mulai Latihan'"></span>
@@ -338,14 +338,14 @@
                                 <div class="min-w-0 flex-1">
                                     <h3 class="block truncate text-sm font-bold text-slate-900 group-hover:text-{{ $tone }}-700 transition-colors">{{ $document->title }}</h3>
                                     <div class="mt-1.5 flex flex-wrap gap-2 text-xs">
-                                        <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-600 uppercase">{{ $document->extension }}</span>
-                                        <span class="rounded-md {{ $document->status === 'processed' ? 'bg-campus-50 text-campus-700' : ($document->status === 'processing' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600') }} px-2 py-0.5 text-[9px] font-bold">
+                                        <span class="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 uppercase">{{ $document->extension }}</span>
+                                        <span class="rounded-md {{ $document->status === 'processed' ? 'bg-campus-50 text-campus-700' : ($document->status === 'processing' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600') }} px-2 py-0.5 text-[10px] font-bold">
                                             {{ $document->status === 'processed' ? 'Siap dipelajari' : ($document->status === 'processing' ? 'Membaca...' : 'Belum diproses') }}
                                         </span>
                                     </div>
                                 </div>
                                 <div class="shrink-0 pl-2">
-                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-[10px] font-bold text-slate-600 shadow-sm transition-colors group-hover:border-transparent group-hover:bg-{{ $tone }}-600 group-hover:text-white">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm transition-colors group-hover:border-transparent group-hover:bg-{{ $tone }}-600 group-hover:text-white">
                                         <span x-text="loading ? 'Memproses...' : 'Pilih'"></span>
                                         <i data-lucide="arrow-right" class="h-3 w-3" x-show="!loading"></i>
                                     </span>
@@ -365,14 +365,14 @@
                                     <i data-lucide="file-text" class="h-6 w-6"></i>
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <h3 class="block truncate text-[14px] font-bold text-slate-900 group-hover:text-campus-700 transition-colors" title="{{ $document->title }}">{{ $document->title }}</h3>
-                                    <p class="mt-0.5 block truncate text-[11px] text-slate-500" title="{{ $document->original_name }}">{{ $document->original_name }}</p>
+                                    <h3 class="block truncate text-[15px] font-bold text-slate-900 group-hover:text-campus-700 transition-colors" title="{{ $document->title }}">{{ $document->title }}</h3>
+                                    <p class="mt-0.5 block truncate text-[12px] text-slate-500" title="{{ $document->original_name }}">{{ $document->original_name }}</p>
                                     <div class="mt-2.5 flex flex-wrap gap-2">
-                                        <span class="rounded-md bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 uppercase">{{ $document->extension }}</span>
-                                        <span class="rounded-md {{ $document->status === 'processed' ? 'bg-campus-50 text-campus-700' : ($document->status === 'processing' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500') }} px-2.5 py-0.5 text-[10px] font-bold">
+                                        <span class="rounded-md bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-600 uppercase">{{ $document->extension }}</span>
+                                        <span class="rounded-md {{ $document->status === 'processed' ? 'bg-campus-50 text-campus-700' : ($document->status === 'processing' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500') }} px-2.5 py-0.5 text-[11px] font-bold">
                                             {{ $document->status === 'processed' ? 'Siap dipelajari' : ($document->status === 'processing' ? 'Membaca...' : 'Belum diproses') }}
                                         </span>
-                                        <span class="rounded-md bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600">{{ number_format($document->size / 1024 / 1024, 2) }} MB</span>
+                                        <span class="rounded-md bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">{{ number_format($document->size / 1024 / 1024, 2) }} MB</span>
                                     </div>
                                 </div>
                             </a>
@@ -385,25 +385,25 @@
                                 <div class="live-row-menu-content" popover="manual">
                                     <button class="live-row-menu-close" type="button" onclick="this.closest('details').open = false" aria-label="Tutup menu materi"><i data-lucide="x" aria-hidden="true"></i> Tutup</button>
                             <form method="POST" action="{{ route('chat.create', $document) }}" x-data="{ loading: false }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true">@csrf
-                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-2 rounded-xl bg-campus-50 px-4 text-[11px] font-bold text-campus-700 shadow-sm transition-colors hover:bg-campus-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
+                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-2 rounded-xl bg-campus-50 px-4 text-[12px] font-bold text-campus-700 shadow-sm transition-colors hover:bg-campus-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
                                     <i data-lucide="messages-square" class="h-4 w-4" x-show="!loading"></i>
                                     <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-campus-700 border-t-white"></span>
                                     <span>Tanya AI</span>
                                 </button>
                             </form>
                             <form method="POST" action="{{ route('documents.study-rooms.store', $document) }}" x-data="{ loading: false }" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading = true">@csrf
-                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-2 rounded-xl bg-accent-50 px-4 text-[11px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
+                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-2 rounded-xl bg-accent-50 px-4 text-[12px] font-bold text-accent-700 shadow-sm transition-colors hover:bg-accent-600 hover:text-white disabled:opacity-50 disabled:cursor-wait">
                                     <i data-lucide="users" class="h-4 w-4" x-show="!loading"></i>
                                     <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-accent-700 border-t-white"></span>
                                     <span>Belajar Bareng</span>
                                 </button>
                             </form>
-                            <button type="button" x-bind:disabled="aiBusy" @click="triggerMove('{{ $document->public_id }}', '{{ addslashes($document->title) }}')" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed" title="Pindahkan ke Folder">
+                            <button type="button" x-bind:disabled="aiBusy" @click="triggerMove('{{ $document->public_id }}', '{{ addslashes($document->title) }}')" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed" title="Pindahkan ke Folder">
                                 <i data-lucide="folder-input" class="h-4 w-4 text-slate-500"></i>
                                 <span>Pindahkan</span>
                             </button>
                             <form method="POST" action="{{ route('summaries.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true">@csrf
-                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-wait">
+                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:cursor-wait">
                                     <i data-lucide="notebook-tabs" class="h-4 w-4 text-slate-500" x-show="!loading"></i>
                                     <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-campus-700"></span>
                                     <span>Ringkas</span>
@@ -411,13 +411,13 @@
                             </form>
                             <form method="POST" action="{{ route('quizzes.store', $document) }}" x-data="{loading:false, type:'multiple_choice', count:10}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true">
                                 @csrf
-                                <button type="button" :disabled="aiBusy" @click="if (!aiBusy) $refs.quizSettings.showModal()" class="flex h-9 items-center gap-2 rounded-xl px-3 text-[11px] font-bold" aria-haspopup="dialog">
+                                <button type="button" :disabled="aiBusy" @click="if (!aiBusy) $refs.quizSettings.showModal()" class="flex h-9 items-center gap-2 rounded-xl px-3 text-[12px] font-bold" aria-haspopup="dialog">
                                     <i data-lucide="list-checks" class="h-4 w-4"></i> Latihan
                                 </button>
                                 <x-quiz-settings :id="'quiz-'.$document->public_id" />
                             </form>
                             <form method="POST" action="{{ route('flashcards.store', $document) }}" x-data="{loading:false}" x-on:submit="if (aiBusy) { $event.preventDefault(); return; } setBusy(true); loading=true">@csrf
-                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-wait">
+                                <button x-bind:disabled="aiBusy || loading" class="flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-wait">
                                     <i data-lucide="copy-check" class="h-4 w-4" x-show="!loading"></i>
                                     <span x-show="loading" x-cloak class="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-campus-700"></span>
                                     <span>Kartu belajar</span>
@@ -426,7 +426,7 @@
                             <form method="POST" action="{{ route('documents.destroy', $document) }}" @submit.prevent="if (!aiBusy) confirmDelete($event, 'Hapus File?', 'Hapus permanen file ini beserta seluruh riwayat AI terkait? Tindakan ini tidak dapat dibatalkan.')">
                                 @csrf @method('DELETE')
                                 <input type="hidden" name="redirect_to" value="{{ request()->getRequestUri() }}">
-                                <button x-bind:disabled="aiBusy" class="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-[11px] font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 disabled:opacity-50 disabled:cursor-not-allowed" title="Hapus">
+                                <button x-bind:disabled="aiBusy" class="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-[12px] font-bold text-rose-600 transition hover:bg-rose-100 hover:text-rose-700 disabled:opacity-50 disabled:cursor-not-allowed" title="Hapus">
                                     <i data-lucide="trash-2" class="h-4 w-4"></i>
                                 </button>
                             </form>
@@ -466,14 +466,14 @@
                                 <div class="mt-4 text-center sm:ml-4 sm:mt-0 sm:text-left">
                                     <h3 class="text-xl font-bold leading-6 text-slate-900" id="modal-title" x-text="modalTitle"></h3>
                                     <div class="mt-3">
-                                        <p class="text-[13px] text-slate-500" x-text="modalMessage"></p>
+                                        <p class="text-[14px] text-slate-500" x-text="modalMessage"></p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="bg-slate-50 px-6 py-5 flex flex-col-reverse sm:flex-row sm:justify-end sm:px-8 gap-3">
-                            <button type="button" @click="showModal = false" class="inline-flex w-full justify-center rounded-xl bg-white px-5 py-2.5 text-[13px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 sm:w-auto transition-all">Batal</button>
-                            <button type="button" @click="submitForm()" class="inline-flex w-full justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-rose-700 sm:w-auto transition-all">Ya, Hapus</button>
+                            <button type="button" @click="showModal = false" class="inline-flex w-full justify-center rounded-xl bg-white px-5 py-2.5 text-[14px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 sm:w-auto transition-all">Batal</button>
+                            <button type="button" @click="submitForm()" class="inline-flex w-full justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-[14px] font-bold text-white shadow-sm hover:bg-rose-700 sm:w-auto transition-all">Ya, Hapus</button>
                         </div>
                     </div>
                 </div>
@@ -515,7 +515,7 @@
                                                 </div>
                                                 <div class="min-w-0 flex-1">
                                                     <span class="block text-sm font-bold text-slate-700 truncate group-hover:text-campus-900 transition">{{ $f->name }}</span>
-                                                    <span class="block text-[10px] text-slate-400">{{ $f->documents_count ?? $f->documents()->count() }} file</span>
+                                                    <span class="block text-[11px] text-slate-400">{{ $f->documents_count ?? $f->documents()->count() }} file</span>
                                                 </div>
                                                 <i data-lucide="chevron-right" class="h-4 w-4 text-slate-300 group-hover:text-campus-500 transition-transform group-hover:translate-x-0.5"></i>
                                             </button>
@@ -525,7 +525,7 @@
                             </div>
                         </div>
                         <div class="bg-slate-50 px-6 py-4 flex justify-end sm:px-8">
-                            <button type="button" @click="showMoveModal = false" class="rounded-xl bg-white px-5 py-2.5 text-[13px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition-all">Batal</button>
+                            <button type="button" @click="showMoveModal = false" class="rounded-xl bg-white px-5 py-2.5 text-[14px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 transition-all">Batal</button>
                         </div>
                     </div>
                 </div>

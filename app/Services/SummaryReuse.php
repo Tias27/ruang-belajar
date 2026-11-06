@@ -30,9 +30,9 @@ class SummaryReuse
     }
 
     /** Reserve once under a short row lock; AI generation runs after committing. */
-    public function resolve(Document|DocumentFolder $source, ?array $selectedIds = null): array
+    public function resolve(Document|DocumentFolder $source, ?array $selectedIds = null, bool $background = false): array
     {
-        return DB::transaction(function () use ($source, $selectedIds) {
+        return DB::transaction(function () use ($source, $selectedIds, $background) {
             $source = $source->newQuery()->whereKey($source->id)->lockForUpdate()->firstOrFail();
             $snapshot = $this->snapshot($source, $selectedIds);
             $summary = $this->findReusable($source, $snapshot);
@@ -45,7 +45,7 @@ class SummaryReuse
                 'full_summary' => 'AI sedang membaca materi dan menyusun ringkasan.',
                 'key_points' => [], 'conclusion' => null,
                 'raw_response' => ['_source_snapshot' => $snapshot],
-                'status' => 'processing', 'selected_document_ids' => $selectedIds,
+                'status' => $background ? 'queued' : 'processing', 'selected_document_ids' => $selectedIds,
             ]), true];
         });
     }
@@ -54,12 +54,19 @@ class SummaryReuse
     {
         $allIds = null;
         foreach ($source->summaries()->where('user_id', $source->user_id)
-            ->whereIn('status', ['completed', 'processing'])->orderByDesc('id')->cursor() as $summary) {
+            ->whereIn('status', ['completed', 'processing', 'queued'])->orderByDesc('id')->cursor() as $summary) {
+            $this->expireStalled($summary);
+            if ($summary->status === 'failed') continue;
             $saved = $summary->raw_response['_source_snapshot'] ?? null;
-            if ($summary->status === 'processing') {
-                if (($saved['hash'] ?? null) === $snapshot['hash'] && $summary->created_at->gt(now()->subMinutes(6))) return $summary;
+            if ($summary->status === 'queued') {
+                if (($saved['hash'] ?? null) === $snapshot['hash']) return $summary;
                 continue;
             }
+            if ($summary->status === 'processing') {
+                if (($saved['hash'] ?? null) === $snapshot['hash']) return $summary;
+                continue;
+            }
+            if (($summary->raw_response['_summary_policy'] ?? null) !== SummaryLength::POLICY) continue;
             if (blank($summary->full_summary) || $summary->full_summary === 'Ringkasan lengkap belum tersedia.') continue;
             if ($saved !== null) {
                 if (($saved['hash'] ?? null) === $snapshot['hash']) return $summary;
@@ -77,6 +84,16 @@ class SummaryReuse
             return $summary;
         }
         return null;
+    }
+
+    public function expireStalled(Summary $summary): void
+    {
+        if ($summary->status !== 'processing' || $summary->updated_at->gt(now()->subMinutes(6))) return;
+        Summary::whereKey($summary->id)->where('status', 'processing')
+            ->where('updated_at', '<=', now()->subMinutes(6))->update([
+                'status' => 'failed', 'generation_error' => 'Proses ringkasan terhenti sebelum selesai. Coba lagi',
+            ]);
+        $summary->refresh();
     }
 
     public function invalidateLegacy(Document $document, ?int $previousFolderId = null, bool $contentChanged = true): void

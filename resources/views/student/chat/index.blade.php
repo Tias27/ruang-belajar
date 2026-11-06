@@ -10,7 +10,7 @@
                     <h1 class="mt-4 text-3xl font-extrabold tracking-tight text-campus-950 sm:text-4xl">
                         Obrolan belajarmu
                     </h1>
-                    <p class="mt-3 max-w-2xl text-[14px] leading-relaxed text-slate-600">
+                    <p class="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-600">
                         Ada jawaban yang mau dibaca lagi? Semua obrolan tentang materimu tersimpan di sini.
                     </p>
 
@@ -21,7 +21,7 @@
                             <input aria-label="Cari percakapan" name="q" value="{{ $search }}" 
                                    @input.debounce.700ms="$refs.searchForm.submit()" 
                                    placeholder="Cari isi percakapan..." 
-                                   class="h-12 w-full rounded-full border border-slate-200 bg-white pr-10 text-[14px] shadow-sm transition-all focus:border-campus-400 focus:outline-none focus:ring-4 focus:ring-campus-100/50"
+                                   class="h-12 w-full rounded-full border border-slate-200 bg-white pr-10 text-[15px] shadow-sm transition-all focus:border-campus-400 focus:outline-none focus:ring-4 focus:ring-campus-100/50"
                                    style="padding-left: 2.75rem;">
                             @if($search !== '')
                                 <a href="{{ route('chat.index') }}" class="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors" title="Bersihkan Pencarian">
@@ -33,7 +33,7 @@
                 </div>
                 
                 <div class="flex flex-col sm:flex-row lg:flex-col gap-3 mt-2 lg:mt-0">
-                    <a href="{{ route('documents.index', ['intent' => 'chat']) }}" class="inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-campus-700 px-6 text-[13px] font-bold text-white shadow-sm transition hover:bg-campus-800 lg:w-auto">
+                    <a href="{{ route('documents.index', ['intent' => 'chat']) }}" class="inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-campus-700 px-6 text-[14px] font-bold text-white shadow-sm transition hover:bg-campus-800 lg:w-auto">
                         <i data-lucide="messages-square" class="h-4 w-4"></i> Mulai obrolan baru
                     </a>
                 </div>
@@ -130,7 +130,7 @@
                         </div>
                         <h3 class="text-xl font-bold text-slate-800">Belum Ada Riwayat</h3>
                         <p class="mt-2 text-sm text-slate-500 max-w-sm mx-auto">kamu belum memulai percakapan apa pun. Buka materi dan pilih "Tanya AI" untuk memulai.</p>
-                        <a href="{{ route('documents.index') }}" class="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-campus-700 px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-campus-800 transition-transform active:scale-[0.98]">
+                        <a href="{{ route('documents.index') }}" class="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-campus-700 px-5 py-2.5 text-[14px] font-bold text-white shadow-sm hover:bg-campus-800 transition-transform active:scale-[0.98]">
                             Mulai Belajar Sekarang
                         </a>
                     </div>
@@ -155,14 +155,14 @@
                                 <div class="mt-4 text-center sm:ml-4 sm:mt-0 sm:text-left">
                                     <h3 class="text-xl font-bold leading-6 text-slate-900" id="modal-title" x-text="modalTitle"></h3>
                                     <div class="mt-3">
-                                        <p class="text-[13px] text-slate-500" x-text="modalMessage"></p>
+                                        <p class="text-[14px] text-slate-500" x-text="modalMessage"></p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="bg-slate-50 px-6 py-5 flex flex-col-reverse sm:flex-row sm:justify-end sm:px-8 gap-3">
-                            <button type="button" @click="showModal = false" class="inline-flex w-full justify-center rounded-xl bg-white px-5 py-2.5 text-[13px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 sm:w-auto transition-all">Batal</button>
-                            <button type="button" @click="submitForm()" class="inline-flex w-full justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-[13px] font-bold text-white shadow-sm hover:bg-rose-700 sm:w-auto transition-all">Ya, Hapus</button>
+                            <button type="button" @click="showModal = false" class="inline-flex w-full justify-center rounded-xl bg-white px-5 py-2.5 text-[14px] font-bold text-slate-700 shadow-sm border border-slate-200 hover:bg-slate-50 sm:w-auto transition-all">Batal</button>
+                            <button type="button" @click="submitForm()" class="inline-flex w-full justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-[14px] font-bold text-white shadow-sm hover:bg-rose-700 sm:w-auto transition-all">Ya, Hapus</button>
                         </div>
                     </div>
                 </div>

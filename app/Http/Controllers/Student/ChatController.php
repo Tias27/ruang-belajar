@@ -12,6 +12,7 @@ use App\Services\GeminiService;
 use App\Services\LearningSourceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class ChatController extends Controller
@@ -133,13 +134,13 @@ class ChatController extends Controller
 
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            $fileName = (string) Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $file->move(storage_path('app/public/chat_images'), $fileName);
-            $imagePath = 'chat_images/' . $fileName;
-            $dbMetadata['image_path'] = 'storage/' . $imagePath;
+            $imagePath = $file->store('chat_images', 'local');
+            abort_unless($imagePath, 503, 'Gambar belum bisa disimpan');
+            $dbMetadata['image_path'] = $imagePath;
+            $dbMetadata['image_disk'] = 'local';
         }
 
-        $absoluteImagePath = $imagePath ? storage_path('app/public/' . $imagePath) : null;
+        $absoluteImagePath = $imagePath ? Storage::disk('local')->path($imagePath) : null;
 
         // Fetch recent messages before saving the new one as chat history context
         $history = $session->messages()
@@ -162,9 +163,11 @@ class ChatController extends Controller
         $source = $session->folder ?: $session->document;
 
         if ($request->header('Accept') === 'text/event-stream' || $request->expectsJson()) {
-            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history, $absoluteImagePath, $materials) {
+            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history, $absoluteImagePath, $materials, $userMessage) {
                 @ini_set('zlib.output_compression', '0');
                 echo ": connected\n\n";
+                echo 'data: '.json_encode(['user_message' => $userMessage->forChat(),
+                    'session_url' => route('chat.show', $session), 'store_url' => route('chat.store', $session)])."\n\n";
                 if (ob_get_level() > 0) ob_flush();
                 flush();
                 $session->update(['title' => Str::limit($data['question'], 70)]);
@@ -174,7 +177,12 @@ class ChatController extends Controller
                 $sourceSnippets = [];
 
                 try {
-                    $stream = $gemini->streamChat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath, $materials->all(), richResponses: true);
+                    $stream = $gemini->streamChat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath, $materials->all(), richResponses: true,
+                        onEvent: function (array $event) {
+                            echo 'data: '.json_encode($event)."\n\n";
+                            if (ob_get_level() > 0) ob_flush();
+                            flush();
+                        });
                     foreach ($stream as $chunk) {
                         $fullAnswer .= $chunk;
                         echo "data: " . json_encode(['chunk' => $chunk]) . "\n\n";
@@ -183,11 +191,11 @@ class ChatController extends Controller
                         flush();
                     }
 
-                    $sourceSnippets = ($source ? $sources->snippetsFor($source, $data['question'] . ' ' . $fullAnswer) : []);
+                    $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $fullAnswer, selectedDocIds: $session->selected_document_ids) : []);
                 } catch (Throwable $exception) {
                     report($exception);
-                    $fullAnswer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage()) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
-                    $sourceSnippets = ($source ? $sources->snippetsFor($source, $data['question']) : []);
+                    $fullAnswer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage(), $session->selected_document_ids) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
+                    $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $fullAnswer, selectedDocIds: $session->selected_document_ids) : []);
                     echo "data: " . json_encode(['chunk' => $fullAnswer]) . "\n\n";
                     if (ob_get_level() > 0)
                         ob_flush();
@@ -195,14 +203,14 @@ class ChatController extends Controller
                 }
 
                 $sourceSnippets = collect($sourceSnippets)
-                    ->concat(app(ChatMaterials::class)->snippets($materials, $data['question']))
+                    ->concat(app(ChatMaterials::class)->snippets($materials, $data['question'], $fullAnswer))
                     ->unique(fn ($snippet) => $snippet['document_id'].'|'.$snippet['snippet'])->values()->all();
                 $assistantMessage = $session->messages()->create([
                     'role' => 'assistant',
                     'content' => $fullAnswer,
                     'metadata' => [
                         'source_snippets' => $sourceSnippets,
-                    ],
+                    ] + $gemini->webMetadata(),
                 ]);
 
                 if ($source && $materials->isEmpty()) \App\Jobs\ConsolidateAiMemoryJob::enqueue($source, auth()->user(), [
@@ -235,21 +243,21 @@ class ChatController extends Controller
         // Fallback for non-AJAX / non-streaming requests
         try {
             $answer = $gemini->chat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath, $materials->all(), richResponses: true);
-            $sourceSnippets = ($source ? $sources->snippetsFor($source, $data['question'] . ' ' . $answer) : []);
+            $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $answer, selectedDocIds: $session->selected_document_ids) : []);
         } catch (Throwable $exception) {
             report($exception);
-            $answer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage()) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
-            $sourceSnippets = ($source ? $sources->snippetsFor($source, $data['question']) : []);
+            $answer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage(), $session->selected_document_ids) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
+            $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $answer, selectedDocIds: $session->selected_document_ids) : []);
         }
         $sourceSnippets = collect($sourceSnippets)
-            ->concat(app(ChatMaterials::class)->snippets($materials, $data['question']))
+            ->concat(app(ChatMaterials::class)->snippets($materials, $data['question'], $answer))
             ->unique(fn ($snippet) => $snippet['document_id'].'|'.$snippet['snippet'])->values()->all();
         $session->messages()->create([
             'role' => 'assistant',
             'content' => $answer,
             'metadata' => [
                 'source_snippets' => $sourceSnippets,
-            ],
+            ] + $gemini->webMetadata(),
         ]);
         $session->update(['title' => Str::limit($data['question'], 70)]);
         $logger->log('chat_document', $session, ['document_id' => $session->document_id, 'folder_id' => $session->folder_id]);

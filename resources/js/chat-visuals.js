@@ -102,7 +102,7 @@ async function diagramRenderer() {
             maxTextSize: 12000, maxEdges: 100, theme: 'base', htmlLabels: false,
             fontFamily: 'sans-serif',
             themeVariables: {
-                fontFamily: 'sans-serif', fontSize: '12px', background: '#fffef9',
+                fontFamily: 'sans-serif', fontSize: '13px', background: '#fffef9',
                 primaryColor: '#edf3f8', primaryTextColor: '#262626', primaryBorderColor: '#7898af',
                 secondaryColor: '#f0f3eb', secondaryTextColor: '#262626', secondaryBorderColor: '#8e999b',
                 tertiaryColor: '#fffef9', tertiaryTextColor: '#262626', tertiaryBorderColor: '#c0c9c5',
@@ -238,14 +238,14 @@ export async function renderChatChart(container, source) {
             },
             options: {
                 responsive: true, maintainAspectRatio: false, animation: false,
-                color: '#4b4b4b', font: { size: 11 },
+                color: '#4b4b4b', font: { size: 12 },
                 plugins: {
-                    legend: { display: circular || data.datasets.length > 1, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, padding: 12, font: { size: 11 } } },
+                    legend: { display: circular || data.datasets.length > 1, position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, padding: 12, font: { size: 12 } } },
                     tooltip: { enabled: true },
                 },
                 scales: circular ? {} : {
-                    x: { title: { display: !!data.xLabel, text: data.xLabel }, grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 45, font: { size: 10 } } },
-                    y: { beginAtZero: data.type === 'bar', title: { display: !!data.yLabel, text: data.yLabel }, grid: { color: '#e1e5dc' }, ticks: { maxTicksLimit: 6, font: { size: 10 } } },
+                    x: { title: { display: !!data.xLabel, text: data.xLabel }, grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 45, font: { size: 11 } } },
+                    y: { beginAtZero: data.type === 'bar', title: { display: !!data.yLabel, text: data.yLabel }, grid: { color: '#e1e5dc' }, ticks: { maxTicksLimit: 6, font: { size: 11 } } },
                 },
             },
         });
