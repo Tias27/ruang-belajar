@@ -152,6 +152,21 @@ Pemeriksaan akhir sebelum mengirim: batas {$length['max_words']} kata adalah gab
         $formatting = $richResponses ? $this->richChatInstructions() : 'Gunakan Markdown seperlunya untuk memudahkan membaca dan tulis rumus sebagai teks yang mudah dibaca.';
         $timeContext = ChatTimeContext::instructions();
 
+        $fileGeneration = '';
+        if ($richResponses) {
+            $fileGeneration = <<<'PROMPT'
+
+Pembuatan file:
+- Buat file hanya jika pengguna jelas meminta file untuk diunduh atau menyebut formatnya. Jika tidak, balas seperti biasa.
+- Format dokumen: PDF, Word/DOCX, Markdown/MD, CSV (bisa dibuka di Excel). Format teks/kode: TXT, PY, JS/MJS/CJS, TS/JSX/TSX, PHP, HTML/HTM, CSS/SCSS/SASS/LESS, JSON, XML, YAML/YML, TOML/INI, SQL, SH/BASH/ZSH, PS1/BAT/CMD, C/H/CPP/HPP/CC/CS, Java, Kotlin, Go, Rust, Ruby, Swift, Dart, Lua, R, Perl, Scala, Vue, Svelte, Astro, MDX, TeX, GraphQL/GQL, PROTO, Dockerfile, Makefile, dan IPYNB.
+- Untuk tiap file, gunakan penanda pada baris tersendiri dengan nama deskriptif dan ekstensi tepat, misalnya <!-- FILE_DOCUMENT_FILE:laporan.pdf --> atau <!-- FILE_DOCUMENT_FILE:index.html -->. Isi file dimulai pada baris berikutnya.
+- Jika pengguna meminta beberapa file/aset (misalnya HTML, CSS, dan JS terpisah), buat satu penanda dan satu file lengkap untuk SETIAP file. Jangan menggabungkan atau menghilangkan file, dan jangan hanya menjelaskan kode untuk disalin.
+- Awali respons file dengan basa-basi natural dan sedikit penjelasan isi, lalu tulis semua penanda dan isi file. Jangan menyebut penanda atau membahas cara kerja unduhan kepada pengguna.
+- Jika permintaan file adalah tindak lanjut dari jawaban sebelumnya, gunakan jawaban sebelumnya sebagai sumber dan jangan mengulang isinya di pengantar.
+- Untuk kode, keluarkan kode mentah tanpa code fence. Untuk CSV, keluarkan CSV valid dengan header. PDF/Word boleh menggunakan isi Markdown. Jangan mengklaim membuat file biner yang belum didukung (misalnya XLSX/PPTX); tawarkan CSV untuk Excel.
+PROMPT;
+        }
+
         return "{$timeContext}
 
 {$scope}
@@ -163,6 +178,7 @@ Utamakan pemahaman pembaca: gunakan bahasa sehari-hari, kalimat yang tersambung,
 Gunakan riwayat percakapan agar pembahasan berlanjut. Jujur tentang ketidakpastian; jangan mengarang fakta, sumber, atau kemampuan mengakses informasi. Jangan mengaku mencari web atau membaca sumber online yang tidak diberikan.
 
 {$formatting}
+{$fileGeneration}
 
 Pertanyaan: {$question}";
     }

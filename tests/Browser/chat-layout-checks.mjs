@@ -44,6 +44,7 @@ export async function checkChatLayout({ cdp, evaluate, until, go, check, fixture
     await check('Shift+Enter inserts newline', "document.querySelector('textarea[name=question]').value.includes('\\n') && !chat.sending");
 
     await go(data.chat);
+    await check('send button shows a single arrow while idle', "document.querySelectorAll('.live-chat-input button[type=submit] svg').length === 1 && !document.querySelector('.live-chat-input button[type=submit] svg.animate-spin')");
     await evaluate(`window.chat = Alpine.$data(document.querySelector('.live-ai-chat'));
         window.fetch = async () => new Response(new ReadableStream({start(controller) {
             window.replyStream = controller;
@@ -52,9 +53,28 @@ export async function checkChatLayout({ cdp, evaluate, until, go, check, fixture
         document.querySelector('.live-chat-prompt').click();`);
     await until("chat.messages.length === 2 && chat.messages[1].content === 'Jawaban '");
     await check('partial reply appears before stream completes', "chat.sending && chat.messages[1].content === 'Jawaban '");
+    await check('send button shows only its spinner while sending', "document.querySelectorAll('.live-chat-input button[type=submit] svg').length === 1 && document.querySelector('.live-chat-input button[type=submit] svg.animate-spin')");
     await evaluate(`replyStream.enqueue(new TextEncoder().encode('data: ' + JSON.stringify({chunk: 'uji'}) + '\\n\\n' + 'data: ' + JSON.stringify({done: true, title: 'Percakapan uji', message: {id: 99, content: 'Jawaban uji', metadata: null}}) + '\\n\\n')); replyStream.close();`);
     await until("chat.messages.length === 2 && !chat.sending && chat.messages[1].content === 'Jawaban uji'");
     await check('starter prompt still sends question and displays reply', "!document.querySelector('.live-chat-welcome') && chat.messages[0].role === 'user' && chat.question === ''");
+    await check('ordinary replies do not show a file card or toolbar download', "!document.querySelector('.chat-file-card') && [...document.querySelectorAll('.chat-export-wrap')].every((item) => getComputedStyle(item).display === 'none')");
+    await evaluate("chat.messages[1].content = '<!-- FILE_DOCUMENT:pdf -->\\n# Laporan Uji\\nIsi dokumen'");
+    await until("document.querySelector('.chat-file-card .chat-file-card-title')?.textContent === 'Laporan-Uji.pdf'");
+    await check('requested PDF appears as a named file card', "document.querySelector('.chat-file-card .chat-file-card-title')?.textContent === 'Laporan-Uji.pdf' && [...document.querySelectorAll('.chat-file-card-actions button')].filter((button) => getComputedStyle(button).display !== 'none').length === 1");
+    await check('file reply shows only the file card instead of repeating its contents', "!document.querySelector('.chat-message-actions') && ![...document.querySelectorAll('[x-chat-content]')].some((element) => element.innerText.includes('Isi dokumen'))");
+    await evaluate("chat.messages[1].content = 'Baik, saya buatkan dalam format PDF. Saya gunakan penjelasan sebelumnya sebagai isi dokumen.\\n\\n<!-- FILE_DOCUMENT:pdf -->\\n# Laporan Uji\\nIsi dokumen'");
+    await until("document.querySelector('.chat-file-card .chat-file-card-title')?.textContent === 'Laporan-Uji.pdf'");
+    await until("[...document.querySelectorAll('[x-chat-content]')].some((element) => element.innerText.includes('Baik, saya buatkan dalam format PDF'))");
+    await check('file introduction appears above the card while file contents stay hidden', "[...document.querySelectorAll('[x-chat-content]')].some((element) => element.innerText.includes('Baik, saya buatkan dalam format PDF')) && ![...document.querySelectorAll('[x-chat-content]')].some((element) => element.innerText.includes('Isi dokumen'))");
+    await evaluate("chat.messages[0].content = 'Buatkan halaman login dalam HTML'; chat.messages[1].content = '<!-- FILE_DOCUMENT:html -->\\n<!doctype html><title>Login</title>'");
+    await until("document.querySelector('.chat-file-card .chat-file-card-title')?.textContent.endsWith('.html')");
+    await check('unnamed requested file gets a descriptive name from the request', "document.querySelector('.chat-file-card .chat-file-card-title')?.textContent.includes('login') && !document.querySelector('.chat-file-card .chat-file-card-title')?.textContent.startsWith('Dokumen')");
+    await evaluate("chat.messages[1].content = 'Baik, saya siapkan skrip Python.\\n\\n<!-- FILE_DOCUMENT_FILE:hello.py -->\\nprint(\\\"Halo\\\")'");
+    await until("document.querySelector('.chat-file-card .chat-file-card-title')?.textContent === 'hello.py'");
+    await check('requested programming language appears as a correctly named source file', "document.querySelector('.chat-file-card .chat-file-card-title')?.textContent === 'hello.py' && document.querySelectorAll('.chat-file-card-actions button').length === 1");
+    await evaluate("chat.messages[1].content = 'Baik, saya buatkan halaman login dengan HTML, CSS, dan JavaScript terpisah.\\n\\n<!-- FILE_DOCUMENT_FILE:index.html -->\\n<!doctype html>\\n<link rel=\\\"stylesheet\\\" href=\\\"style.css\\\">\\n<script src=\\\"script.js\\\"></script>\\n<!-- FILE_DOCUMENT_FILE:style.css -->\\nbody { color: #222; }\\n<!-- FILE_DOCUMENT_FILE:script.js -->\\nconsole.log(\\\"login\\\");'");
+    await until("document.querySelectorAll('.chat-file-card').length === 3");
+    await check('separate code assets appear as correctly named files', "[...document.querySelectorAll('.chat-file-card-title')].map((element) => element.textContent).join(',') === 'index.html,style.css,script.js' && document.querySelectorAll('.chat-file-card-actions button').length === 3");
 
     await go('/tanya-ai');
     await evaluate("window.chat = Alpine.$data(document.querySelector('.live-ai-chat')); window.sentUrls = []; window.initialNavigation = performance.timeOrigin;");

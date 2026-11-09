@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Exceptions\AiServiceException;
+use App\Models\ChatSession;
 use App\Models\Document;
 use App\Models\User;
+use App\Services\ChatFileFormats;
 use App\Services\GeminiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -76,6 +78,53 @@ class PublicAiMessagesTest extends TestCase
         $stream = $response->streamedContent();
         $this->assertStringContainsString('AI belum bisa menjawab', $stream);
         foreach (['Gemini', 'private-model', '9router'] as $name) $this->assertStringNotContainsString($name, $stream);
+    }
+
+    public function test_word_followup_converts_the_previous_answer_without_calling_ai_again(): void
+    {
+        $user = User::factory()->create(['role' => 'mahasiswa']);
+        $session = $user->chatSessions()->create(['title' => 'Fotosintesis']);
+        $previousAnswer = "# Fotosintesis\n\nFotosintesis adalah proses tumbuhan membuat makanan dengan bantuan cahaya.";
+        $session->messages()->create(['role' => 'assistant', 'content' => $previousAnswer]);
+
+        $service = $this->mock(GeminiService::class);
+        $service->shouldNotReceive('streamChat');
+        $service->shouldReceive('webMetadata')->once()->andReturn([]);
+
+        $response = $this->actingAs($user)->postJson(route('chat.store', $session), [
+            'question' => 'Buatkan dalam Word',
+        ])->assertOk();
+
+        $this->assertStringContainsString('Baik, saya siapkan versi Word tentang Fotosintesis tadi sebagai file yang bisa diunduh.', $response->streamedContent());
+        $this->assertStringNotContainsString('agar bisa langsung diunduh tanpa mengulang pembahasannya di chat', $response->streamedContent());
+        $this->assertStringContainsString('<!-- FILE_DOCUMENT_FILE:fotosintesis.docx -->', $response->streamedContent());
+        $fileMessage = $session->messages()->where('role', 'assistant')->latest('id')->firstOrFail();
+        $this->assertStringContainsString("<!-- FILE_DOCUMENT_FILE:fotosintesis.docx -->\n".$previousAnswer, $fileMessage->content);
+    }
+
+    public function test_file_format_detection_handles_multiple_requested_assets(): void
+    {
+        $this->assertSame(
+            ['html', 'css', 'js'],
+            ChatFileFormats::requestedFormats('Buatkan halaman login dan pisahkan file HTML, CSS, dan JavaScript.')
+        );
+        $this->assertSame(['py'], ChatFileFormats::requestedFormats('Jadikan penjelasan tadi dalam format Python.'));
+        $this->assertSame(['csv'], ChatFileFormats::requestedFormats('Buatkan dalam bentuk Excel.'));
+    }
+
+    public function test_generated_code_can_be_downloaded_as_a_source_file(): void
+    {
+        $user = User::factory()->create(['role' => 'mahasiswa']);
+
+        $this->actingAs($user)->post(route('chat.export'), [
+            'content' => 'print("Halo")',
+            'format' => 'py',
+            'filename' => 'contoh-python',
+        ])->assertOk()
+            ->assertHeader('Content-Type', 'application/octet-stream')
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('Content-Disposition', 'attachment; filename="contoh-python.py"')
+            ->assertContent('print("Halo")');
     }
 
     public function test_admin_dashboard_uses_product_name_without_model_branding(): void

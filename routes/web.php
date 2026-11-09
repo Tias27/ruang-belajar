@@ -73,6 +73,7 @@ Route::middleware(['auth', 'role:mahasiswa'])->group(function () {
     Route::get('tanya-ai/lampiran/{document}/file', [\App\Http\Controllers\Student\ChatAttachmentController::class, 'documentFile'])->name('chat.attachments.document-file');
     Route::get('tanya/{session}/messages/{message}/image', [\App\Http\Controllers\Student\ChatAttachmentController::class, 'image'])->name('chat.attachments.image');
     Route::post('tanya-ai', [ChatController::class, 'storeGeneral'])->name('chat.general.store');
+    Route::post('tanya-ai/export', [\App\Http\Controllers\Student\ChatExportController::class, 'export'])->name('chat.export');
     Route::delete('riwayat-selected', [ChatController::class, 'bulkDestroy'])->name('chat.bulk-destroy');
     Route::post('documents/{document}/tanya', [ChatController::class, 'create'])->name('chat.create');
     Route::post('folders/{folder}/tanya', [ChatController::class, 'createFolder'])->name('folders.chat.create');

@@ -209,6 +209,26 @@
 .chat-web-source-list a:hover { background: var(--study-soft); }
 .chat-web-source-list strong { font-size: 12px; font-weight: 600; }
 .chat-web-source-list :is(span,small) { font-size: 11px; color: var(--study-muted); }
+.chat-message-actions { display: flex; align-items: center; gap: 2px; margin-top: 10px; }
+.chat-action-btn { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; color: var(--study-muted); transition: background 0.15s, color 0.15s; }
+.chat-action-btn svg { width: 15px; height: 15px; }
+.chat-action-btn:hover { background: var(--study-soft); color: var(--study-ink); }
+.chat-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.chat-action-btn--active { color: var(--study-blue) !important; }
+.chat-action-btn--bad { color: #e05252 !important; }
+.chat-action-btn--good { color: #4a9e6b !important; }
+.chat-export-wrap { display: none; }
+.chat-file-card { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding: 12px 16px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 16px; }
+.chat-file-card-icon { display: grid; place-items: center; width: 40px; height: 40px; color: #1683f8; flex-shrink: 0; }
+.chat-file-card-icon svg { width: 22px; height: 22px; }
+.chat-file-card-info { flex: 1; min-width: 140px; }
+.chat-file-card-title { display: block; font-size: 14px; font-weight: 600; color: #171717; }
+.chat-file-card-subtitle { display: block; font-size: 12px; color: #737373; margin-top: 1px; }
+.chat-file-card-actions { display: flex; gap: 6px; }
+.chat-file-btn { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; color: #171717; transition: background 0.15s; }
+.chat-file-btn:hover { background: #e5e7eb; }
+.chat-file-btn svg { width: 22px; height: 22px; }
+.chat-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 9px 18px; border-radius: 999px; background: #262626; color: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 16px rgb(0 0 0 / .18); }
 /* Natural height keeps the welcome reachable when the viewport is short. */
 .live-ai-chat .live-chat-welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; width: 100%; max-width: 768px; margin: 0 auto; padding: 20px 0; text-align: center; }
 .live-ai-chat .live-chat-welcome>* { flex-shrink: 0; }

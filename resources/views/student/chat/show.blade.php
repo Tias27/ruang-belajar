@@ -92,6 +92,87 @@
                         }
                     });
                 },
+                async copyMessage(content) {
+                    try {
+                        await navigator.clipboard.writeText(content);
+                    } catch {
+                        const ta = document.createElement('textarea');
+                        ta.value = content;
+                        ta.style.position = 'fixed';
+                        ta.style.opacity = '0';
+                        document.body.appendChild(ta);
+                        ta.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(ta);
+                    }
+                },
+                toast: null,
+                _toastTimer: null,
+                showToast(msg, duration = 2500) {
+                    clearTimeout(this._toastTimer);
+                    this.toast = msg;
+                    this._toastTimer = setTimeout(() => { this.toast = null; }, duration);
+                },
+                async exportMessage(content, format, filename = this.title || 'jawaban-ai') {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = @js(route('chat.export'));
+                    form.style.display = 'none';
+                    const fields = {
+                        _token: @js(csrf_token()),
+                        content: content,
+                        format: format,
+                        filename: filename.substring(0, 200),
+                    };
+                    for (const [k, v] of Object.entries(fields)) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = k;
+                        input.value = v;
+                        form.appendChild(input);
+                    }
+                    document.body.appendChild(form);
+                    form.submit();
+                    setTimeout(() => form.remove(), 1000);
+                },
+                fileFormat(content) {
+                    const match = content.match(/<!-- FILE_DOCUMENT_FILE:([a-z0-9_.-]+) -->|<!-- FILE_DOCUMENT(?::([a-z0-9]+))? -->/i);
+                    if (!match) return null;
+                    return (match[1]?.split('.').pop() || match[2] || 'md').toLowerCase();
+                },
+                fileContent(content) {
+                    const marker = content.match(/<!-- FILE_DOCUMENT_FILE:[a-z0-9_.-]+ -->|<!-- FILE_DOCUMENT(?::[a-z0-9]+)? -->/i);
+                    return marker ? content.slice(marker.index + marker[0].length).trim() : content;
+                },
+                fileIntroduction(content) {
+                    const marker = content.match(/<!-- FILE_DOCUMENT_FILE:[a-z0-9_.-]+ -->|<!-- FILE_DOCUMENT(?::[a-z0-9]+)? -->/i);
+                    return marker ? content.slice(0, marker.index).trim() : '';
+                },
+                fileCards(content) {
+                    const markers = [...content.matchAll(/<!-- FILE_DOCUMENT_FILE:([a-z0-9_.-]+) -->|<!-- FILE_DOCUMENT(?::([a-z0-9]+))? -->/gi)];
+                    return markers.map((marker, index) => {
+                        const start = marker.index + marker[0].length;
+                        const end = markers[index + 1]?.index ?? content.length;
+                        const body = content.slice(start, end).trim();
+                        const format = (marker[1]?.split('.').pop() || marker[2] || 'md').toLowerCase();
+                        const fallback = this.fileBaseName(body);
+                        return { name: marker[1] || `${fallback || 'Dokumen'}.${format}`, format, content: body };
+                    }).filter(file => file.content);
+                },
+                fileName(content) {
+                    const format = this.fileFormat(content);
+                    const safeTitle = this.fileBaseName(this.fileContent(content));
+                    return `${safeTitle}.${format}`;
+                },
+                fileBaseName(content) {
+                    const heading = content.match(/^#\s+(.+)$/m)?.[1]?.trim();
+                    const latestQuestion = [...this.messages].reverse().find(item => item.role === 'user')?.content || '';
+                    const source = heading || latestQuestion.replace(/\b(?:tolong|bantu|buatkan|buat|bikin|saya|aku|dong|ya|file|dalam|format|bentuk|pisahkan|dan|untuk|yang|dari|ke|jadikan)\b/gi, ' ');
+                    return source.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').slice(0, 80) || 'file';
+                },
+                displayContent(content) {
+                    return this.fileFormat(content) ? this.fileIntroduction(content) : content;
+                },
                 async sendQuestion() {
                     const text = this.question.trim();
                     if ((!text && !this.imageFile && !this.materials.length) || this.sending || this.materialUploading) return;
@@ -129,9 +210,12 @@
 
                     const assistantMessageId = 'assistant-' + Date.now();
                     let requestAccepted = false;
+                    let assistantIndex = -1;
+                    let typeQueue = '';
+                    let typingTimer = null;
                     try {
                         this.messages.push({ id: assistantMessageId, role: 'assistant', content: '', metadata: null, streaming: true });
-                        const assistantIndex = this.messages.length - 1;
+                        assistantIndex = this.messages.length - 1;
 
                         const response = await fetch(this.storeUrl, {
                             method: 'POST',
@@ -154,8 +238,6 @@
                         const decoder = new TextDecoder();
                         let buffer = '';
 
-                        let typeQueue = '';
-                        let typingTimer = null;
                         const drainTypeQueue = (stepOverride) => {
                             if (!typeQueue.length || !this.messages[assistantIndex]) return;
                             const qlen = typeQueue.length;
@@ -235,7 +317,6 @@
                                                 if (window.lucide) window.lucide.createIcons();
                                             });
                                             streamCompleted = true;
-                                            try { await reader.cancel(); } catch (e) { }
                                             break;
                                         }
                                     } catch (e) {
@@ -406,8 +487,30 @@
                                             </div>
                                         </template>
 
-                                        <template x-if="message.content.trim()">
-                                            <div x-chat-content="[message.content, message.streaming]"></div>
+                                        <template x-if="displayContent(message.content).trim()">
+                                            <div x-chat-content="[displayContent(message.content), message.streaming]"></div>
+                                        </template>
+
+                                        <!-- File document download card -->
+                                        <template x-if="!message.streaming && fileFormat(message.content)">
+                                            <div class="space-y-2.5">
+                                            <template x-for="file in fileCards(message.content)" :key="file.name">
+                                            <div class="chat-file-card">
+                                                <div class="chat-file-card-icon">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+                                                </div>
+                                                <div class="chat-file-card-info">
+                                                    <span class="chat-file-card-title" x-text="file.name"></span>
+                                                    <span class="chat-file-card-subtitle">Dokumen</span>
+                                                </div>
+                                                <div class="chat-file-card-actions">
+                                                    <button type="button" class="chat-file-btn" :aria-label="'Unduh ' + file.name" :title="'Unduh ' + file.name" @click="exportMessage(file.content, file.format, file.name.replace(/\.[^.]+$/, '')); showToast('Mengunduh ' + file.format.toUpperCase() + '...')">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            </template>
+                                            </div>
                                         </template>
 
                                         <template x-if="message.metadata?.web_sources?.length">
@@ -464,6 +567,76 @@
                                                         </template>
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Action buttons: shown after streaming completes -->
+                                        <template x-if="!message.streaming && message.content.trim() && !fileFormat(message.content)">
+                                            <div x-data="{ copied: false, feedback: null, showExport: false }"
+                                                class="chat-message-actions">
+                                                <!-- Copy -->
+                                                <button type="button"
+                                                    class="chat-action-btn"
+                                                    :class="copied ? 'chat-action-btn--active' : ''"
+                                                    :aria-label="copied ? 'Disalin!' : 'Salin jawaban'"
+                                                    :title="copied ? 'Disalin!' : 'Salin'"
+                                                    @click="await copyMessage(displayContent(message.content)); copied = true; showToast('Jawaban disalin'); setTimeout(() => copied = false, 2000)">
+                                                    <template x-if="!copied">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                                    </template>
+                                                    <template x-if="copied">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                                    </template>
+                                                </button>
+                                                <!-- Download -->
+                                                <div class="chat-export-wrap" x-show="false">
+                                                    <button type="button"
+                                                        class="chat-action-btn"
+                                                        :class="showExport ? 'chat-action-btn--active' : ''"
+                                                        aria-label="Unduh jawaban"
+                                                        title="Unduh"
+                                                        @click="showExport = !showExport">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                                    </button>
+                                                    <div class="chat-export-menu" x-show="showExport" x-cloak
+                                                        x-transition:enter="transition ease-out duration-150"
+                                                        x-transition:enter-start="opacity-0 scale-95"
+                                                        x-transition:enter-end="opacity-100 scale-100"
+                                                        x-transition:leave="transition ease-in duration-100"
+                                                        x-transition:leave-start="opacity-100 scale-100"
+                                                        x-transition:leave-end="opacity-0 scale-95">
+                                                        <button type="button" @click="exportMessage(message.content, 'md'); showExport = false; showToast('Mengunduh Markdown...')">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+                                                            <span>Markdown (.md)</span>
+                                                        </button>
+                                                        <button type="button" @click="exportMessage(message.content, 'pdf'); showExport = false; showToast('Mengunduh PDF...')">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M10 13H8v4h2a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1Z"/></svg>
+                                                            <span>PDF (.pdf)</span>
+                                                        </button>
+                                                        <button type="button" @click="exportMessage(message.content, 'docx'); showExport = false; showToast('Mengunduh Word...')">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13l2 4 2-4 2 4"/></svg>
+                                                            <span>Word (.docx)</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <!-- Thumbs down -->
+                                                <button type="button"
+                                                    class="chat-action-btn"
+                                                    :class="feedback === 'bad' ? 'chat-action-btn--bad' : ''"
+                                                    aria-label="Respons buruk"
+                                                    title="Respons buruk"
+                                                    @click="feedback = feedback === 'bad' ? null : 'bad'; if (feedback === 'bad') showToast('Terima kasih, masukan kamu dicatat')">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/></svg>
+                                                </button>
+                                                <!-- Thumbs up -->
+                                                <button type="button"
+                                                    class="chat-action-btn"
+                                                    :class="feedback === 'good' ? 'chat-action-btn--good' : ''"
+                                                    aria-label="Respons bagus"
+                                                    title="Respons bagus"
+                                                    @click="feedback = feedback === 'good' ? null : 'good'; if (feedback === 'good') showToast('Terima kasih, senang bisa membantu!')">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+                                                </button>
                                             </div>
                                         </template>
                                     </div>
@@ -528,13 +701,16 @@
                             :class="{ 'is-sending !cursor-wait !bg-campus-600 !text-white opacity-95': sending }"
                             class="group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
                             <template x-if="sending">
-                                <svg class="h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg class="h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3.5"></circle>
                                     <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
                             </template>
                             <template x-if="!sending">
-                                <i data-lucide="arrow-up" class="h-5 w-5"></i>
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 19V5"></path>
+                                    <path d="m5 12 7-7 7 7"></path>
+                                </svg>
                             </template>
                             <span class="sr-only" x-text="sending ? 'Sedang memproses jawaban...' : 'Kirim'"></span>
                         </button>
@@ -545,5 +721,7 @@
         </div>
         <x-chat-material-picker />
         <x-chat-attachment-preview />
+        <!-- Toast notification -->
+        <div x-show="toast" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="chat-toast" x-text="toast" aria-live="polite" role="status"></div>
     </div>
 </x-app-layout>

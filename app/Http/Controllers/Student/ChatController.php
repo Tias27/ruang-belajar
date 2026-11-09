@@ -8,6 +8,7 @@ use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Services\ActivityLogger;
 use App\Services\ChatMaterials;
+use App\Services\ChatFileFormats;
 use App\Services\GeminiService;
 use App\Services\LearningSourceService;
 use Illuminate\Http\Request;
@@ -154,6 +155,8 @@ class ChatController extends Controller
             ])
             ->all();
 
+        $fileConversionAnswer = $this->fileConversionAnswer($history, $data['question']);
+
         $userMessage = $session->messages()->create([
             'role' => 'user',
             'content' => $data['question'],
@@ -163,7 +166,7 @@ class ChatController extends Controller
         $source = $session->folder ?: $session->document;
 
         if ($request->header('Accept') === 'text/event-stream' || $request->expectsJson()) {
-            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history, $absoluteImagePath, $materials, $userMessage) {
+            return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history, $absoluteImagePath, $materials, $userMessage, $fileConversionAnswer) {
                 @ini_set('zlib.output_compression', '0');
                 echo ": connected\n";
                 echo ': ' . str_repeat(' ', 1024) . "\n\n";
@@ -177,35 +180,42 @@ class ChatController extends Controller
                 $fullAnswer = '';
                 $sourceSnippets = [];
 
-                try {
-                    $stream = $gemini->streamChat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath, $materials->all(), richResponses: true,
-                        onEvent: function (array $event) {
-                            echo 'data: '.json_encode($event)."\n\n";
+                if ($fileConversionAnswer !== null) {
+                    $fullAnswer = $fileConversionAnswer;
+                    echo "data: " . json_encode(['chunk' => $fullAnswer]) . "\n\n";
+                    if (ob_get_level() > 0) ob_flush();
+                    flush();
+                } else {
+                    try {
+                        $stream = $gemini->streamChat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath, $materials->all(), richResponses: true,
+                            onEvent: function (array $event) {
+                                echo 'data: '.json_encode($event)."\n\n";
+                                if (ob_get_level() > 0) ob_flush();
+                                flush();
+                            });
+                        foreach ($stream as $chunk) {
+                            $fullAnswer .= $chunk;
+                            echo "data: " . json_encode(['chunk' => $chunk]) . "\n\n";
                             if (ob_get_level() > 0) ob_flush();
                             flush();
-                        });
-                    foreach ($stream as $chunk) {
-                        $fullAnswer .= $chunk;
-                        echo "data: " . json_encode(['chunk' => $chunk]) . "\n\n";
-                        if (ob_get_level() > 0)
-                            ob_flush();
+                        }
+
+                        $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $fullAnswer, selectedDocIds: $session->selected_document_ids) : []);
+                    } catch (Throwable $exception) {
+                        report($exception);
+                        $fullAnswer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage(), $session->selected_document_ids) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
+                        $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $fullAnswer, selectedDocIds: $session->selected_document_ids) : []);
+                        echo "data: " . json_encode(['chunk' => $fullAnswer]) . "\n\n";
+                        if (ob_get_level() > 0) ob_flush();
                         flush();
                     }
-
-                    $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $fullAnswer, selectedDocIds: $session->selected_document_ids) : []);
-                } catch (Throwable $exception) {
-                    report($exception);
-                    $fullAnswer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage(), $session->selected_document_ids) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
-                    $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $fullAnswer, selectedDocIds: $session->selected_document_ids) : []);
-                    echo "data: " . json_encode(['chunk' => $fullAnswer]) . "\n\n";
-                    if (ob_get_level() > 0)
-                        ob_flush();
-                    flush();
                 }
 
-                $sourceSnippets = collect($sourceSnippets)
-                    ->concat(app(ChatMaterials::class)->snippets($materials, $data['question'], $fullAnswer))
-                    ->unique(fn ($snippet) => $snippet['document_id'].'|'.$snippet['snippet'])->values()->all();
+                if ($fileConversionAnswer === null) {
+                    $sourceSnippets = collect($sourceSnippets)
+                        ->concat(app(ChatMaterials::class)->snippets($materials, $data['question'], $fullAnswer))
+                        ->unique(fn ($snippet) => $snippet['document_id'].'|'.$snippet['snippet'])->values()->all();
+                }
                 $assistantMessage = $session->messages()->create([
                     'role' => 'assistant',
                     'content' => $fullAnswer,
@@ -242,17 +252,24 @@ class ChatController extends Controller
         }
 
         // Fallback for non-AJAX / non-streaming requests
-        try {
-            $answer = $gemini->chat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath, $materials->all(), richResponses: true);
-            $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $answer, selectedDocIds: $session->selected_document_ids) : []);
-        } catch (Throwable $exception) {
-            report($exception);
-            $answer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage(), $session->selected_document_ids) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
-            $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $answer, selectedDocIds: $session->selected_document_ids) : []);
+        if ($fileConversionAnswer !== null) {
+            $answer = $fileConversionAnswer;
+            $sourceSnippets = [];
+        } else {
+            try {
+                $answer = $gemini->chat($source, $data['question'], $history, $session->selected_document_ids, $absoluteImagePath, $materials->all(), richResponses: true);
+                $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $answer, selectedDocIds: $session->selected_document_ids) : []);
+            } catch (Throwable $exception) {
+                report($exception);
+                $answer = ($source ? $sources->fallbackAnswer($source, $data['question'], $exception->getMessage(), $session->selected_document_ids) : 'AI belum bisa menjawab saat ini, coba lagi sebentar');
+                $sourceSnippets = ($source ? $sources->chatSnippetsFor($source, $data['question'], $answer, selectedDocIds: $session->selected_document_ids) : []);
+            }
         }
-        $sourceSnippets = collect($sourceSnippets)
-            ->concat(app(ChatMaterials::class)->snippets($materials, $data['question'], $answer))
-            ->unique(fn ($snippet) => $snippet['document_id'].'|'.$snippet['snippet'])->values()->all();
+        if ($fileConversionAnswer === null) {
+            $sourceSnippets = collect($sourceSnippets)
+                ->concat(app(ChatMaterials::class)->snippets($materials, $data['question'], $answer))
+                ->unique(fn ($snippet) => $snippet['document_id'].'|'.$snippet['snippet'])->values()->all();
+        }
         $session->messages()->create([
             'role' => 'assistant',
             'content' => $answer,
@@ -269,5 +286,41 @@ class ChatController extends Controller
         ]);
 
         return redirect()->route('chat.show', $session);
+    }
+
+    private function fileConversionAnswer(array $history, string $question): ?string
+    {
+        $lastMessage = end($history);
+        if (($lastMessage['role'] ?? null) !== 'assistant' || ! is_string($lastMessage['content'] ?? null)) {
+            return null;
+        }
+
+        $requestedFormats = ChatFileFormats::requestedFormats($question);
+        if (count($requestedFormats) !== 1) {
+            return null;
+        }
+        $format = $requestedFormats[0];
+
+        $conversionRequest = preg_match('/\b(?:jadikan|ubah(?:kan)?|konversi(?:kan)?|convert|simpan|export|download|versi)\b/i', $question) === 1
+            || preg_match('/\b(?:dalam|ke|jadi)\s+(?:(?:bentuk|format)\s+)?(?:microsoft\s+)?\.?[\pL\pN.+#-]+/iu', $question) === 1;
+        if (! $conversionRequest) {
+            return null;
+        }
+
+        $content = preg_replace('/^\s*<!-- FILE_DOCUMENT(?:(?:_FILE):[a-z0-9_.-]+|:[a-z0-9]+)? -->\s*/i', '', trim($lastMessage['content']));
+        if (! is_string($content) || trim($content) === '') {
+            return null;
+        }
+
+        $formatLabel = ChatFileFormats::label($format);
+        preg_match('/^\s{0,3}#\s+(.+)$/m', $content, $heading);
+        $topic = trim($heading[1] ?? '');
+        $introduction = $topic !== ''
+            ? "Baik, saya siapkan versi {$formatLabel} tentang {$topic} tadi sebagai file yang bisa diunduh."
+            : "Baik, saya siapkan versi {$formatLabel} dari penjelasan tadi sebagai file yang bisa diunduh.";
+        $title = $topic !== '' ? Str::slug($topic) : 'jawaban-sebelumnya';
+        $filename = "{$title}.{$format}";
+
+        return "{$introduction}\n\n<!-- FILE_DOCUMENT_FILE:{$filename} -->\n".trim($content);
     }
 }
