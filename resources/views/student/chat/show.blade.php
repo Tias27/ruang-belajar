@@ -182,7 +182,8 @@
                             }, 18);
                         };
 
-                        while (true) {
+                        let streamCompleted = false;
+                        while (!streamCompleted) {
                             const { value, done } = await reader.read();
                             if (done) break;
 
@@ -233,6 +234,9 @@
                                             this.$nextTick(() => {
                                                 if (window.lucide) window.lucide.createIcons();
                                             });
+                                            streamCompleted = true;
+                                            try { await reader.cancel(); } catch (e) { }
+                                            break;
                                         }
                                     } catch (e) {
                                         console.error('SSE parse error:', e);
@@ -521,9 +525,18 @@
                             style="border: none !important; background: transparent !important; box-shadow: none !important; outline: none !important; resize: none !important;"></textarea>
 
                         <button type="submit" aria-label="Kirim pertanyaan" :disabled="(!question.trim() && !imageFile && !materials.length) || sending || materialUploading"
+                            :class="{ 'is-sending !cursor-wait !bg-campus-600 !text-white opacity-95': sending }"
                             class="group flex h-11 w-11 shrink-0 items-center justify-center p-0 rounded-full bg-slate-900 text-white shadow-sm transition-all hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400">
-                            <i data-lucide="arrow-up" class="h-5 w-5"></i>
-                            <span class="sr-only">Kirim</span>
+                            <template x-if="sending">
+                                <svg class="h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3.5"></circle>
+                                    <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </template>
+                            <template x-if="!sending">
+                                <i data-lucide="arrow-up" class="h-5 w-5"></i>
+                            </template>
+                            <span class="sr-only" x-text="sending ? 'Sedang memproses jawaban...' : 'Kirim'"></span>
                         </button>
                     </div>
                     <p class="live-chat-hint">AI bisa keliru, cek lagi dengan materimu</p>

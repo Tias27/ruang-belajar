@@ -227,6 +227,7 @@
 .live-ai-chat .live-chat-input:focus-within { border-color: var(--study-blue); box-shadow: 0 0 0 2px #416f9414; }
 .live-ai-chat .live-chat-input textarea { padding: 11px 4px; font-size: 14px; line-height: 22px; max-height: min(128px,20dvh); overflow-y: auto; }
 .live-ai-chat .live-chat-input button[type="submit"]:not(:disabled) { background: var(--study-blue); color: #fff; }
+.live-ai-chat .live-chat-input button[type="submit"].is-sending { background: var(--study-blue) !important; color: #fff !important; cursor: wait !important; opacity: 0.95; }
 .live-ai-chat .live-chat-hint { margin-top: 7px; font-size: 10px; line-height: 1.5; text-align: center; color: var(--study-muted); }
 .live-ai-chat .live-chat-input { gap: 2px; }
 .live-ai-chat .live-chat-input textarea { min-width: 0; }
