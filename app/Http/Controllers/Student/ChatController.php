@@ -165,7 +165,8 @@ class ChatController extends Controller
         if ($request->header('Accept') === 'text/event-stream' || $request->expectsJson()) {
             return response()->stream(function () use ($session, $gemini, $sources, $data, $source, $logger, $history, $absoluteImagePath, $materials, $userMessage) {
                 @ini_set('zlib.output_compression', '0');
-                echo ": connected\n\n";
+                echo ": connected\n";
+                echo ': ' . str_repeat(' ', 1024) . "\n\n";
                 echo 'data: '.json_encode(['user_message' => $userMessage->forChat(),
                     'session_url' => route('chat.show', $session), 'store_url' => route('chat.store', $session)])."\n\n";
                 if (ob_get_level() > 0) ob_flush();

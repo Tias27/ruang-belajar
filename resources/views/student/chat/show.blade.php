@@ -154,6 +154,34 @@
                         const decoder = new TextDecoder();
                         let buffer = '';
 
+                        let typeQueue = '';
+                        let typingTimer = null;
+                        const drainTypeQueue = (stepOverride) => {
+                            if (!typeQueue.length || !this.messages[assistantIndex]) return;
+                            const qlen = typeQueue.length;
+                            const step = stepOverride || (qlen > 250 ? 24 : (qlen > 100 ? 12 : (qlen > 30 ? 5 : 2)));
+                            const chars = typeQueue.slice(0, step);
+                            typeQueue = typeQueue.slice(step);
+                            this.messages[assistantIndex].content += chars;
+                            if (window.lucide && chars.includes('<')) {
+                                this.$nextTick(() => window.lucide?.createIcons());
+                            }
+                        };
+
+                        const startTyping = () => {
+                            if (typingTimer) return;
+                            typingTimer = setInterval(() => {
+                                if (!typeQueue.length) {
+                                    if (!this.sending) {
+                                        clearInterval(typingTimer);
+                                        typingTimer = null;
+                                    }
+                                    return;
+                                }
+                                drainTypeQueue();
+                            }, 18);
+                        };
+
                         while (true) {
                             const { value, done } = await reader.read();
                             if (done) break;
@@ -184,11 +212,17 @@
                                                 this.messages[assistantIndex].searchStatus = '';
                                                 this.messages[assistantIndex].searchPhase = 'answering';
                                             }
-                                            this.messages[assistantIndex].content += parsed.chunk;
-                                            this.$nextTick(() => {
-                                                if (window.lucide) window.lucide.createIcons();
-                                            });
+                                            typeQueue += parsed.chunk;
+                                            startTyping();
                                         } else if (parsed.done) {
+                                            while (typeQueue.length > 0) {
+                                                drainTypeQueue(Math.max(6, Math.ceil(typeQueue.length / 4)));
+                                                await new Promise(r => setTimeout(r, 16));
+                                            }
+                                            if (typingTimer) {
+                                                clearInterval(typingTimer);
+                                                typingTimer = null;
+                                            }
                                             this.messages[assistantIndex].streaming = false;
                                             this.title = parsed.title || this.title;
                                             if (parsed.store_url) this.storeUrl = parsed.store_url;
@@ -221,6 +255,14 @@
                             content: error.message || 'Maaf, jawaban belum berhasil dibuat. Coba kirim ulang pertanyaannya.',
                         });
                     } finally {
+                        if (typingTimer) {
+                            clearInterval(typingTimer);
+                            typingTimer = null;
+                        }
+                        if (typeQueue.length > 0 && this.messages[assistantIndex]) {
+                            this.messages[assistantIndex].content += typeQueue;
+                            typeQueue = '';
+                        }
                         this.messages.forEach(message => { if (message.streaming) message.streaming = false; });
                         this.sending = false;
                         this.$nextTick(() => {

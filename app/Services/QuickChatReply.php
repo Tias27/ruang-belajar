@@ -29,6 +29,9 @@ class QuickChatReply
 
     public static function stream(string $answer): \Generator
     {
-        yield $answer;
+        $words = preg_split('/(\s+)/u', $answer, -1, PREG_SPLIT_DELIM_CAPTURE);
+        foreach ($words as $word) {
+            if ($word !== '') yield $word;
+        }
     }
 }
