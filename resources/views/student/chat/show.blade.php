@@ -345,7 +345,7 @@
                                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                                         <g x-show="message.searchPhase === 'searching'"><circle cx="12" cy="12" r="8"/><ellipse cx="12" cy="12" rx="3.5" ry="8"/><path d="M4 12h16"/></g>
                                                         <g x-show="message.searchPhase === 'reading'"><path d="M12 6v14M12 6C9 4 6 4 3 5v14c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Z"/><path d="m6 9 3 1m-3 3 3 1m6-4 3-1m-3 5 3-1"/></g>
-                                                        <g x-show="message.searchPhase === 'answering'"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/></g>
+                                                        <g x-show="message.searchPhase === 'answering'"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/><path d="m15 5 3 3"/></g>
                                                     </svg>
                                                 </span>
                                                 <span class="chat-web-status-label" x-show="message.searchStatus" x-text="message.searchStatus"></span>

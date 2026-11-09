@@ -193,11 +193,13 @@
 .chat-web-status[data-phase="answering"] .chat-web-status-steps i:last-child { background: #708865; animation: chat-web-pulse 1.4s ease-in-out infinite; }
 .chat-web-status[data-phase="reading"] .chat-web-status-steps i:first-child,
 .chat-web-status[data-phase="answering"] .chat-web-status-steps i:not(:last-child) { background: #9aaa90; }
+.chat-web-status[data-phase="answering"] .chat-web-status-icon svg { animation: chat-pencil-write 0.8s ease-in-out infinite alternate; transform-origin: 30% 70%; }
 @keyframes chat-web-orbit { to { transform: rotate(360deg); } }
+@keyframes chat-pencil-write { 0% { transform: rotate(0deg); } 100% { transform: rotate(-10deg) translate(1px, -1px); } }
 @keyframes chat-web-shimmer { from { background-position: 140% 0; } to { background-position: -100% 0; } }
 @keyframes chat-web-pulse { 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) {
-    .chat-web-status-icon::before, .chat-web-status-label, .chat-web-status .chat-web-status-steps i { animation: none !important; }
+    .chat-web-status-icon::before, .chat-web-status-label, .chat-web-status .chat-web-status-steps i, .chat-web-status .chat-web-status-icon svg { animation: none !important; }
     .chat-web-status-label { color: #50644a; background: none; }
 }
 .chat-web-sources { margin-top: 14px; border-top: 1px solid var(--study-line); padding-top: 8px; }
